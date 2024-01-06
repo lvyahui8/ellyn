@@ -6,6 +6,6 @@ import (
 )
 
 func TestProgram(t *testing.T) {
-	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	prog := NewProgram(ellyn_testing.GetTestProjPath(), nil)
 	prog.Visit()
 }
