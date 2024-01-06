@@ -1,4 +1,4 @@
-package assert
+package asserts
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ func NewAssertError(msg string) (ae AssertError) {
 	lines := strings.Split(stack, "\n")
 	visited := false
 	for i := 0; i < len(lines); i++ {
-		if !strings.Contains(lines[i], "/assert.") {
+		if !strings.Contains(lines[i], "/asserts.") {
 			if visited {
 				ae.fileLine = strings.Join(lines[i-1:i+1], "\n")
 				break

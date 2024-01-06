@@ -1,4 +1,4 @@
-package assert
+package asserts
 
 import (
 	"github.com/stretchr/testify/require"

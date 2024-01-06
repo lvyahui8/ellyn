@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"github.com/lvyahui8/ellyn/ellyn_common/assert"
+	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"os"
 	"os/exec"
 )
@@ -18,6 +18,6 @@ func (s *shellUtils) Exec(dir, name string, args ...string) string {
 	}
 	cmd.Stderr = os.Stderr
 	outBytes, err := cmd.Output()
-	assert.IsNil(err)
+	asserts.IsNil(err)
 	return string(outBytes)
 }
