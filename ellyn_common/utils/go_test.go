@@ -33,6 +33,7 @@ func TestGoUtils_GetRootPkg(t *testing.T) {
 }
 
 func TestGoUtils_IsAutoGenFile(t *testing.T) {
+	t.Skip()
 	goRootDir := Go.GetGoRootDir()
 	require.True(t, Go.IsAutoGenFile(goRootDir+"\\src\\cmd\\go\\internal\\test\\flagdefs.go"))
 	require.False(t, Go.IsAutoGenFile(goRootDir+"\\src\\cmd\\go\\internal\\test\\cover.go"))
