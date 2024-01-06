@@ -31,8 +31,8 @@ func (g *goUtils) AllPackages(mainPkgPath string) map[string]string {
 }
 
 // GetGoEnv 获取指定的go env
-func (g *goUtils) GetGoEnv(mainPkgPath, envKey string) string {
-	out := Shell.Exec(mainPkgPath, "go", "env", envKey)
+func (g *goUtils) GetGoEnv(workDir, envKey string) string {
+	out := Shell.Exec(workDir, "go", "env", envKey)
 	return strings.TrimSpace(out)
 }
 
@@ -41,13 +41,19 @@ func (g *goUtils) GetModFile(mainPkgPath string) string {
 	return g.GetGoEnv(mainPkgPath, "GOMOD")
 }
 
-// GetRootPkgPath 获取项目go.mod文件所在的package name
-func (g *goUtils) GetRootPkgPath(modFilePath string) string {
+// GetProjectRootPkgPath 获取项目go.mod文件所在的package name
+func (g *goUtils) GetProjectRootPkgPath(modFilePath string) string {
 	content, err := os.ReadFile(modFilePath)
 	asserts.IsNil(err)
 	modFile, err := modfile.Parse("go.mod", content, nil)
 	asserts.IsNil(err)
 	return modFile.Module.Mod.Path
+}
+
+func (g *goUtils) GetGoRootDir() string {
+	wd, err := os.Getwd()
+	asserts.IsNil(err)
+	return g.GetGoEnv(wd, "GOROOT")
 }
 
 func (g *goUtils) IsTestFile(file string) bool {

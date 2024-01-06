@@ -59,7 +59,7 @@ func (p *Program) _init() {
 		}
 		p.mainPkg.Name = p.pkgMap[p.mainPkg.Dir].Name
 		p.modFile = utils.Go.GetModFile(p.mainPkg.Dir)
-		rootPkgPath := utils.Go.GetRootPkgPath(p.modFile)
+		rootPkgPath := utils.Go.GetProjectRootPkgPath(p.modFile)
 		p.rootPkg = NewPackage(path.Dir(p.modFile), rootPkgPath)
 		p.progCtx = &ProgramContext{rootPkgPath: rootPkgPath}
 	})

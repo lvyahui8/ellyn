@@ -28,11 +28,12 @@ func TestGoUtils_GetModFile(t *testing.T) {
 }
 
 func TestGoUtils_GetRootPkg(t *testing.T) {
-	rootPkg := Go.GetRootPkgPath(Go.GetModFile(ellyn_testing.GetTestProjPath()))
+	rootPkg := Go.GetProjectRootPkgPath(Go.GetModFile(ellyn_testing.GetTestProjPath()))
 	require.Equal(t, "test_proj", rootPkg)
 }
 
 func TestGoUtils_IsAutoGenFile(t *testing.T) {
-	require.True(t, Go.IsAutoGenFile("D:\\software\\go\\go1.18\\src\\cmd\\go\\internal\\test\\flagdefs.go"))
-	require.False(t, Go.IsAutoGenFile("D:\\software\\go\\go1.18\\src\\cmd\\go\\internal\\test\\cover.go"))
+	goRootDir := Go.GetGoRootDir()
+	require.True(t, Go.IsAutoGenFile(goRootDir+"\\src\\cmd\\go\\internal\\test\\flagdefs.go"))
+	require.False(t, Go.IsAutoGenFile(goRootDir+"\\src\\cmd\\go\\internal\\test\\cover.go"))
 }
