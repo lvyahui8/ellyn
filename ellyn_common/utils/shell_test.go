@@ -6,6 +6,6 @@ import (
 )
 
 func TestShellUtils_Exec(t *testing.T) {
-	output := Shell.Exec(OS.GetWorkDir(), "ping", "localhost", "-c", "1")
+	output := Shell.Exec(OS.GetWorkDir(), "echo", "1")
 	require.Equal(t, "1", output)
 }
