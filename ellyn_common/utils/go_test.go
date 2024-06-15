@@ -29,7 +29,7 @@ func TestGoUtils_GetModFile(t *testing.T) {
 
 func TestGoUtils_GetRootPkg(t *testing.T) {
 	rootPkg := Go.GetProjectRootPkgPath(Go.GetModFile(ellyn_testing.GetTestProjPath()))
-	require.Equal(t, "test_proj", rootPkg)
+	require.Equal(t, "example", rootPkg)
 }
 
 func TestGoUtils_IsAutoGenFile(t *testing.T) {
