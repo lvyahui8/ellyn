@@ -6,5 +6,6 @@ import (
 )
 
 func main() {
-	ellyn_ast.NewProgram(ellyn_testing.GetTestProjPath(), nil)
+	program := ellyn_ast.NewProgram(ellyn_testing.GetTestProjPath(), nil)
+	program.Visit()
 }
