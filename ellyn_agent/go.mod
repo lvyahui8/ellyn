@@ -1,6 +1,6 @@
 module github.com/lvyahui8/ellyn/ellyn_agent
 
-go 1.18
+go 1.19
 
 replace github.com/lvyahui8/ellyn => ./..
 

@@ -12,6 +12,7 @@ type Processor interface {
 	FilterPackage(progCtx *ProgramContext, pkg Package) bool
 	FilterFile(progCtx *ProgramContext, pkg Package, file fs.FileInfo) bool
 	HandleFile(progCtx *ProgramContext, pkg Package, file fs.FileInfo, content []byte)
+	HandleFunc(progCtx *ProgramContext, pkg Package, file fs.FileInfo, goFunc *GoFunc)
 }
 
 type DefaultProcessor struct {
@@ -39,4 +40,8 @@ func (d DefaultProcessor) FilterFile(progCtx *ProgramContext, pkg Package, file 
 
 func (d DefaultProcessor) HandleFile(progCtx *ProgramContext, pkg Package, file fs.FileInfo, content []byte) {
 	log.Infof("dir %s,file %s", pkg.Dir, file.Name())
+}
+
+func (d DefaultProcessor) HandleFunc(progCtx *ProgramContext, pkg Package, file fs.FileInfo, goFunc *GoFunc) {
+
 }

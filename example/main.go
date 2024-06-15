@@ -64,6 +64,13 @@ func Trade() {
 	}()
 
 	go Handle()
+
+	c := make(chan string, 100)
+	c <- "hello"
+	select {
+	case msg := <-c:
+		_ = fmt.Sprintf("say: %v", msg)
+	}
 }
 
 func main() {
