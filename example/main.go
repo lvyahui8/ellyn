@@ -71,8 +71,17 @@ func Trade() {
 	case msg := <-c:
 		_ = fmt.Sprintf("say: %v", msg)
 	}
+	if 1 == 1 {
+	}
+	func() {
+	}()
+	// empty
+	go func() {
+		select {} // 阻塞
+	}()
 }
 
 func main() {
 	fmt.Println(Sum(1, 1))
+	Trade()
 }

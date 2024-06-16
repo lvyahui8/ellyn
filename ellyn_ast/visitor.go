@@ -139,7 +139,7 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 				fname = star + p.Name + "." + fname
 			}
 		}
-
+		fmt.Printf("func %s\n", fname)
 		ast.Walk(f, n.Body)
 		return nil
 	case *ast.FuncLit:
@@ -149,8 +149,9 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 		// just make up a descriptive name.
 		pos := n.Pos()
 		p := f.fset.File(pos).Position(pos)
-		_ = fmt.Sprintf("func.L%d.C%d", p.Line, p.Column)
-
+		fname := fmt.Sprintf("func.L%d.C%d", p.Line, p.Column)
+		fmt.Printf("func %s\n", fname)
+		// todo get parent func
 		return nil
 	}
 	return f
@@ -203,6 +204,7 @@ func (f *FileVisitor) addCounters(pos, insertPos, blockEnd token.Pos, list []ast
 	if len(list) == 0 {
 		//f.edit.Insert(f.offset(insertPos), f.newCounter(insertPos, blockEnd, 0)+";")
 		// todo 插入
+		fmt.Printf("empty block begin:%d,end:%d\n", f.offset(insertPos), f.offset(blockEnd))
 		return
 	}
 	// Make a copy of the list, as we may mutate it and should leave the
@@ -253,6 +255,7 @@ func (f *FileVisitor) addCounters(pos, insertPos, blockEnd token.Pos, list []ast
 		}
 		if pos != end { // Can have no source to cover if e.g. blocks abut.
 			// todo 插入block计数器
+			fmt.Printf("block begin:%d,end:%d\n", f.offset(insertPos), f.offset(end))
 		}
 
 		list = list[last:]
