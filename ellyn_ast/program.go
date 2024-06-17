@@ -3,6 +3,9 @@ package ellyn_ast
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io/ioutil"
 	"os"
 	"path"
@@ -84,6 +87,11 @@ func (p *Program) handleFiles() {
 			content, err := ioutil.ReadFile(fileAbsPath)
 			asserts.IsNil(err)
 			p.processor.HandleFile(p.progCtx, pkg, file, content)
+			visitor := &FileVisitor{content: content}
+			fset := token.NewFileSet()
+			visitor.fset = fset
+			parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
+			ast.Walk(visitor, parsedFile)
 		}
 	}
 }
