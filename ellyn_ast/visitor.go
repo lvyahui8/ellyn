@@ -10,6 +10,7 @@ import (
 type FileVisitor struct {
 	fset    *token.FileSet
 	content []byte
+	prog    *Program
 }
 
 func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
@@ -155,6 +156,18 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 		return nil
 	}
 	return f
+}
+
+func (f *FileVisitor) addFuncByLint(fName string, lit *ast.FuncLit) {
+	f.prog.funcCounter.Add(1)
+}
+
+func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
+	f.prog.funcCounter.Add(1)
+}
+
+func (f *FileVisitor) addBlock(offset int) {
+	f.prog.blockCounter.Add(1)
 }
 
 // offset translates a token position into a 0-indexed byte offset.

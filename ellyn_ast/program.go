@@ -15,10 +15,8 @@ import (
 )
 
 type ProgramContext struct {
-	rootPkgPath  string
-	extra        sync.Map
-	funcCounter  atomic.Int32
-	blockCounter atomic.Int32
+	rootPkgPath string
+	extra       sync.Map
 }
 
 func (p *ProgramContext) RootPkgPath() string {
@@ -26,15 +24,17 @@ func (p *ProgramContext) RootPkgPath() string {
 }
 
 type Program struct {
-	mainPkg   Package
-	rootPkg   Package
-	pkgMap    map[string]Package
-	modFile   string
-	allFuncs  []*GoFunc
-	allBlocks []*Block
-	processor Processor
-	progCtx   *ProgramContext
-	initOnce  sync.Once
+	mainPkg      Package
+	rootPkg      Package
+	pkgMap       map[string]Package
+	modFile      string
+	allFuncs     []*GoFunc
+	allBlocks    []*Block
+	processor    Processor
+	progCtx      *ProgramContext
+	initOnce     sync.Once
+	funcCounter  atomic.Int32
+	blockCounter atomic.Int32
 }
 
 func NewProgram(mainPkgDir string, processor Processor) *Program {
