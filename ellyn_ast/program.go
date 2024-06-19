@@ -11,11 +11,14 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 type ProgramContext struct {
-	rootPkgPath string
-	extra       sync.Map
+	rootPkgPath  string
+	extra        sync.Map
+	funcCounter  atomic.Int32
+	blockCounter atomic.Int32
 }
 
 func (p *ProgramContext) RootPkgPath() string {
