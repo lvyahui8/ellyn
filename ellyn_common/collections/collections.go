@@ -90,39 +90,64 @@ func (s *mapSegment) Size() int {
 	return s.size
 }
 
-// unsafeStack 非并发安全的Stack
-type unsafeStack struct {
+// UnsafeCompressedStack 非并发安全的Stack
+type UnsafeCompressedStack struct {
 	elements *list.List
+	count    int
 }
 
-func NewStack() *unsafeStack {
-	return &unsafeStack{
+type stackElement struct {
+	val   interface{}
+	max   int
+	count int
+}
+
+func NewStack() *UnsafeCompressedStack {
+	return &UnsafeCompressedStack{
 		elements: list.New(),
 	}
 }
 
-func (s *unsafeStack) Push(val interface{}) {
-	s.elements.PushBack(val)
-}
-
-func (s *unsafeStack) Pop() interface{} {
-	e := s.elements.Back()
-	if e != nil {
-		s.elements.Remove(e)
+func (s *UnsafeCompressedStack) Push(val interface{}) {
+	s.count++
+	back := s.elements.Back()
+	if back != nil {
+		ele := back.Value.(*stackElement)
+		if ele.val == val {
+			ele.max++
+			ele.count++
+			return
+		}
 	}
-	return e.Value
+	s.elements.PushBack(&stackElement{val: val, max: 1, count: 1})
 }
 
-func (s *unsafeStack) Top() interface{} {
+func (s *UnsafeCompressedStack) Pop() interface{} {
 	e := s.elements.Back()
 	if e != nil {
-		return e.Value
+		ele := e.Value.(*stackElement)
+		if ele.count == 1 {
+			s.elements.Remove(e)
+		} else {
+			ele.count--
+		}
+		s.count--
+		return ele.val
+	} else {
+		return nil
+	}
+}
+
+func (s *UnsafeCompressedStack) Top() interface{} {
+	e := s.elements.Back()
+	if e != nil {
+		return e.Value.(*stackElement).val
 	}
 	return nil
 }
 
-func (s *unsafeStack) Size() int {
-	return s.elements.Len()
+func (s *UnsafeCompressedStack) Size() int {
+	return s.count
 }
 
 // https://www.lenshood.dev/2021/04/19/lock-free-ring-buffer/
