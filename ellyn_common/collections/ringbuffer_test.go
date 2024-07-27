@@ -2,18 +2,49 @@ package collections
 
 import (
 	"fmt"
-	"math/rand"
+	"github.com/stretchr/testify/require"
 	"runtime"
 	"sync"
-	"sync/atomic"
 	"testing"
-	"time"
-	"unsafe"
 )
 
-var buffer = NewRingBuffer(2000)
+//var buffer =
 
-func queueReadWrite(cnt int, produce func() interface{}, consume func(val interface{})) {
+const capacity = 100000
+
+type Queue interface {
+	Enqueue(value interface{}) (success bool)
+	Dequeue() (value interface{}, success bool)
+}
+
+type channelQueue struct {
+	q chan interface{}
+}
+
+func newChannelQueue() *channelQueue {
+	return &channelQueue{
+		q: make(chan interface{}, capacity),
+	}
+}
+
+func (c channelQueue) Enqueue(value interface{}) (success bool) {
+	c.q <- value
+	return true
+}
+
+func (c channelQueue) Dequeue() (value interface{}, success bool) {
+	select {
+	case value, success = <-c.q:
+	default:
+	}
+	return
+}
+
+func (c channelQueue) Close() {
+	close(c.q)
+}
+
+func queueReadWrite(queue Queue, cnt int) {
 	pNum := runtime.NumCPU()
 	cNum := runtime.NumCPU()
 	group := sync.WaitGroup{}
@@ -23,15 +54,7 @@ func queueReadWrite(cnt int, produce func() interface{}, consume func(val interf
 		go func() {
 			defer group.Done()
 			for k := 0; k < cnt; k++ {
-				var suc bool
-				if produce != nil {
-					suc = buffer.Offer(produce())
-				} else {
-					suc = buffer.Offer(1)
-				}
-				if !suc {
-					fmt.Printf("offer failed.\n")
-				}
+				_ = queue.Enqueue(1)
 			}
 		}()
 	}
@@ -40,9 +63,9 @@ func queueReadWrite(cnt int, produce func() interface{}, consume func(val interf
 		go func() {
 			defer group.Done()
 			for {
-				val, suc := buffer.Poll()
-				if consume != nil && suc {
-					consume(val)
+				_, suc := queue.Dequeue()
+				if !suc {
+					return
 				}
 			}
 		}()
@@ -51,74 +74,45 @@ func queueReadWrite(cnt int, produce func() interface{}, consume func(val interf
 	return
 }
 
-func TestRingBuffer(t *testing.T) {
-	var sum uint64 = 0
-	queueReadWrite(100,
-		func() interface{} {
-			time.Sleep(10 * time.Millisecond)
-			return 1
-		},
-		func(val interface{}) {
-			t.Logf("%d\n", val.(int))
-			atomic.AddUint64(&sum, uint64(val.(int)))
-		})
-	t.Logf("sum %d\n", sum)
+func TestRingBufferBasic(t *testing.T) {
+	buffer := NewRingBuffer(100000)
+	n := 4
+	for i := 1; i <= n; i++ {
+		buffer.Enqueue(i)
+	}
+	sum := 0
+	for {
+		if v, ok := buffer.Dequeue(); ok {
+			sum += v.(int)
+		} else {
+			break
+		}
+	}
+	require.Equal(t, (1+n)*n/2, sum)
 }
 
-// BenchmarkRingBuffer go test -bench BenchmarkRingBuffer -benchtime=5s
+func TestRingBuffer(t *testing.T) {
+	queueReadWrite(NewRingBuffer(2000), 100)
+}
+
+// BenchmarkRingBuffer go test -v -run ^$  -bench BenchmarkRingBuffer -benchtime=5s -benchmem
 func BenchmarkRingBuffer(b *testing.B) {
+	// 读写元素个数
 	cntList := []int{1, 10, 100, 1000, 10000}
 	for _, cnt := range cntList {
 		k := cnt
-		b.Run(fmt.Sprintf("readWrite_%d", k), func(b *testing.B) {
+		b.Run(fmt.Sprintf("ringBuffer readWrite_%d", k), func(b *testing.B) {
+			q := NewRingBuffer(capacity)
 			for i := 0; i < b.N; i++ {
-				queueReadWrite(k, nil, nil)
+				queueReadWrite(q, k)
 			}
 		})
-	}
-}
-
-func TestInterfaceSize(t *testing.T) {
-	var a interface{}
-	a = float64(10)
-	var b interface{}
-	b = float32(10)
-	t.Logf("interface{} size=%d\n", unsafe.Sizeof(a))
-	t.Logf("interface{} size=%d\n", unsafe.Sizeof(b))
-	var c *interface{}
-	c = &a
-	t.Logf("*interface{} size=%d\n", unsafe.Sizeof(c))
-}
-
-// go test -v -run ^$  -bench BenchmarkIndex -benchtime=5s
-const listLen = 10000
-
-func BenchmarkIndexMap(b *testing.B) {
-	m := make(map[int]int, listLen)
-	for i := 0; i < listLen; i++ {
-		m[i] = i
-	}
-	for i := 0; i < b.N; i++ {
-		_ = m[rand.Intn(listLen)]
-	}
-}
-
-func BenchmarkIndexSlice(b *testing.B) {
-	s := make([]int, listLen)
-	for i := 0; i < listLen; i++ {
-		s[i] = i
-	}
-	for i := 0; i < b.N; i++ {
-		_ = s[rand.Intn(listLen)]
-	}
-}
-
-func BenchmarkIndexArray(b *testing.B) {
-	var a [listLen]int
-	for i := 0; i < listLen; i++ {
-		a[i] = i
-	}
-	for i := 0; i < b.N; i++ {
-		_ = a[rand.Intn(listLen)]
+		b.Run(fmt.Sprintf("channelBuffer readWrite_%d", k), func(b *testing.B) {
+			q := newChannelQueue()
+			for i := 0; i < b.N; i++ {
+				queueReadWrite(q, k)
+			}
+			q.Close()
+		})
 	}
 }
