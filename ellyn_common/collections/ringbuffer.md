@@ -9,28 +9,30 @@ goos: windows
 goarch: amd64
 pkg: github.com/lvyahui8/ellyn/ellyn_common/collections
 cpu: AMD Ryzen 7 4800U with Radeon Graphics
+BenchmarkRingBuffer10000
+BenchmarkRingBuffer10000-16          382          16506136 ns/op           26062 B/op        376 allocs/op
 BenchmarkRingBuffer
 BenchmarkRingBuffer/ringBuffer_readWrite_1
-BenchmarkRingBuffer/ringBuffer_readWrite_1-16             539079             10520 ns/op            1313 B/op         33 allocs/op
+BenchmarkRingBuffer/ringBuffer_readWrite_1-16             577216              9874 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/channelBuffer_readWrite_1
-BenchmarkRingBuffer/channelBuffer_readWrite_1-16          489321             12805 ns/op            1299 B/op         33 allocs/op
+BenchmarkRingBuffer/channelBuffer_readWrite_1-16          517130             11760 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/ringBuffer_readWrite_10
-BenchmarkRingBuffer/ringBuffer_readWrite_10-16            211220             27978 ns/op            1340 B/op         33 allocs/op
+BenchmarkRingBuffer/ringBuffer_readWrite_10-16            224670             26767 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/channelBuffer_readWrite_10
-BenchmarkRingBuffer/channelBuffer_readWrite_10-16         152728             39356 ns/op            1306 B/op         33 allocs/op
+BenchmarkRingBuffer/channelBuffer_readWrite_10-16         168636             35749 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/ringBuffer_readWrite_100
-BenchmarkRingBuffer/ringBuffer_readWrite_100-16            29646            204086 ns/op            1614 B/op         37 allocs/op
+BenchmarkRingBuffer/ringBuffer_readWrite_100-16            31714            189755 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/channelBuffer_readWrite_100
-BenchmarkRingBuffer/channelBuffer_readWrite_100-16          7141            800233 ns/op            1520 B/op         33 allocs/op
+BenchmarkRingBuffer/channelBuffer_readWrite_100-16          7354            781929 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/ringBuffer_readWrite_1000
-BenchmarkRingBuffer/ringBuffer_readWrite_1000-16            2828           2113992 ns/op            4633 B/op         79 allocs/op
+BenchmarkRingBuffer/ringBuffer_readWrite_1000-16            3050           1942901 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/channelBuffer_readWrite_1000
-BenchmarkRingBuffer/channelBuffer_readWrite_1000-16          608           8629558 ns/op            3937 B/op         33 allocs/op
+BenchmarkRingBuffer/channelBuffer_readWrite_1000-16          625           9612621 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/ringBuffer_readWrite_10000
-BenchmarkRingBuffer/ringBuffer_readWrite_10000-16            308          18802652 ns/op           31936 B/op        458 allocs/op
+BenchmarkRingBuffer/ringBuffer_readWrite_10000-16            332          17939649 ns/op            1296 B/op         33 allocs/op
 BenchmarkRingBuffer/channelBuffer_readWrite_10000
-BenchmarkRingBuffer/channelBuffer_readWrite_10000-16          79         104347427 ns/op           21622 B/op         33 allocs/op
+BenchmarkRingBuffer/channelBuffer_readWrite_10000-16          55         104589107 ns/op            1296 B/op         33 allocs/op
 PASS
-ok      github.com/lvyahui8/ellyn/ellyn_common/collections      67.490s
+ok      github.com/lvyahui8/ellyn/ellyn_common/collections      73.444s
 
 ```
