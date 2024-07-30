@@ -6,7 +6,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"path"
 	"strings"
@@ -23,6 +22,7 @@ func (p *ProgramContext) RootPkgPath() string {
 	return p.rootPkgPath
 }
 
+// Program 封装程序信息，解析遍历程序的所有包、函数、代码块
 type Program struct {
 	mainPkg      Package
 	rootPkg      Package
@@ -57,6 +57,7 @@ func (p *Program) Visit() {
 	p.handleFiles()
 }
 
+// _init 初始化基础信息，为文件迭代做准备
 func (p *Program) _init() {
 	p.initOnce.Do(func() {
 		packages := utils.Go.AllPackages(p.mainPkg.Dir)
@@ -64,6 +65,7 @@ func (p *Program) _init() {
 			p.pkgMap[pkgDir] = NewPackage(pkgDir, pkgPath)
 		}
 		p.mainPkg.Name = p.pkgMap[p.mainPkg.Dir].Name
+
 		p.modFile = utils.Go.GetModFile(p.mainPkg.Dir)
 		rootPkgPath := utils.Go.GetProjectRootPkgPath(p.modFile)
 		p.rootPkg = NewPackage(path.Dir(p.modFile), rootPkgPath)
@@ -76,7 +78,7 @@ func (p *Program) handleFiles() {
 		if !p.processor.FilterPackage(p.progCtx, pkg) {
 			continue
 		}
-		files, err := ioutil.ReadDir(pkgDir)
+		files, err := os.ReadDir(pkgDir)
 		asserts.IsNil(err)
 		for _, file := range files {
 			if !strings.HasSuffix(file.Name(), ".go") {
@@ -87,7 +89,7 @@ func (p *Program) handleFiles() {
 			}
 			// 加入遍历集合
 			fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
-			content, err := ioutil.ReadFile(fileAbsPath)
+			content, err := os.ReadFile(fileAbsPath)
 			asserts.IsNil(err)
 			p.processor.HandleFile(p.progCtx, pkg, file, content)
 			visitor := &FileVisitor{content: content}

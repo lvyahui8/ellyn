@@ -3,6 +3,7 @@ package collections
 import (
 	"fmt"
 	"github.com/stretchr/testify/require"
+	"math"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -90,6 +91,12 @@ func queueReadWrite(queue Queue, cnt int) bool {
 	queue.Enqueue(0) // 队列最后一个元素标识
 	group.Wait()
 	return produceCnt == consumeCnt
+}
+
+func TestMaxIdx(t *testing.T) {
+	s := math.MaxInt64 / int64(100*10000)
+	year := s / int64(60*60*24*365)
+	t.Log(year)
 }
 
 func TestRingBufferBasic(t *testing.T) {

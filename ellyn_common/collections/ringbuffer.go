@@ -1,6 +1,8 @@
 package collections
 
-import "sync/atomic"
+import (
+	"sync/atomic"
+)
 
 type ringBuffer struct {
 	// dequeuePos 指向下一个可消费点位，一直累加然后对capacity取模（&mask）取值
