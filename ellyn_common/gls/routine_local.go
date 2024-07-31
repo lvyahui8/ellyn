@@ -2,55 +2,45 @@ package gls
 
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
-	"sync/atomic"
 )
 
 var m = collections.NewConcurrentMap(2048, func(key interface{}) int {
 	return int(key.(uint64))
 })
 
-var localId int64 = 0
-
-type routineLocal struct {
-	id int64
+type RoutineLocal struct {
 }
 
-func NewRoutineLocal() *routineLocal {
-	return &routineLocal{
-		id: atomic.AddInt64(&localId, 1),
-	}
-}
-
-func (rl *routineLocal) Set(val interface{}) {
+func (rl *RoutineLocal) Set(val interface{}) {
 	goId := GetGoId()
 	tableVal, ok := m.Load(goId)
-	var table map[int64]interface{}
+	var table map[interface{}]interface{}
 	if !ok {
-		table = make(map[int64]interface{})
+		table = make(map[interface{}]interface{})
 		m.Store(goId, table)
 	} else {
-		table = tableVal.(map[int64]interface{})
+		table = tableVal.(map[interface{}]interface{})
 	}
-	table[rl.id] = val
+	table[rl] = val
 }
 
-func (rl *routineLocal) Get() (interface{}, bool) {
+func (rl *RoutineLocal) Get() (interface{}, bool) {
 	goId := GetGoId()
 	tableVal, ok := m.Load(goId)
 	if !ok {
 		return nil, false
 	}
-	table := tableVal.(map[int64]interface{})
-	res, ok := table[rl.id]
+	table := tableVal.(map[interface{}]interface{})
+	res, ok := table[rl]
 	return res, ok
 }
 
-func (rl *routineLocal) Clear() {
+func (rl *RoutineLocal) Clear() {
 	goId := GetGoId()
 	tableVal, ok := m.Load(goId)
 	if !ok {
 		return
 	}
-	table := tableVal.(map[int64]interface{})
-	delete(table, rl.id)
+	table := tableVal.(map[interface{}]interface{})
+	delete(table, rl)
 }
