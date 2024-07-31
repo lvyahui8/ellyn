@@ -116,7 +116,7 @@ func BenchmarkMap(b *testing.B) {
 	insertSeq := randomSeq()
 	readSeq := shuffle(insertSeq)
 	deleteSeq := shuffle(insertSeq)
-	testReadWrite(b, "concurrentMap", NewConcurrentMap(2048, func(key interface{}) int {
+	testReadWrite(b, "concurrentMap", NewConcurrentMap(2048, func(key any) int {
 		return key.(int)
 	}), insertSeq, readSeq, deleteSeq)
 	sMap := &sync.Map{}
@@ -124,7 +124,7 @@ func BenchmarkMap(b *testing.B) {
 }
 
 func TestMapPadding(t *testing.T) {
-	m := NewConcurrentMap(2048, func(key interface{}) int {
+	m := NewConcurrentMap(2048, func(key any) int {
 		return key.(int)
 	})
 	require.Equal(t, 64, int(unsafe.Sizeof(*m)))

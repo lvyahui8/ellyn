@@ -40,13 +40,13 @@ func BenchmarkIndexArray(b *testing.B) {
 }
 
 func TestInterfaceSize(t *testing.T) {
-	var a interface{}
+	var a any
 	a = float64(10)
-	var b interface{}
+	var b any
 	b = float32(10)
-	t.Logf("interface{} size=%d\n", unsafe.Sizeof(a))
-	t.Logf("interface{} size=%d\n", unsafe.Sizeof(b))
-	var c *interface{}
+	t.Logf("any size=%d\n", unsafe.Sizeof(a))
+	t.Logf("any size=%d\n", unsafe.Sizeof(b))
+	var c *any
 	c = &a
-	t.Logf("*interface{} size=%d\n", unsafe.Sizeof(c))
+	t.Logf("*any size=%d\n", unsafe.Sizeof(c))
 }

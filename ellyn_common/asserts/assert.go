@@ -33,13 +33,13 @@ func (ae AssertError) Error() string {
 	return fmt.Sprintf("msg:%s,fileLine:%s", ae.msg, ae.fileLine)
 }
 
-func IsNil(a interface{}) {
+func IsNil(a any) {
 	if a != nil {
 		panic(NewAssertError(fmt.Sprintf("must be nil. but got %+v", a)))
 	}
 }
 
-func NotNil(a interface{}) {
+func NotNil(a any) {
 	if a == nil {
 		panic(NewAssertError("must be not nil. but got nil"))
 	}

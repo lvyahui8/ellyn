@@ -15,26 +15,26 @@ import (
 const capacity = 100000
 
 type Queue interface {
-	Enqueue(value interface{}) (success bool)
-	Dequeue() (value interface{}, success bool)
+	Enqueue(value any) (success bool)
+	Dequeue() (value any, success bool)
 }
 
 type channelQueue struct {
-	q chan interface{}
+	q chan any
 }
 
 func newChannelQueue() *channelQueue {
 	return &channelQueue{
-		q: make(chan interface{}, capacity),
+		q: make(chan any, capacity),
 	}
 }
 
-func (c channelQueue) Enqueue(value interface{}) (success bool) {
+func (c channelQueue) Enqueue(value any) (success bool) {
 	c.q <- value
 	return true
 }
 
-func (c channelQueue) Dequeue() (value interface{}, success bool) {
+func (c channelQueue) Dequeue() (value any, success bool) {
 	select {
 	case value, success = <-c.q:
 	default:

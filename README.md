@@ -5,6 +5,10 @@
 [![codecov](https://codecov.io/gh/lvyahui8/ellyn/graph/badge.svg?token=YBV3TH2HQU)](https://codecov.io/gh/lvyahui8/ellyn)
 
 
+### Requires
+
+- Go Version >= 1.18
+
 ### 通用层模型
 
 - program 代表应用程序

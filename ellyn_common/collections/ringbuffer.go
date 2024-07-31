@@ -24,7 +24,7 @@ type node struct {
 	// 将seq设置为dequeuePos+capacity时，说明消费掉这个元素，将他设置到下一个可写入的窗口（enqueuePos会循环追上这个值）
 	seq uint64
 	// 具体元素值
-	value    interface{} // 64位处理器上 size 16字节
+	value    any // 64位处理器上 size 16字节
 	_padding [40]byte
 }
 
@@ -43,7 +43,7 @@ func NewRingBuffer(capacity uint64) *ringBuffer {
 	}
 }
 
-func (r *ringBuffer) Enqueue(value interface{}) (success bool) {
+func (r *ringBuffer) Enqueue(value any) (success bool) {
 	pos := atomic.LoadUint64(&r.enqueuePos)
 	var element *node
 	for {
@@ -70,7 +70,7 @@ func (r *ringBuffer) Enqueue(value interface{}) (success bool) {
 	return true
 }
 
-func (r *ringBuffer) Dequeue() (value interface{}, success bool) {
+func (r *ringBuffer) Dequeue() (value any, success bool) {
 	var element *node
 	pos := atomic.LoadUint64(&r.dequeuePos)
 	for {

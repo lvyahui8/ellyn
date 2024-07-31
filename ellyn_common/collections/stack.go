@@ -3,9 +3,9 @@ package collections
 import "container/list"
 
 type Stack interface {
-	Push(val interface{})
-	Pop() interface{}
-	Top() interface{}
+	Push(val any)
+	Pop() any
+	Top() any
 	Size() int
 }
 
@@ -19,11 +19,11 @@ func NewUnsafeStack() *UnsafeStack {
 	}
 }
 
-func (u UnsafeStack) Push(val interface{}) {
+func (u UnsafeStack) Push(val any) {
 	u.elements.PushBack(val)
 }
 
-func (u UnsafeStack) Pop() interface{} {
+func (u UnsafeStack) Pop() any {
 	v := u.elements.Back()
 	if v != nil {
 		u.elements.Remove(v)
@@ -32,7 +32,7 @@ func (u UnsafeStack) Pop() interface{} {
 	return nil
 }
 
-func (u UnsafeStack) Top() interface{} {
+func (u UnsafeStack) Top() any {
 	v := u.elements.Back()
 	if v != nil {
 		return v.Value
@@ -52,7 +52,7 @@ type UnsafeCompressedStack struct {
 }
 
 type stackElement struct {
-	val   interface{}
+	val   any
 	max   int
 	count int
 }
@@ -63,7 +63,7 @@ func NewUnsafeCompressedStack() *UnsafeCompressedStack {
 	}
 }
 
-func (s *UnsafeCompressedStack) Push(val interface{}) {
+func (s *UnsafeCompressedStack) Push(val any) {
 	s.count++
 	back := s.elements.Back()
 	if back != nil {
@@ -77,7 +77,7 @@ func (s *UnsafeCompressedStack) Push(val interface{}) {
 	s.elements.PushBack(&stackElement{val: val, max: 1, count: 1})
 }
 
-func (s *UnsafeCompressedStack) Pop() interface{} {
+func (s *UnsafeCompressedStack) Pop() any {
 	e := s.elements.Back()
 	if e != nil {
 		ele := e.Value.(*stackElement)
@@ -93,7 +93,7 @@ func (s *UnsafeCompressedStack) Pop() interface{} {
 	}
 }
 
-func (s *UnsafeCompressedStack) Top() interface{} {
+func (s *UnsafeCompressedStack) Top() any {
 	e := s.elements.Back()
 	if e != nil {
 		return e.Value.(*stackElement).val

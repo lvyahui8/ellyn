@@ -2,12 +2,12 @@ package collections
 
 import "sync"
 
-type keyHasher func(key interface{}) int
+type keyHasher func(key any) int
 
 type mapApi interface {
-	Store(key, val interface{})
-	Load(key interface{}) (interface{}, bool)
-	Delete(key interface{})
+	Store(key, val any)
+	Load(key any) (any, bool)
+	Delete(key any)
 }
 
 type concurrentMap struct {
@@ -27,25 +27,25 @@ func NewConcurrentMap(segSize int, hasher keyHasher) *concurrentMap {
 	}
 	for i := 0; i < segSize; i++ {
 		m.segments[i] = &mapSegment{
-			entries: make(map[interface{}]interface{}),
+			entries: make(map[any]any),
 		}
 	}
 	return m
 }
 
-func (m *concurrentMap) Store(key, val interface{}) {
+func (m *concurrentMap) Store(key, val any) {
 	m.getSegment(key).Store(key, val)
 }
 
-func (m *concurrentMap) Load(key interface{}) (interface{}, bool) {
+func (m *concurrentMap) Load(key any) (any, bool) {
 	return m.getSegment(key).Load(key)
 }
 
-func (m *concurrentMap) Delete(key interface{}) {
+func (m *concurrentMap) Delete(key any) {
 	m.getSegment(key).Delete(key)
 }
 
-func (m *concurrentMap) getSegment(key interface{}) *mapSegment {
+func (m *concurrentMap) getSegment(key any) *mapSegment {
 	return m.segments[m.hasher(key)&m.segMask]
 }
 
@@ -58,27 +58,27 @@ func (m *concurrentMap) Size() int {
 }
 
 type mapSegment struct {
-	sync.RWMutex                             // 24
-	entries      map[interface{}]interface{} // 8
-	size         int                         // 8
-	_padding     [24]byte                    //
+	sync.RWMutex             // 24
+	entries      map[any]any // 8
+	size         int         // 8
+	_padding     [24]byte    //
 }
 
-func (s *mapSegment) Store(key, val interface{}) {
+func (s *mapSegment) Store(key, val any) {
 	s.Lock()
 	defer s.Unlock()
 	s.entries[key] = val
 	s.size = len(s.entries)
 }
 
-func (s *mapSegment) Load(key interface{}) (res interface{}, ok bool) {
+func (s *mapSegment) Load(key any) (res any, ok bool) {
 	s.RLock()
 	defer s.RUnlock()
 	res, ok = s.entries[key]
 	return
 }
 
-func (s *mapSegment) Delete(key interface{}) {
+func (s *mapSegment) Delete(key any) {
 	s.Lock()
 	defer s.Unlock()
 	delete(s.entries, key)

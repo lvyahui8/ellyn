@@ -4,43 +4,47 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 )
 
-var m = collections.NewConcurrentMap(2048, func(key interface{}) int {
+var m = collections.NewConcurrentMap(2048, func(key any) int {
 	return int(key.(uint64))
 })
 
-type RoutineLocal struct {
+type RoutineLocal[T any] struct {
 }
 
-func (rl *RoutineLocal) Set(val interface{}) {
+func (rl *RoutineLocal[T]) Set(val T) {
 	goId := GetGoId()
 	tableVal, ok := m.Load(goId)
-	var table map[interface{}]interface{}
+	var table map[any]any
 	if !ok {
-		table = make(map[interface{}]interface{})
+		table = make(map[any]any)
 		m.Store(goId, table)
 	} else {
-		table = tableVal.(map[interface{}]interface{})
+		table = tableVal.(map[any]any)
 	}
 	table[rl] = val
 }
 
-func (rl *RoutineLocal) Get() (interface{}, bool) {
+func (rl *RoutineLocal[T]) Get() (res T, exist bool) {
 	goId := GetGoId()
 	tableVal, ok := m.Load(goId)
 	if !ok {
-		return nil, false
+		exist = false
+		return
 	}
-	table := tableVal.(map[interface{}]interface{})
-	res, ok := table[rl]
-	return res, ok
+	table := tableVal.(map[any]any)
+	obj, exist := table[rl]
+	if exist {
+		res = obj.(T)
+	}
+	return
 }
 
-func (rl *RoutineLocal) Clear() {
+func (rl *RoutineLocal[T]) Clear() {
 	goId := GetGoId()
 	tableVal, ok := m.Load(goId)
 	if !ok {
 		return
 	}
-	table := tableVal.(map[interface{}]interface{})
+	table := tableVal.(map[any]any)
 	delete(table, rl)
 }
