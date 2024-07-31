@@ -3,9 +3,10 @@ package collections
 const slotShift = 6
 
 type bitMap struct {
-	slots []uint64
-	cap   uint
-	size  int
+	slots    []uint64
+	cap      uint
+	size     int
+	_padding [24]byte
 }
 
 func NewBitMap(cap uint) *bitMap {
