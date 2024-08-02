@@ -47,4 +47,7 @@ func (rl *RoutineLocal[T]) Clear() {
 	}
 	table := tableVal.(map[any]any)
 	delete(table, rl)
+	if len(table) == 0 {
+		m.Delete(goId) // 释放map占用的内存
+	}
 }
