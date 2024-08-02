@@ -51,6 +51,11 @@ type UnsafeCompressedStack struct {
 	count    int
 }
 
+type Frame interface {
+	Equals(value any) bool
+	Init()
+}
+
 type stackElement struct {
 	val   any
 	max   int
@@ -66,13 +71,24 @@ func NewUnsafeCompressedStack() *UnsafeCompressedStack {
 func (s *UnsafeCompressedStack) Push(val any) {
 	s.count++
 	back := s.elements.Back()
+	f, _ := val.(Frame)
+
 	if back != nil {
 		ele := back.Value.(*stackElement)
-		if ele.val == val {
+		var eq bool
+		if f != nil {
+			eq = f.Equals(ele.val)
+		} else {
+			eq = ele.val == val
+		}
+		if eq {
 			ele.max++
 			ele.count++
 			return
 		}
+	}
+	if f != nil {
+		f.Init()
 	}
 	s.elements.PushBack(&stackElement{val: val, max: 1, count: 1})
 }
