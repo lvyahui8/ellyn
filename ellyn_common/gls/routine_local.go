@@ -9,6 +9,10 @@ var m = collections.NewConcurrentMap(2048, func(key any) int {
 })
 
 type RoutineLocal[T any] struct {
+	// 两个作用：
+	// - 缓存行填充
+	// - 不能用空结构体，空结构体地址是一样，多个local会变成同一个key
+	_padding [64]byte
 }
 
 func (rl *RoutineLocal[T]) Set(val T) {

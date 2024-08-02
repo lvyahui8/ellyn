@@ -21,6 +21,12 @@ func TestRoutineLocalBasic(t *testing.T) {
 	val, ok = local.Get()
 	require.True(t, ok)
 	require.Equal(t, 2, val)
+
+	ptrCopied := localPtr
+	val, ok = ptrCopied.Get()
+	require.True(t, ok)
+	require.Equal(t, 2, val)
+
 	local.Clear()
 	val, ok = local.Get()
 	require.False(t, ok)
@@ -28,6 +34,26 @@ func TestRoutineLocalBasic(t *testing.T) {
 	val, ok = local.Get()
 	require.True(t, ok)
 	require.Equal(t, 4, val)
+}
+
+func TestRoutineLocal_MoreInstances(t *testing.T) {
+	userIdLocal := RoutineLocal[int]{}
+	setIdLocal := RoutineLocal[int]{}
+	sessionKeyLocal := RoutineLocal[string]{}
+
+	userIdLocal.Set(12345)
+	setIdLocal.Set(1)
+	sessionKeyLocal.Set("test01")
+
+	userId, ok := userIdLocal.Get()
+	require.True(t, ok)
+	require.Equal(t, 12345, userId)
+	setId, ok := setIdLocal.Get()
+	require.True(t, ok)
+	require.Equal(t, 1, setId)
+	sessionId, ok := sessionKeyLocal.Get()
+	require.True(t, ok)
+	require.Equal(t, "test01", sessionId)
 }
 
 func TestRoutineLocalConcurrent(t *testing.T) {
