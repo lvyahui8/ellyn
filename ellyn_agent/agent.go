@@ -28,12 +28,11 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx) {
 			return
 		}
 		// 记录调用链
-
+		ctx.g.add(top, pop)
 	} else {
 		// 已经完全弹空， 调用链路追加到队列
-
+		coll.add(ctx.g)
 	}
-
 }
 
 func (agent *ellynAgent) VisitBlock(ctx *EllynCtx, blockOffset int) {

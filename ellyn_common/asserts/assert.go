@@ -44,3 +44,9 @@ func NotNil(a any) {
 		panic(NewAssertError("must be not nil. but got nil"))
 	}
 }
+
+func Equals(expect any, actual any) {
+	if expect != actual {
+		panic(NewAssertError(fmt.Sprintf("not equals. expect:%+v, actual:%+v", expect, actual)))
+	}
+}

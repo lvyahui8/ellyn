@@ -54,6 +54,7 @@ type UnsafeCompressedStack struct {
 type Frame interface {
 	Equals(value any) bool
 	Init()
+	Refresh()
 }
 
 type stackElement struct {
@@ -78,6 +79,9 @@ func (s *UnsafeCompressedStack) Push(val any) {
 		var eq bool
 		if f != nil {
 			eq = f.Equals(ele.val)
+			if eq {
+				f.Refresh()
+			}
 		} else {
 			eq = ele.val == val
 		}

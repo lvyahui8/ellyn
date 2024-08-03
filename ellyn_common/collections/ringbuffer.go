@@ -4,7 +4,7 @@ import (
 	"sync/atomic"
 )
 
-type ringBuffer struct {
+type RingBuffer struct {
 	// dequeuePos 指向下一个可消费点位，一直累加然后对capacity取模（&mask）取值
 	dequeuePos uint64
 	_padding0  [56]byte
@@ -28,14 +28,14 @@ type node struct {
 	_padding [40]byte
 }
 
-func NewRingBuffer(capacity uint64) *ringBuffer {
+func NewRingBuffer(capacity uint64) *RingBuffer {
 	capacity = roundingToPowerOfTwo(capacity)
 	nodes := make([]*node, capacity)
 	for i := uint64(0); i < capacity; i++ {
 		nodes[i] = &node{seq: i}
 	}
 
-	return &ringBuffer{
+	return &RingBuffer{
 		dequeuePos: uint64(0),
 		enqueuePos: uint64(0),
 		mask:       capacity - 1,
@@ -43,7 +43,7 @@ func NewRingBuffer(capacity uint64) *ringBuffer {
 	}
 }
 
-func (r *ringBuffer) Enqueue(value any) (success bool) {
+func (r *RingBuffer) Enqueue(value any) (success bool) {
 	pos := atomic.LoadUint64(&r.enqueuePos)
 	var element *node
 	for {
@@ -70,7 +70,7 @@ func (r *ringBuffer) Enqueue(value any) (success bool) {
 	return true
 }
 
-func (r *ringBuffer) Dequeue() (value any, success bool) {
+func (r *RingBuffer) Dequeue() (value any, success bool) {
 	var element *node
 	pos := atomic.LoadUint64(&r.dequeuePos)
 	for {

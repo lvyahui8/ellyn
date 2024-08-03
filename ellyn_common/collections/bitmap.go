@@ -1,5 +1,7 @@
 package collections
 
+import "errors"
+
 const slotShift = 6
 
 type BitMap struct {
@@ -37,6 +39,16 @@ func (m *BitMap) Clear(pos uint) {
 	if m.slots[pos>>slotShift] != old {
 		m.size--
 	}
+}
+
+func (m *BitMap) Merge(o *BitMap) error {
+	if m.cap != o.cap {
+		return errors.New("inconsistent capacity cannot be merged")
+	}
+	for i := range m.slots {
+		m.slots[i] |= o.slots[i]
+	}
+	return nil
 }
 
 func (m *BitMap) Size() int {

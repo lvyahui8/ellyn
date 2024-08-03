@@ -135,7 +135,7 @@ func BenchmarkRingBuffer(b *testing.B) {
 	cntList := []int{1, 10, 100, 1000, 10000} // 每个线程读写次数
 	for _, cnt := range cntList {
 		k := cnt
-		b.Run(fmt.Sprintf("ringBuffer readWrite_%d", k), func(b *testing.B) {
+		b.Run(fmt.Sprintf("RingBuffer readWrite_%d", k), func(b *testing.B) {
 			q := NewRingBuffer(capacity)
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {

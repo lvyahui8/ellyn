@@ -3,8 +3,9 @@ package ellyn_agent
 import "github.com/lvyahui8/ellyn/ellyn_common/collections"
 
 type methodFrame struct {
-	methodId uint32
-	blocks   *collections.BitMap
+	methodId  uint32
+	blocks    *collections.BitMap
+	recursion bool
 }
 
 func (mf *methodFrame) Equals(value any) bool {
@@ -16,5 +17,11 @@ func (mf *methodFrame) Equals(value any) bool {
 }
 
 func (mf *methodFrame) Init() {
-	mf.blocks = collections.NewBitMap(uint(len(allMethods[mf.methodId].blocks)))
+	mf.blocks = newMethodBlockBits(mf.methodId)
+}
+
+func (mf *methodFrame) Refresh() {
+	if !mf.recursion {
+		mf.recursion = true
+	}
 }

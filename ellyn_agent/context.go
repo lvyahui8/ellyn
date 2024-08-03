@@ -9,4 +9,5 @@ var CtxLocal = &gls.RoutineLocal[*EllynCtx]{}
 
 type EllynCtx struct {
 	stack collections.Stack
+	g     *graph
 }
