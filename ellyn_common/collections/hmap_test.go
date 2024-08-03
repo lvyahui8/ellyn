@@ -2,38 +2,11 @@ package collections
 
 import (
 	"github.com/stretchr/testify/require"
-	"math/rand"
 	"runtime"
 	"sync"
 	"testing"
-	"time"
 	"unsafe"
 )
-
-const maxVal = 10000 * 10000
-const cnt = 1000 * 10000
-
-func shuffle(nums []int) (res []int) {
-	res = make([]int, len(nums))
-	for i, v := range nums {
-		res[i] = v
-	}
-	rand.Seed(time.Now().UnixMilli())
-	rand.Shuffle(len(nums), func(i, j int) {
-		res[i], res[j] = res[j], res[i]
-	})
-	return
-}
-
-// 生成100w个小于1000w不重复的数字
-func randomSeq() (res []int) {
-	raw := make([]int, maxVal)
-	for i := 0; i < maxVal; i++ {
-		raw[i] = i
-	}
-	res = shuffle(raw[0:cnt])
-	return
-}
 
 func testReadWrite(b *testing.B, name string, m mapApi, insertSeq, readSeq, deleteSeq []int) {
 	// 测试纯粹写入的并发性能
@@ -112,8 +85,11 @@ func testReadWrite(b *testing.B, name string, m mapApi, insertSeq, readSeq, dele
 	})
 }
 
+const maxVal = 1000 * 10000
+const cnt = 100 * 10000
+
 func BenchmarkMap(b *testing.B) {
-	insertSeq := randomSeq()
+	insertSeq := randomSeq(cnt, maxVal)
 	readSeq := shuffle(insertSeq)
 	deleteSeq := shuffle(insertSeq)
 	testReadWrite(b, "concurrentMap", NewConcurrentMap(2048, func(key any) int {

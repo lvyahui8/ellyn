@@ -1,5 +1,7 @@
 package ellyn_agent
 
+var Agent *ellynAgent = &ellynAgent{}
+
 // 实例
 type ellynAgent struct {
 }
