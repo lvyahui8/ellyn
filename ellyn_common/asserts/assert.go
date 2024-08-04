@@ -2,6 +2,7 @@ package asserts
 
 import (
 	"fmt"
+	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"runtime/debug"
 	"strings"
 )
@@ -13,7 +14,7 @@ type AssertError struct {
 
 func NewAssertError(msg string) (ae AssertError) {
 	ae.msg = msg
-	stack := string(debug.Stack())
+	stack := utils.String.Bytes2string(debug.Stack())
 	lines := strings.Split(stack, "\n")
 	visited := false
 	for i := 0; i < len(lines); i++ {

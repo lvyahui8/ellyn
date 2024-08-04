@@ -8,5 +8,5 @@ import (
 func Marshal(v any) string {
 	bytes, err := json.Marshal(v)
 	asserts.IsNil(err)
-	return string(bytes)
+	return String.Bytes2string(bytes)
 }

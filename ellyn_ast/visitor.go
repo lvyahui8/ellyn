@@ -3,14 +3,49 @@ package ellyn_ast
 import (
 	"bytes"
 	"fmt"
+	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"go/ast"
 	"go/token"
+	"sort"
 )
+
+type insert struct {
+	offset   int
+	content  []byte
+	priority int
+}
 
 type FileVisitor struct {
 	fset    *token.FileSet
 	content []byte
 	prog    *Program
+	inserts []*insert
+}
+
+func (f *FileVisitor) mergeInserts() []byte {
+	sort.Slice(f.inserts, func(i, j int) bool {
+		if f.inserts[i].offset != f.inserts[j].offset {
+			return f.inserts[i].offset-f.inserts[j].offset < 0
+		}
+		return f.inserts[i].priority-f.inserts[j].priority < 0
+	})
+	pre := 0
+	var res []byte
+	for _, item := range f.inserts {
+		if item.offset != pre {
+			res = append(res, f.content[pre:item.offset]...)
+			pre = item.offset
+		}
+		res = append(res, item.content...)
+	}
+	return res
+}
+
+func (f *FileVisitor) insert(offset int, content string, priority int) {
+	f.inserts = append(f.inserts, &insert{
+		offset:   offset,
+		content:  utils.String.String2bytes(content),
+		priority: priority})
 }
 
 func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
