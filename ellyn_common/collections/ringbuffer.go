@@ -43,6 +43,7 @@ func NewRingBuffer(capacity uint64) *RingBuffer {
 	}
 }
 
+// Enqueue 非阻塞式写入，当缓冲区满时，返回失败
 func (r *RingBuffer) Enqueue(value any) (success bool) {
 	pos := atomic.LoadUint64(&r.enqueuePos)
 	var element *node
@@ -70,6 +71,7 @@ func (r *RingBuffer) Enqueue(value any) (success bool) {
 	return true
 }
 
+// Dequeue 非阻塞式出队，当没有元素可以取时（缓冲区空）返回失败
 func (r *RingBuffer) Dequeue() (value any, success bool) {
 	var element *node
 	pos := atomic.LoadUint64(&r.dequeuePos)
