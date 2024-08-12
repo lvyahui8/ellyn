@@ -8,3 +8,16 @@
 ### Requires
 
 - Go Version >= 1.18
+
+
+### Sdk组件及用途
+
+- [RingBuffer ](./ellyn_common/collections/ringbuffer.go) : 缓冲流量数据
+  - [RingBuffer性能测试](./ellyn_common/collections/ringbuffer.md)
+- [hmap(SegmentHashmap)](./ellyn_common/collections/hmap.go): 实现高性能的routineLocal
+  - [hmap性能测试](./ellyn_common/collections/hmap.md)
+- [bitmap](./ellyn_common/collections/bitmap.go): 记录函数、块的执行情况
+- [UnsafeCompressedStack](./ellyn_common/collections/stack.go) : 模拟入栈弹栈
+  - [Stack性能测试](./ellyn_common/collections/stack.md)
+- routineLocal(GLS\GroutineLocalStorage): 缓存上下文
+  - [routineLocal性能测试](./ellyn_common/gls/routine_local_test.go)
