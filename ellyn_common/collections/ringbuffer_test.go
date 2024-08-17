@@ -14,11 +14,6 @@ import (
 
 const capacity = 100000
 
-type Queue interface {
-	Enqueue(value any) (success bool)
-	Dequeue() (value any, success bool)
-}
-
 type channelQueue struct {
 	q chan any
 }

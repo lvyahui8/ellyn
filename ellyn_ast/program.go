@@ -50,7 +50,7 @@ func NewProgram(mainPkgDir string) *Program {
 // Visit 触发项目扫描处理动作
 func (p *Program) Visit() {
 	p._init()
-	p.handleFiles()
+	p.scanFiles()
 }
 
 // _init 初始化基础信息，为文件迭代做准备
@@ -69,7 +69,7 @@ func (p *Program) _init() {
 	})
 }
 
-func (p *Program) handleFiles() {
+func (p *Program) scanFiles() {
 	for pkgDir, pkg := range p.pkgMap {
 		if !strings.HasPrefix(pkg.Path, p.progCtx.RootPkgPath()) {
 			continue
@@ -93,15 +93,19 @@ func (p *Program) handleFiles() {
 			}
 
 			// 加入遍历集合
-			fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
-			content, err := os.ReadFile(fileAbsPath)
-			asserts.IsNil(err)
-			log.Infof("dir %s,file %s", pkg.Dir, file.Name())
-			visitor := &FileVisitor{content: content}
-			fset := token.NewFileSet()
-			visitor.fset = fset
-			parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
-			ast.Walk(visitor, parsedFile)
+			p.parseFile(pkg, file)
 		}
 	}
+}
+
+func (p *Program) parseFile(pkg Package, file os.DirEntry) {
+	fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
+	content, err := os.ReadFile(fileAbsPath)
+	asserts.IsNil(err)
+	log.Infof("dir %s,file %s", pkg.Dir, file.Name())
+	visitor := &FileVisitor{content: content}
+	fset := token.NewFileSet()
+	visitor.fset = fset
+	parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
+	ast.Walk(visitor, parsedFile)
 }
