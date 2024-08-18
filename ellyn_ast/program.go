@@ -105,6 +105,7 @@ func (p *Program) scanFiles() {
 
 	// 等待所有文件处理完成
 	p.w.Wait()
+	p.executor.Shutdown()
 }
 
 func (p *Program) parseFile(pkg Package, file os.DirEntry) {
