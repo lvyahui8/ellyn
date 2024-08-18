@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 GOROOT=`go env GOROOT`
 
 TARGET_FILE=$GOROOT/src/runtime/ellyn_goid.go
