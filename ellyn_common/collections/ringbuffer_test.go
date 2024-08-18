@@ -83,7 +83,8 @@ func queueReadWrite(queue Queue, cnt int) bool {
 		}()
 	}
 	produceGroup.Wait()
-	queue.Enqueue(0) // 队列最后一个元素标识
+	for !queue.Enqueue(0) { // 队列最后一个元素标识
+	}
 	group.Wait()
 	return produceCnt == consumeCnt
 }
