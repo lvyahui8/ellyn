@@ -9,11 +9,18 @@
 
 - Go Version >= 1.18
 
+### key
+
+- 避免资源冲突/锁竞争
+- 核心函数必须O(1)操作
+- 高频元素必须缓存行填充
+- etc
 
 ### Sdk组件及用途
 
 - [RingBuffer ](./ellyn_common/collections/ringbuffer.go) : 缓冲流量数据
   - [RingBuffer性能测试](./ellyn_common/collections/ringbuffer.md)
+- [LinkedQueue](./ellyn_common/collections/linked_queue.go): 基于链表的同步队列。用作协程池的任务队列
 - [hmap(SegmentHashmap)](./ellyn_common/collections/hmap.go): 实现高性能的routineLocal
   - [hmap性能测试](./ellyn_common/collections/hmap.md)
 - [bitmap](./ellyn_common/collections/bitmap.go): 记录函数、块的执行情况
