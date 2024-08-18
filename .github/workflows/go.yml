@@ -24,13 +24,22 @@ jobs:
     - name: goid_init
       run: chmod +x goid_init.sh && ./goid_init.sh
 
+    - name: Install go-junit-report
+      run: go install github.com/jstemmer/go-junit-report/v2@latest
+
     - name: Build
       run: go build -v ./...
 
     - name: Test
-      run: go test -v -coverprofile="coverage.txt" -coverpkg="$(go list -mod=mod ./... | tr '\n' ',')" ./...
+      run: go test -v -coverprofile="coverage.txt" -coverpkg="$(go list -mod=mod ./... | tr '\n' ',')" ./... |  go-junit-report -set-exit-code > junit.xml
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Upload test results to Codecov
+      if: ${{ !cancelled() }}
+      uses: codecov/test-results-action@v1
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
