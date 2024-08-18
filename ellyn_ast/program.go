@@ -2,6 +2,7 @@ package ellyn_ast
 
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
+	"github.com/lvyahui8/ellyn/ellyn_common/goroutine"
 	"github.com/lvyahui8/ellyn/ellyn_common/log"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"go/ast"
@@ -9,6 +10,7 @@ import (
 	"go/token"
 	"os"
 	"path"
+	"runtime"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -35,6 +37,8 @@ type Program struct {
 	initOnce     sync.Once
 	funcCounter  atomic.Int32
 	blockCounter atomic.Int32
+	executor     *goroutine.RoutinePool
+	w            *sync.WaitGroup
 }
 
 func NewProgram(mainPkgDir string) *Program {
@@ -42,7 +46,9 @@ func NewProgram(mainPkgDir string) *Program {
 		mainPkg: Package{
 			Dir: mainPkgDir,
 		},
-		pkgMap: make(map[string]Package),
+		pkgMap:   make(map[string]Package),
+		executor: goroutine.NewRoutinePool(runtime.NumCPU() << 1),
+		w:        &sync.WaitGroup{},
 	}
 	return prog
 }
@@ -92,20 +98,27 @@ func (p *Program) scanFiles() {
 				continue
 			}
 
-			// 加入遍历集合
+			// 将文件加入遍历队列
 			p.parseFile(pkg, file)
 		}
 	}
+
+	// 等待所有文件处理完成
+	p.w.Wait()
 }
 
 func (p *Program) parseFile(pkg Package, file os.DirEntry) {
-	fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
-	content, err := os.ReadFile(fileAbsPath)
-	asserts.IsNil(err)
-	log.Infof("dir %s,file %s", pkg.Dir, file.Name())
-	visitor := &FileVisitor{content: content}
-	fset := token.NewFileSet()
-	visitor.fset = fset
-	parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
-	ast.Walk(visitor, parsedFile)
+	p.w.Add(1)
+	p.executor.Submit(func() {
+		defer p.w.Done()
+		fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
+		content, err := os.ReadFile(fileAbsPath)
+		asserts.IsNil(err)
+		log.Infof("dir %s,file %s", pkg.Dir, file.Name())
+		visitor := &FileVisitor{content: content}
+		fset := token.NewFileSet()
+		visitor.fset = fset
+		parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
+		ast.Walk(visitor, parsedFile)
+	})
 }
