@@ -23,12 +23,12 @@ func (p *RoutinePool) init() {
 	for i := 0; i < p.routineNum; i++ {
 		go func() {
 			for {
+				if p.closed {
+					return
+				}
 				r, success := p.buf.Dequeue()
 				if !success {
 					continue
-				}
-				if p.closed {
-					return
 				}
 				func() {
 					defer func() {
