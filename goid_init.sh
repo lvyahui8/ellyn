@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
@@ -6,15 +6,17 @@ GOROOT=`go env GOROOT`
 
 TARGET_FILE=$GOROOT/src/runtime/ellyn_goid.go
 
-echo "write code to $TARGET_FILE"
+if [ ! -f $TARGET_FILE ]
+then
+  echo "write code to $TARGET_FILE"
+  sudo cat >  $TARGET_FILE  <<EOF
+  package runtime
 
-echo <<EOF
-package runtime
-
-func EllynGetGoid() uint64 {
-	return uint64(getg().goid)
-}
-
-EOF > $TARGET_FILE
-
-echo "write success"
+  func EllynGetGoid() uint64 {
+    return uint64(getg().goid)
+  }
+EOF
+  echo "write success"
+else
+  echo "goid file exists"
+fi
