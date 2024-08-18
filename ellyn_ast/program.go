@@ -13,7 +13,6 @@ import (
 	"runtime"
 	"strings"
 	"sync"
-	"sync/atomic"
 )
 
 type ProgramContext struct {
@@ -35,8 +34,8 @@ type Program struct {
 	allBlocks    []*Block
 	progCtx      *ProgramContext
 	initOnce     sync.Once
-	funcCounter  atomic.Int32
-	blockCounter atomic.Int32
+	funcCounter  int64
+	blockCounter int64
 	executor     *goroutine.RoutinePool
 	w            *sync.WaitGroup
 }
