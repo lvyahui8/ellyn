@@ -1,4 +1,4 @@
-package gls
+package goroutine
 
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
