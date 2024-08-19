@@ -29,3 +29,4 @@
 - [routineLocal/GLS/GoRoutineLocalStorage](./ellyn_common/goroutine/routine_local.go): 缓存上下文
   - [routineLocal性能测试](./ellyn_common/gls/routine_local_test.go)
 - [routinePool](./ellyn_common/goroutine/routine_pool.go): 协程池，并发处理文件
+- [Uint64GUIDGenerator](./ellyn_common/guid/guid.go)
