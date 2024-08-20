@@ -39,10 +39,14 @@ func getReverseFlag() uint64 {
 	return uint64(flagVal & ((1 << reverseLen) - 1))
 }
 
+func getSvrId() uint64 {
+	svrId, _ := rand.Int(rand.Reader, big.NewInt(int64(1<<svrIdLen)))
+	return svrId.Uint64()
+}
+
 func NewGuidGenerator() *Uint64GUIDGenerator {
 	g := &Uint64GUIDGenerator{}
-	svrId, _ := rand.Int(rand.Reader, big.NewInt(int64(1<<svrIdLen)))
-	g.svrId = svrId.Uint64()
+	g.svrId = getSvrId()
 	g.svrIdMask = g.svrId << (reverseLen + seqLen)
 	g.reverseFlag = getReverseFlag()
 	return g

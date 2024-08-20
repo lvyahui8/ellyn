@@ -9,6 +9,14 @@ import (
 	"testing"
 )
 
+func TestGetSvrId(t *testing.T) {
+	res := make(map[uint64]struct{})
+	for i := 0; i < 1000; i++ {
+		res[getSvrId()] = struct{}{}
+	}
+	t.Log(len(res))
+}
+
 func TestUint64GUIDGenerator_GenGUID(t *testing.T) {
 	generator := NewGuidGenerator()
 	cnt := 100
