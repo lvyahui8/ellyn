@@ -3,7 +3,6 @@ package guid
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"github.com/stretchr/testify/require"
-	"runtime"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -53,7 +52,7 @@ func TestUint64GUIDGenerator_GenGUID_Concurrent(t *testing.T) {
 func TestGuidCycleSeq(t *testing.T) {
 	generator := NewGuidGenerator()
 	generator.cycleSeq()
-	gNum := runtime.NumCPU() << 1
+	gNum := 32
 	w := &sync.WaitGroup{}
 	w.Add(gNum)
 	var sum uint64 = 0
