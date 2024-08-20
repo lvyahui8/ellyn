@@ -68,6 +68,7 @@ func TestGuidCycleSeq(t *testing.T) {
 		}()
 	}
 	w.Wait()
+	t.Logf("sum = %d\n", sum)
 	require.Equal(t, uint64(10263490816), sum)
 }
 
