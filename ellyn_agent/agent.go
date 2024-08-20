@@ -1,6 +1,13 @@
 package ellyn_agent
 
+import (
+	"github.com/lvyahui8/ellyn/ellyn_common/collections"
+	"github.com/lvyahui8/ellyn/ellyn_common/guid"
+)
+
 var Agent *ellynAgent = &ellynAgent{}
+
+var idGenerator = guid.NewGuidGenerator()
 
 // 实例
 type ellynAgent struct {
@@ -9,7 +16,10 @@ type ellynAgent struct {
 func (agent *ellynAgent) GetCtx() *EllynCtx {
 	res, exist := CtxLocal.Get()
 	if !exist {
-		res = &EllynCtx{}
+		res = &EllynCtx{
+			id:    idGenerator.GenGUID(),
+			stack: collections.NewUnsafeCompressedStack(),
+		}
 		CtxLocal.Set(res)
 	}
 	return res

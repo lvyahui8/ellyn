@@ -1,6 +1,7 @@
 package guid
 
 import (
+	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"github.com/stretchr/testify/require"
 	"runtime"
 	"sync"
@@ -18,6 +19,27 @@ func TestUint64GUIDGenerator_GenGUID(t *testing.T) {
 		idMap[id] = struct{}{}
 	}
 	require.Equal(t, cnt, len(idMap))
+}
+
+func TestUint64GUIDGenerator_GenGUID_Concurrent(t *testing.T) {
+	g := NewGuidGenerator()
+	cnt := 600
+	m := collections.NewConcurrentMap(1<<10, func(key any) int {
+		return int(key.(uint64))
+	})
+	gCnt := 10
+	w := &sync.WaitGroup{}
+	w.Add(gCnt)
+	for i := 0; i < gCnt; i++ {
+		go func() {
+			defer w.Done()
+			for i := 0; i < cnt; i++ {
+				m.Store(g.GenGUID(), struct{}{})
+			}
+		}()
+	}
+	w.Wait()
+	require.Equal(t, gCnt*cnt, m.Size())
 }
 
 func TestGuidCycleSeq(t *testing.T) {

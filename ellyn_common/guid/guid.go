@@ -11,17 +11,20 @@ import (
 
 const logIdLen = 64
 const timestampLen = 32
-const maxSvrIdLen = 13
+const svrIdLen = 13
 const reverseLen = 3
-const seqLen = logIdLen - timestampLen - maxSvrIdLen - reverseLen
+const seqLen = logIdLen - timestampLen - svrIdLen - reverseLen
 const seqMask uint64 = (1 << seqLen) - 1
 
 type Uint64GUIDGenerator struct {
 	seq         uint64
+	_padding0   [56]byte
 	svrId       uint64
+	_padding1   [56]byte
 	svrIdMask   uint64
+	_padding2   [56]byte
 	reverseFlag uint64
-	_padding    [32]byte
+	_padding3   [56]byte
 }
 
 func getReverseFlag() uint64 {
@@ -38,7 +41,7 @@ func getReverseFlag() uint64 {
 
 func NewGuidGenerator() *Uint64GUIDGenerator {
 	g := &Uint64GUIDGenerator{}
-	svrId, _ := rand.Int(rand.Reader, big.NewInt(int64(1<<maxSvrIdLen)))
+	svrId, _ := rand.Int(rand.Reader, big.NewInt(int64(1<<svrIdLen)))
 	g.svrId = svrId.Uint64()
 	g.svrIdMask = g.svrId << (reverseLen + seqLen)
 	g.reverseFlag = getReverseFlag()
@@ -55,8 +58,7 @@ func (g *Uint64GUIDGenerator) GenGUID() uint64 {
 func (g *Uint64GUIDGenerator) cycleSeq() uint64 {
 	for {
 		cur := atomic.LoadUint64(&g.seq)
-		updated := (cur + 1) & seqMask
-		if atomic.CompareAndSwapUint64(&g.seq, cur, updated) {
+		if atomic.CompareAndSwapUint64(&g.seq, cur, (cur+1)&seqMask) {
 			return cur
 		}
 	}
