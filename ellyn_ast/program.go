@@ -97,7 +97,7 @@ func (p *Program) scanFiles() {
 				continue
 			}
 
-			// 将文件加入遍历队列
+			// 将文件加入遍历队列并发处理，加快文件处理速度
 			p.parseFile(pkg, file)
 		}
 	}
@@ -109,6 +109,7 @@ func (p *Program) scanFiles() {
 
 func (p *Program) parseFile(pkg Package, file os.DirEntry) {
 	p.w.Add(1)
+	// 这里使用阻塞队列，队列不限制容量，确保文件不会被丢弃
 	p.executor.Submit(func() {
 		defer p.w.Done()
 		fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
