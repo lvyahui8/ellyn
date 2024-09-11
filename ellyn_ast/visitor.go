@@ -49,6 +49,10 @@ func (f *FileVisitor) insert(offset int, content string, priority int) {
 		priority: priority})
 }
 
+func (f *FileVisitor) insertBlockVisit(beginPos, endPos token.Pos) {
+	fmt.Printf("empty block begin:%d,end:%d\n", f.offset(beginPos), f.offset(endPos))
+}
+
 func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
 	case *ast.BlockStmt:
@@ -252,8 +256,7 @@ func (f *FileVisitor) addCounters(pos, insertPos, blockEnd token.Pos, list []ast
 	// or we will add a counter to an empty statement list after, say, a return statement.
 	if len(list) == 0 {
 		//f.edit.Insert(f.offset(insertPos), f.newCounter(insertPos, blockEnd, 0)+";")
-		// todo 插入
-		fmt.Printf("empty block begin:%d,end:%d\n", f.offset(insertPos), f.offset(blockEnd))
+		f.insertBlockVisit(insertPos, blockEnd)
 		return
 	}
 	// Make a copy of the list, as we may mutate it and should leave the
@@ -303,8 +306,7 @@ func (f *FileVisitor) addCounters(pos, insertPos, blockEnd token.Pos, list []ast
 			end = blockEnd
 		}
 		if pos != end { // Can have no source to cover if e.g. blocks abut.
-			// todo 插入block计数器
-			fmt.Printf("block begin:%d,end:%d\n", f.offset(insertPos), f.offset(end))
+			f.insertBlockVisit(insertPos, end)
 		}
 
 		list = list[last:]
