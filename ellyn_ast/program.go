@@ -14,6 +14,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"sync/atomic"
 )
 
 type ProgramContext struct {
@@ -38,8 +39,8 @@ type Program struct {
 	blockMutex        sync.Mutex
 	progCtx           *ProgramContext
 	initOnce          sync.Once
-	funcCounter       int64
-	blockCounter      int64
+	funcCounter       uint32
+	blockCounter      uint32
 	executor          *goroutine.RoutinePool
 	w                 *sync.WaitGroup
 }
@@ -84,6 +85,7 @@ func (p *Program) addFunc(file string, fcName string, begin, end token.Position)
 	f := &GoFunc{
 		begin: begin,
 		end:   end,
+		id:    p.funcCounter,
 	}
 	p.allFuncs = append(p.allFuncs, f)
 	fileAllFuncs := p.fileOffsetFuncMap[file]
@@ -93,6 +95,8 @@ func (p *Program) addFunc(file string, fcName string, begin, end token.Position)
 		})
 		p.fileOffsetFuncMap[file] = fileAllFuncs
 	}
+	atomic.AddUint32(&p.funcCounter, 1)
+
 	fileAllFuncs.Add(f)
 }
 
@@ -113,13 +117,14 @@ func (p *Program) findFunc(file string, offset int) *GoFunc {
 	return nil
 }
 
-func (p *Program) addBlock() {
+func (p *Program) addBlock(file string, begin, end token.Position) {
 	p.blockMutex.Lock()
 	defer p.blockMutex.Unlock()
 	b := &Block{
-		fc:    nil,
-		begin: token.Position{},
-		end:   token.Position{},
+		id:    p.blockCounter,
+		fc:    p.findFunc(file, begin.Offset),
+		begin: begin,
+		end:   end,
 	}
 	p.allBlocks = append(p.allBlocks, b)
 }
@@ -166,7 +171,10 @@ func (p *Program) parseFile(pkg Package, file os.DirEntry) {
 		content, err := os.ReadFile(fileAbsPath)
 		asserts.IsNil(err)
 		log.Infof("dir %s,file %s", pkg.Dir, file.Name())
-		visitor := &FileVisitor{content: content}
+		visitor := &FileVisitor{
+			content: content,
+			file:    fileAbsPath,
+		}
 		fset := token.NewFileSet()
 		visitor.fset = fset
 		parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)

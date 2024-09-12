@@ -7,7 +7,6 @@ import (
 	"go/ast"
 	"go/token"
 	"sort"
-	"sync/atomic"
 )
 
 type insert struct {
@@ -17,6 +16,7 @@ type insert struct {
 }
 
 type FileVisitor struct {
+	file    string
 	fset    *token.FileSet
 	content []byte
 	prog    *Program
@@ -199,15 +199,15 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 }
 
 func (f *FileVisitor) addFuncByLint(fName string, lit *ast.FuncLit) {
-	atomic.AddInt64(&f.prog.funcCounter, 1)
+	f.prog.addFunc(f.file, fName, f.fset.Position(lit.Pos()), f.fset.Position(lit.End()))
 }
 
 func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
-	atomic.AddInt64(&f.prog.funcCounter, 1)
+	f.prog.addFunc(f.file, fName, f.fset.Position(decl.Pos()), f.fset.Position(decl.End()))
 }
 
-func (f *FileVisitor) addBlock(offset int) {
-	atomic.AddInt64(&f.prog.blockCounter, 1)
+func (f *FileVisitor) addBlock(begin, end token.Pos) {
+	f.prog.addBlock(f.file, f.fset.Position(begin), f.fset.Position(end))
 }
 
 // offset translates a token position into a 0-indexed byte offset.
