@@ -10,6 +10,7 @@ type MockRule struct {
 	ruleId       int
 	methodId     uint32
 	returnValues []any
+	args         []any
 	// vars 根据请求或者表达式填充变量，在响应中可以使用
 	vars []string
 }
@@ -21,6 +22,29 @@ type Monkey struct {
 
 func (m *Monkey) FilterMockRule(methodId uint32, methodArgs ...any) *MockRule {
 	// 比对参数，看是否全部命中
+	mtd := allMethods[methodId]
+	typeList := mtd.argsTypeList
+	rules, exist := m.RuleMap.Get(int(methodId))
+	if !exist {
+		return nil
+	}
+	for _, rule := range rules {
+		for i := 0; i < len(typeList); i++ {
+			argType := typeList[i]
+			actualVal := methodArgs[i]
+			if reflect.ValueOf(actualVal).Type() != argType {
+				continue
+			}
+			filterVal := rule.args[i]
+			if filterVal == nil {
+				continue
+			}
+			if reflect.DeepEqual(actualVal, filterVal) {
+				return rule
+			}
+		}
+	}
+
 	return nil
 }
 
