@@ -24,3 +24,5 @@ go.work
 *.iml
 *.pprof
 *.updated.go
+output
+target

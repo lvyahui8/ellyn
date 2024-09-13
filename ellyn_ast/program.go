@@ -50,9 +50,10 @@ func NewProgram(mainPkgDir string) *Program {
 		mainPkg: Package{
 			Dir: mainPkgDir,
 		},
-		pkgMap:   make(map[string]Package),
-		executor: goroutine.NewRoutinePool(runtime.NumCPU() << 1),
-		w:        &sync.WaitGroup{},
+		pkgMap:            make(map[string]Package),
+		executor:          goroutine.NewRoutinePool(runtime.NumCPU()<<1, false),
+		w:                 &sync.WaitGroup{},
+		fileOffsetFuncMap: make(map[string]*treeset.Set),
 	}
 	return prog
 }
@@ -79,7 +80,7 @@ func (p *Program) _init() {
 	})
 }
 
-func (p *Program) addFunc(file string, fcName string, begin, end token.Position) {
+func (p *Program) addFunc(file, fcName string, begin, end token.Position) *GoFunc {
 	p.funcMutex.Lock()
 	defer p.funcMutex.Unlock()
 	f := &GoFunc{
@@ -98,6 +99,7 @@ func (p *Program) addFunc(file string, fcName string, begin, end token.Position)
 	atomic.AddUint32(&p.funcCounter, 1)
 
 	fileAllFuncs.Add(f)
+	return f
 }
 
 func (p *Program) findFunc(file string, offset int) *GoFunc {
@@ -117,7 +119,7 @@ func (p *Program) findFunc(file string, offset int) *GoFunc {
 	return nil
 }
 
-func (p *Program) addBlock(file string, begin, end token.Position) {
+func (p *Program) addBlock(file string, begin, end token.Position) *Block {
 	p.blockMutex.Lock()
 	defer p.blockMutex.Unlock()
 	b := &Block{
@@ -127,6 +129,7 @@ func (p *Program) addBlock(file string, begin, end token.Position) {
 		end:   end,
 	}
 	p.allBlocks = append(p.allBlocks, b)
+	return b
 }
 
 func (p *Program) scanFiles() {
@@ -172,12 +175,14 @@ func (p *Program) parseFile(pkg Package, file os.DirEntry) {
 		asserts.IsNil(err)
 		log.Infof("dir %s,file %s", pkg.Dir, file.Name())
 		visitor := &FileVisitor{
+			prog:    p,
 			content: content,
-			file:    fileAbsPath,
+			file:    strings.ReplaceAll(utils.File.FormatFilePath(fileAbsPath), p.mainPkg.Dir, ""),
 		}
 		fset := token.NewFileSet()
 		visitor.fset = fset
 		parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
 		ast.Walk(visitor, parsedFile)
+		visitor.WriteTo(p.mainPkg.Dir + "/target/")
 	})
 }

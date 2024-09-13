@@ -11,7 +11,7 @@ func TestRoutinePool(t *testing.T) {
 	w := sync.WaitGroup{}
 	cnt := 100
 	w.Add(cnt)
-	pool := NewRoutinePool(10)
+	pool := NewRoutinePool(10, true)
 	var sum int64
 	for i := 0; i < cnt; i++ {
 		pool.Submit(func() {

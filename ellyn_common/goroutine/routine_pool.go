@@ -1,19 +1,23 @@
 package goroutine
 
-import "github.com/lvyahui8/ellyn/ellyn_common/collections"
+import (
+	"github.com/lvyahui8/ellyn/ellyn_common/collections"
+)
 
 type Runnable func()
 
 type RoutinePool struct {
-	buf        *collections.LinkedQueue[Runnable]
-	routineNum int
-	closed     bool
+	buf         *collections.LinkedQueue[Runnable]
+	routineNum  int
+	closed      bool
+	ignorePanic bool
 }
 
-func NewRoutinePool(routineNum int) *RoutinePool {
+func NewRoutinePool(routineNum int, ignorePanic bool) *RoutinePool {
 	pool := &RoutinePool{
-		buf:        collections.NewLinkedQueue[Runnable](0),
-		routineNum: routineNum,
+		buf:         collections.NewLinkedQueue[Runnable](0),
+		routineNum:  routineNum,
+		ignorePanic: ignorePanic,
 	}
 	pool.init()
 	return pool
@@ -31,9 +35,11 @@ func (p *RoutinePool) init() {
 					continue
 				}
 				func() {
-					defer func() {
-						_ = recover()
-					}()
+					if p.ignorePanic {
+						defer func() {
+							_ = recover()
+						}()
+					}
 					r()
 				}()
 			}
