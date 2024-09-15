@@ -1,7 +1,9 @@
 package ellyn_ast
 
 import (
+	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
+	"github.com/lvyahui8/ellyn"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/goroutine"
 	"github.com/lvyahui8/ellyn/ellyn_common/log"
@@ -9,8 +11,10 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"golang.org/x/mod/modfile"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -43,6 +47,7 @@ type Program struct {
 	blockCounter      uint32
 	executor          *goroutine.RoutinePool
 	w                 *sync.WaitGroup
+	targetPath        string
 }
 
 func NewProgram(mainPkgDir string) *Program {
@@ -54,6 +59,7 @@ func NewProgram(mainPkgDir string) *Program {
 		executor:          goroutine.NewRoutinePool(runtime.NumCPU()<<1, false),
 		w:                 &sync.WaitGroup{},
 		fileOffsetFuncMap: make(map[string]*treeset.Set),
+		targetPath:        mainPkgDir + "/target/",
 	}
 	return prog
 }
@@ -61,7 +67,9 @@ func NewProgram(mainPkgDir string) *Program {
 // Visit 触发项目扫描处理动作
 func (p *Program) Visit() {
 	p._init()
-	p.scanFiles()
+	p.scanSourceFiles()
+	p.buildApp()
+	p.buildAgent()
 }
 
 // _init 初始化基础信息，为文件迭代做准备
@@ -74,7 +82,7 @@ func (p *Program) _init() {
 		p.mainPkg.Name = p.pkgMap[p.mainPkg.Dir].Name
 
 		p.modFile = utils.Go.GetModFile(p.mainPkg.Dir)
-		rootPkgPath := utils.Go.GetProjectRootPkgPath(p.modFile)
+		rootPkgPath := p.getProjectRootPkgPath(p.modFile)
 		p.rootPkg = NewPackage(path.Dir(p.modFile), rootPkgPath)
 		p.progCtx = &ProgramContext{rootPkgPath: rootPkgPath}
 	})
@@ -128,11 +136,12 @@ func (p *Program) addBlock(file string, begin, end token.Position) *Block {
 		begin: begin,
 		end:   end,
 	}
+	atomic.AddUint32(&p.blockCounter, 1)
 	p.allBlocks = append(p.allBlocks, b)
 	return b
 }
 
-func (p *Program) scanFiles() {
+func (p *Program) scanSourceFiles() {
 	for pkgDir, pkg := range p.pkgMap {
 		if !strings.HasPrefix(pkg.Path, p.progCtx.RootPkgPath()) {
 			continue
@@ -150,7 +159,6 @@ func (p *Program) scanFiles() {
 			if utils.Go.IsTestFile(file.Name()) {
 				continue
 			}
-
 			if utils.Go.IsAutoGenFile(pkg.Dir + string(os.PathSeparator) + file.Name()) {
 				continue
 			}
@@ -163,6 +171,33 @@ func (p *Program) scanFiles() {
 	// 等待所有文件处理完成
 	p.w.Wait()
 	p.executor.Shutdown()
+}
+
+func (p *Program) buildAgent() {
+	for _, sdkPath := range ellyn.SdkPaths {
+		p.copySdk(sdkPath)
+	}
+}
+
+func (p *Program) copySdk(sdkPath string) {
+	files, err := ellyn.SdkFs.ReadDir(sdkPath)
+	asserts.IsNil(err)
+	for _, file := range files {
+		if !file.IsDir() && !utils.Go.IsSourceFile(file.Name()) {
+			continue
+		}
+		fmt.Printf("sdk file :%s\n", file.Name())
+		rPath := path.Join(sdkPath, file.Name())
+		if file.IsDir() {
+			p.copySdk(rPath)
+		} else {
+			bytes, err := ellyn.SdkFs.ReadFile(rPath)
+			asserts.IsNil(err)
+			updated := strings.ReplaceAll(
+				utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path)
+			utils.OS.WriteTo(path.Join(p.targetPath, rPath), utils.String.String2bytes(updated))
+		}
+	}
 }
 
 func (p *Program) parseFile(pkg Package, file os.DirEntry) {
@@ -183,6 +218,19 @@ func (p *Program) parseFile(pkg Package, file os.DirEntry) {
 		visitor.fset = fset
 		parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
 		ast.Walk(visitor, parsedFile)
-		visitor.WriteTo(p.mainPkg.Dir + "/target/")
+		visitor.WriteTo(p.targetPath)
 	})
+}
+
+func (p *Program) buildApp() {
+	utils.OS.CopyFile(p.modFile, filepath.Join(p.targetPath, "go.mod"))
+}
+
+// getProjectRootPkgPath 获取项目go.mod文件所在的package name
+func (p *Program) getProjectRootPkgPath(modFilePath string) string {
+	content, err := os.ReadFile(modFilePath)
+	asserts.IsNil(err)
+	modFile, err := modfile.Parse("go.mod", content, nil)
+	asserts.IsNil(err)
+	return modFile.Module.Mod.Path
 }

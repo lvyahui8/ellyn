@@ -2,7 +2,6 @@ package utils
 
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
-	"golang.org/x/mod/modfile"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -36,18 +35,13 @@ func (g *goUtils) GetGoEnv(workDir, envKey string) string {
 	return strings.TrimSpace(out)
 }
 
+func (g *goUtils) ModTidy(workDir string) {
+	Shell.Exec(workDir, "go", "mod", "tidy")
+}
+
 // GetModFile 获取go.mod的绝对路径
 func (g *goUtils) GetModFile(mainPkgPath string) string {
 	return g.GetGoEnv(mainPkgPath, "GOMOD")
-}
-
-// GetProjectRootPkgPath 获取项目go.mod文件所在的package name
-func (g *goUtils) GetProjectRootPkgPath(modFilePath string) string {
-	content, err := os.ReadFile(modFilePath)
-	asserts.IsNil(err)
-	modFile, err := modfile.Parse("go.mod", content, nil)
-	asserts.IsNil(err)
-	return modFile.Module.Mod.Path
 }
 
 func (g *goUtils) GetGoRootDir() string {
@@ -58,6 +52,10 @@ func (g *goUtils) GetGoRootDir() string {
 
 func (g *goUtils) IsTestFile(file string) bool {
 	return strings.HasSuffix(file, "_test.go")
+}
+
+func (g *goUtils) IsSourceFile(file string) bool {
+	return strings.HasSuffix(file, ".go") && !g.IsTestFile(file)
 }
 
 func (g *goUtils) IsAutoGenFile(file string) bool {

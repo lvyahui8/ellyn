@@ -27,11 +27,6 @@ func TestGoUtils_GetModFile(t *testing.T) {
 	require.Equal(t, filepath.Join(ellyn_testing.GetTestProjPath(), "go.mod"), modFilePath)
 }
 
-func TestGoUtils_GetRootPkg(t *testing.T) {
-	rootPkg := Go.GetProjectRootPkgPath(Go.GetModFile(ellyn_testing.GetTestProjPath()))
-	require.Equal(t, "example", rootPkg)
-}
-
 func TestGoUtils_IsAutoGenFile(t *testing.T) {
 	t.Skip()
 	goRootDir := Go.GetGoRootDir()

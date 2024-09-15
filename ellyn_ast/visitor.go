@@ -63,6 +63,8 @@ func (f *FileVisitor) insertBlockVisit(beginPos, endPos token.Pos) {
 
 func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 	switch n := node.(type) {
+	case *ast.File:
+		f.addAgentImport(n.Name.End())
 	case *ast.BlockStmt:
 		// If it's a switch or select, the body is a list of case clauses; don't tag the block itself.
 		if len(n.List) > 0 {
@@ -106,14 +108,15 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 		if elseOffset < 0 {
 			panic("lost else")
 		}
-		//f.edit.Insert(elseOffset+4, "{")
-		//f.edit.Insert(f.offset(n.Else.End()), "}")
+		newElseStart := elseOffset + 4
+		f.insert(newElseStart, "{", 1)
+		f.insert(f.offset(n.Else.End()), "}", 1)
 
 		// We just created a block, now walk it.
 		// Adjust the position of the new block to start after
 		// the "else". That will cause it to follow the "{"
 		// we inserted above.
-		pos := f.fset.File(n.Body.End()).Pos(elseOffset + 4)
+		pos := f.fset.File(n.Body.End()).Pos(newElseStart)
 		switch stmt := n.Else.(type) {
 		case *ast.IfStmt:
 			block := &ast.BlockStmt{
@@ -208,6 +211,10 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 	return f
 }
 
+func (f *FileVisitor) addAgentImport(pos token.Pos) {
+	f.insert(f.fset.Position(pos).Offset, fmt.Sprintf(";import \"%s/ellyn_agent\";", f.prog.rootPkg.Path), 1)
+}
+
 func (f *FileVisitor) addFuncByLint(fName string, lit *ast.FuncLit) {
 	f.addFunc(fName, f.fset.Position(lit.Pos()), f.fset.Position(lit.End()), f.fset.Position(lit.Body.Pos()))
 }
@@ -219,12 +226,12 @@ func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
 func (f *FileVisitor) addFunc(fName string, begin, end token.Position, bodyBegin token.Position) {
 	fc := f.prog.addFunc(f.file, fName, begin, end)
 	f.insert(bodyBegin.Offset+1,
-		fmt.Sprintf(`_ellyn_ctx := ellyn_agent.GetCtx();ellyn_agent.Push(_ellyn_ctx,%d);defer ellyn_agent.Pop(_ellyn_ctx);'`, fc.id), 1)
+		fmt.Sprintf(`_ellyn_ctx := ellyn_agent.Agent.GetCtx();ellyn_agent.Agent.Push(_ellyn_ctx,%d);defer ellyn_agent.Agent.Pop(_ellyn_ctx);`, fc.id), 1)
 }
 
 func (f *FileVisitor) addBlock(begin, end token.Pos) {
 	block := f.prog.addBlock(f.file, f.fset.Position(begin), f.fset.Position(end))
-	f.insert(block.begin.Offset, fmt.Sprintf("ellyn_agent.VisitBlock(_ellyn_ctx,%d);", block.id), 2)
+	f.insert(block.begin.Offset, fmt.Sprintf("ellyn_agent.Agent.VisitBlock(_ellyn_ctx,%d);", block.id), 2)
 }
 
 // offset translates a token position into a 0-indexed byte offset.

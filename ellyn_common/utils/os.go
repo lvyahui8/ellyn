@@ -26,3 +26,10 @@ func (osUtils) MkDirs(dir string) {
 	err := os.MkdirAll(dir, os.ModePerm)
 	asserts.IsNil(err)
 }
+
+func (osUtils) CopyFile(source, target string) {
+	file, err := os.ReadFile(source)
+	asserts.IsNil(err)
+	err = os.WriteFile(target, file, os.ModePerm)
+	asserts.IsNil(err)
+}
