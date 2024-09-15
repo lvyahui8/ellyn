@@ -1,19 +1,27 @@
 package ellyn_agent
 
 import (
+	_ "embed"
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"reflect"
 )
 
-var allMethods []*method
+//go:embed methods.dat
+var methodsData []byte
 
-type method struct {
-	id             uint32
-	blocks         []*block
-	argsTypeList   []reflect.Type
-	returnTypeList []reflect.Type
+var allMethods []*Method
+
+type Method struct {
+	Id             uint32
+	Blocks         []*Block
+	ArgsTypeList   []reflect.Type
+	ReturnTypeList []reflect.Type
 }
 
 func newMethodBlockBits(methodId uint32) *collections.BitMap {
-	return collections.NewBitMap(uint(len(allMethods[methodId].blocks)))
+	return collections.NewBitMap(uint(len(allMethods[methodId].Blocks)))
+}
+
+func initMethods() {
+
 }

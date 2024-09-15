@@ -1,7 +1,16 @@
 package ellyn_agent
 
-type allBlocks []*block
+import _ "embed"
 
-type block struct {
-	id uint
+//go:embed blocks.dat
+var blocksData []byte
+
+type allBlocks []*Block
+
+type Block struct {
+	Id uint
+}
+
+func initBlocks() {
+
 }

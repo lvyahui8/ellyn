@@ -43,6 +43,7 @@ type Program struct {
 	blockMutex        sync.Mutex
 	progCtx           *ProgramContext
 	initOnce          sync.Once
+	fileCounter       uint32
 	funcCounter       uint32
 	blockCounter      uint32
 	executor          *goroutine.RoutinePool
@@ -210,6 +211,7 @@ func (p *Program) parseFile(pkg Package, file os.DirEntry) {
 		asserts.IsNil(err)
 		log.Infof("dir %s,file %s", pkg.Dir, file.Name())
 		visitor := &FileVisitor{
+			fileId:  atomic.AddUint32(&p.fileCounter, 1),
 			prog:    p,
 			content: content,
 			file:    strings.ReplaceAll(utils.File.FormatFilePath(fileAbsPath), p.mainPkg.Dir, ""),

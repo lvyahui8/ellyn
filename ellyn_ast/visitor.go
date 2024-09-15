@@ -17,6 +17,7 @@ type insert struct {
 }
 
 type FileVisitor struct {
+	fileId  uint32
 	file    string
 	fset    *token.FileSet
 	content []byte

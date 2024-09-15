@@ -13,6 +13,12 @@ var idGenerator = guid.NewGuidGenerator()
 type ellynAgent struct {
 }
 
+func init() {
+	initFiles()
+	initMethods()
+	initBlocks()
+}
+
 func (agent *ellynAgent) GetCtx() *EllynCtx {
 	res, exist := CtxLocal.Get()
 	if !exist {
