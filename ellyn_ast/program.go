@@ -93,6 +93,7 @@ func (p *Program) addFunc(file, fcName string, begin, end token.Position) *GoFun
 	p.funcMutex.Lock()
 	defer p.funcMutex.Unlock()
 	f := &GoFunc{
+		name:  fcName,
 		begin: begin,
 		end:   end,
 		id:    p.funcCounter,

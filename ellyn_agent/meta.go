@@ -33,6 +33,8 @@ func initCsvData[T CsvRow](compressedContent []byte) []T {
 	for _, line := range lines {
 		cols := strings.Split(line, ",")
 		var t T
+		val := reflect.ValueOf(t)
+		val.Set(reflect.New(val.Elem().Type()))
 		t.parse(cols)
 		res = append(res, t)
 	}
@@ -51,19 +53,19 @@ var packagesData []byte
 var packages []*Package
 
 type Package struct {
-	PackageId   uint32
-	PackageName string
-	PackagePath string
+	Id   uint32
+	Name string
+	Path string
 }
 
 func (p *Package) encodeRow() string {
-	return fmt.Sprintf("%d,%s,%s", p.PackageId, p.PackageName, p.PackagePath)
+	return fmt.Sprintf("%d,%s,%s", p.Id, p.Name, p.Path)
 }
 
 func (p *Package) parse(cols []string) {
-	p.PackageId = parseId(cols[0])
-	p.PackageName = cols[1]
-	p.PackagePath = cols[2]
+	p.Id = parseId(cols[0])
+	p.Name = cols[1]
+	p.Path = cols[2]
 }
 
 //go:embed meta/files.dat
@@ -96,12 +98,13 @@ type Method struct {
 	FileId         uint32 // 所在文件id
 	PackageId      uint32 // 包id
 	Blocks         []*Block
+	BlockCnt       int
 	ArgsTypeList   []reflect.Type
 	ReturnTypeList []reflect.Type
 }
 
 func (m *Method) encodeRow() string {
-	return fmt.Sprintf("%d,%s,%d,%d", m.Id, m.FullName, m.FileId, m.PackageId)
+	return fmt.Sprintf("%d,%s,%d,%d,%d", m.Id, m.FullName, m.FileId, m.PackageId, m.BlockCnt)
 }
 
 func (m *Method) parse(cols []string) {
@@ -109,6 +112,8 @@ func (m *Method) parse(cols []string) {
 	m.FullName = cols[1]
 	m.FileId = parseId(cols[2])
 	m.PackageId = parseId(cols[3])
+	m.BlockCnt = int(parseId(cols[4]))
+	m.Blocks = make([]*Block, m.BlockCnt)
 }
 
 func newMethodBlockBits(methodId uint32) *collections.BitMap {
@@ -121,17 +126,19 @@ var blocksData []byte
 var blocks []*Block
 
 type Block struct {
-	Id       uint32
-	MethodId uint32
+	Id           uint32
+	MethodId     uint32
+	MethodOffset int
 }
 
 func (b *Block) encodeRow() string {
-	return fmt.Sprintf("%d,%d", b.Id, b.MethodId)
+	return fmt.Sprintf("%d,%d,%d", b.Id, b.MethodId, b.MethodOffset)
 }
 
 func (b *Block) parse(cols []string) {
 	b.Id = parseId(cols[0])
 	b.MethodId = parseId(cols[1])
+	b.MethodOffset = int(parseId(cols[2]))
 	method := methods[b.MethodId]
-	method.Blocks = append(method.Blocks, b)
+	method.Blocks[b.MethodOffset] = b
 }
