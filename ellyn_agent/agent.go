@@ -14,9 +14,7 @@ type ellynAgent struct {
 }
 
 func init() {
-	initFiles()
-	initMethods()
-	initBlocks()
+	initMetaData()
 }
 
 func (agent *ellynAgent) GetCtx() *EllynCtx {

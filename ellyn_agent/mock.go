@@ -22,7 +22,7 @@ type Monkey struct {
 
 func (m *Monkey) FilterMockRule(methodId uint32, methodArgs ...any) *MockRule {
 	// 比对参数，看是否全部命中
-	mtd := allMethods[methodId]
+	mtd := methods[methodId]
 	typeList := mtd.ArgsTypeList
 	rules, exist := m.RuleMap.Get(int(methodId))
 	if !exist {
@@ -50,7 +50,7 @@ func (m *Monkey) FilterMockRule(methodId uint32, methodArgs ...any) *MockRule {
 
 func (m *Monkey) BuildReturn(methodId uint32, rule *MockRule) (methodReturns []any) {
 	// 按照mock配置构造返回值
-	mtd := allMethods[methodId]
+	mtd := methods[methodId]
 	list := mtd.ReturnTypeList
 	methodReturns = make([]any, len(list))
 	for i := 0; i < len(list); i++ {
