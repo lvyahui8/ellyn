@@ -6,6 +6,7 @@ import (
 	"github.com/lvyahui8/ellyn"
 	"github.com/lvyahui8/ellyn/ellyn_agent"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
+	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"github.com/lvyahui8/ellyn/ellyn_common/goroutine"
 	"github.com/lvyahui8/ellyn/ellyn_common/log"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
@@ -34,23 +35,24 @@ func (p *ProgramContext) RootPkgPath() string {
 
 // Program 封装程序信息，解析遍历程序的所有包、函数、代码块
 type Program struct {
-	mainPkg        *ellyn_agent.Package
-	rootPkg        *ellyn_agent.Package
-	pkgMap         map[string]*ellyn_agent.Package
-	modFile        string
-	allFuncs       []*ellyn_agent.Method
-	fileMethodsMap map[uint32]*treeset.Set
-	funcMutex      sync.RWMutex
-	allBlocks      []*ellyn_agent.Block
-	blockMutex     sync.Mutex
-	progCtx        *ProgramContext
-	initOnce       sync.Once
-	fileCounter    uint32
-	funcCounter    uint32
-	blockCounter   uint32
-	executor       *goroutine.RoutinePool
-	w              *sync.WaitGroup
-	targetPath     string
+	mainPkg *ellyn_agent.Package
+	rootPkg *ellyn_agent.Package
+	pkgMap  map[string]*ellyn_agent.Package
+	modFile string
+
+	fileMethodsMap *collections.ConcurrentMap[uint32, *treeset.Set]
+
+	allFuncs  *collections.ConcurrentMap[uint32, *ellyn_agent.Method]
+	allBlocks *collections.ConcurrentMap[uint32, *ellyn_agent.Block]
+
+	progCtx      *ProgramContext
+	initOnce     sync.Once
+	fileCounter  uint32
+	funcCounter  uint32
+	blockCounter uint32
+	executor     *goroutine.RoutinePool
+	w            *sync.WaitGroup
+	targetPath   string
 }
 
 func NewProgram(mainPkgDir string) *Program {
@@ -61,7 +63,9 @@ func NewProgram(mainPkgDir string) *Program {
 		pkgMap:         make(map[string]*ellyn_agent.Package),
 		executor:       goroutine.NewRoutinePool(runtime.NumCPU()<<1, false),
 		w:              &sync.WaitGroup{},
-		fileMethodsMap: make(map[uint32]*treeset.Set),
+		fileMethodsMap: collections.NewNumberKeyConcurrentMap[uint32, *treeset.Set](8),
+		allFuncs:       collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.Method](32),
+		allBlocks:      collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.Block](32),
 		targetPath:     mainPkgDir + "/target/",
 	}
 	return prog
@@ -92,9 +96,6 @@ func (p *Program) _init() {
 }
 
 func (p *Program) addMethod(fileId uint32, fcName string, begin, end token.Position) *ellyn_agent.Method {
-	p.funcMutex.Lock()
-	defer p.funcMutex.Unlock()
-
 	f := &ellyn_agent.Method{
 		Id:       p.funcCounter,
 		FileId:   fileId,
@@ -102,13 +103,13 @@ func (p *Program) addMethod(fileId uint32, fcName string, begin, end token.Posit
 		Begin:    ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
 		End:      ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
 	}
-	p.allFuncs = append(p.allFuncs, f)
-	fileAllFuncs := p.fileMethodsMap[fileId]
-	if fileAllFuncs == nil {
+	p.allFuncs.Store(f.Id, f)
+	fileAllFuncs, ok := p.fileMethodsMap.Load(fileId)
+	if !ok {
 		fileAllFuncs = treeset.NewWith(func(a, b interface{}) int {
 			return a.(*ellyn_agent.Method).Begin.Offset - b.(*ellyn_agent.Method).Begin.Offset
 		})
-		p.fileMethodsMap[fileId] = fileAllFuncs
+		p.fileMethodsMap.Store(fileId, fileAllFuncs)
 	}
 	atomic.AddUint32(&p.funcCounter, 1)
 
@@ -117,10 +118,8 @@ func (p *Program) addMethod(fileId uint32, fcName string, begin, end token.Posit
 }
 
 func (p *Program) findMethod(fileId uint32, offset int) *ellyn_agent.Method {
-	p.funcMutex.RLock()
-	defer p.funcMutex.RUnlock()
-	set := p.fileMethodsMap[fileId]
-	if set == nil {
+	set, ok := p.fileMethodsMap.Load(fileId)
+	if !ok {
 		return nil
 	}
 	values := set.Values()
@@ -140,7 +139,8 @@ func (p *Program) findMethod(fileId uint32, offset int) *ellyn_agent.Method {
 // buildMethods 完成方法内容的善后工作
 func (p *Program) buildMethods(fileId uint32) {
 	// 计算Block Offset
-	fileMethods := p.fileMethodsMap[fileId]
+	fileMethods, ok := p.fileMethodsMap.Load(fileId)
+	asserts.True(ok)
 	fileMethods.Each(func(index int, value interface{}) {
 		m := value.(*ellyn_agent.Method)
 		sort.Slice(m.Blocks, func(i, j int) bool {
@@ -154,8 +154,6 @@ func (p *Program) buildMethods(fileId uint32) {
 }
 
 func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agent.Block {
-	p.blockMutex.Lock()
-	defer p.blockMutex.Unlock()
 	method := p.findMethod(fileId, begin.Offset)
 	b := &ellyn_agent.Block{
 		Id:       p.blockCounter,
@@ -165,7 +163,7 @@ func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agen
 	}
 	method.Blocks = append(method.Blocks, b)
 	atomic.AddUint32(&p.blockCounter, 1)
-	p.allBlocks = append(p.allBlocks, b)
+	p.allBlocks.Store(b.Id, b)
 	return b
 }
 

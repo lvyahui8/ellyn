@@ -1,55 +1,69 @@
 package collections
 
-import "sync"
+import (
+	"github.com/lvyahui8/ellyn/ellyn_common/definitions"
+	"sync"
+)
 
-type keyHasher func(key any) int
+var _ mapApi[int, any] = (*ConcurrentMap[int, any])(nil)
 
-type mapApi interface {
-	Store(key, val any)
-	Load(key any) (any, bool)
-	Delete(key any)
+type keyHasher[T comparable] func(t T) int
+
+type mapApi[K comparable, V any] interface {
+	Store(key K, val V)
+	Load(key K) (V, bool)
+	Delete(key K)
 }
 
-type concurrentMap struct {
-	segMask  int           // 8
-	segments []*mapSegment // 24字节，底层是一个slice struct，里面有array指针+两个int字段，3 * 8
-	hasher   keyHasher     // 8
-	size     uint64        // 8 字节
-	_padding [16]byte
+type ConcurrentMap[K comparable, V any] struct {
+	segMask   int // 8
+	_padding0 [56]byte
+	segments  []*mapSegment[K, V] // 24字节，底层是一个slice struct，里面有array指针+两个int字段，3 * 8
+	_padding1 [40]byte
+	hasher    keyHasher[K] // 8
+	_padding2 [56]byte
+	size      uint64 // 8 字节
+	_padding3 [56]byte
 }
 
-func NewConcurrentMap(segSize int, hasher keyHasher) *concurrentMap {
+func NewNumberKeyConcurrentMap[K definitions.Number, V any](segSize int) *ConcurrentMap[K, V] {
+	return NewConcurrentMap[K, V](segSize, func(t K) int {
+		return int(t)
+	})
+}
+
+func NewConcurrentMap[K comparable, V any](segSize int, hasher keyHasher[K]) *ConcurrentMap[K, V] {
 	segSize = int(roundingToPowerOfTwo(uint64(segSize)))
-	m := &concurrentMap{
+	m := &ConcurrentMap[K, V]{
 		segMask:  segSize - 1,
-		segments: make([]*mapSegment, segSize),
+		segments: make([]*mapSegment[K, V], segSize),
 		hasher:   hasher,
 	}
 	for i := 0; i < segSize; i++ {
-		m.segments[i] = &mapSegment{
-			entries: make(map[any]any),
+		m.segments[i] = &mapSegment[K, V]{
+			entries: make(map[K]V),
 		}
 	}
 	return m
 }
 
-func (m *concurrentMap) Store(key, val any) {
+func (m *ConcurrentMap[K, V]) Store(key K, val V) {
 	m.getSegment(key).Store(key, val)
 }
 
-func (m *concurrentMap) Load(key any) (any, bool) {
+func (m *ConcurrentMap[K, V]) Load(key K) (V, bool) {
 	return m.getSegment(key).Load(key)
 }
 
-func (m *concurrentMap) Delete(key any) {
+func (m *ConcurrentMap[K, V]) Delete(key K) {
 	m.getSegment(key).Delete(key)
 }
 
-func (m *concurrentMap) getSegment(key any) *mapSegment {
+func (m *ConcurrentMap[K, V]) getSegment(key K) *mapSegment[K, V] {
 	return m.segments[m.hasher(key)&m.segMask]
 }
 
-func (m *concurrentMap) Size() int {
+func (m *ConcurrentMap[K, V]) Size() int {
 	size := 0
 	for _, s := range m.segments {
 		size += s.Size()
@@ -57,34 +71,34 @@ func (m *concurrentMap) Size() int {
 	return size
 }
 
-type mapSegment struct {
-	sync.RWMutex             // 24
-	entries      map[any]any // 8
-	size         int         // 8
-	_padding     [24]byte    //
+type mapSegment[K comparable, V any] struct {
+	sync.RWMutex          // 24
+	entries      map[K]V  // 8
+	size         int      // 8
+	_padding     [24]byte //
 }
 
-func (s *mapSegment) Store(key, val any) {
+func (s *mapSegment[K, V]) Store(key K, val V) {
 	s.Lock()
 	defer s.Unlock()
 	s.entries[key] = val
 	s.size = len(s.entries)
 }
 
-func (s *mapSegment) Load(key any) (res any, ok bool) {
+func (s *mapSegment[K, V]) Load(key K) (res V, ok bool) {
 	s.RLock()
 	defer s.RUnlock()
 	res, ok = s.entries[key]
 	return
 }
 
-func (s *mapSegment) Delete(key any) {
+func (s *mapSegment[K, V]) Delete(key K) {
 	s.Lock()
 	defer s.Unlock()
 	delete(s.entries, key)
 	s.size = len(s.entries)
 }
 
-func (s *mapSegment) Size() int {
+func (s *mapSegment[K, V]) Size() int {
 	return s.size
 }

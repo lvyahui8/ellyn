@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-func testReadWrite(b *testing.B, name string, m mapApi, insertSeq, readSeq, deleteSeq []int) {
+func testReadWrite(b *testing.B, name string, m mapApi[int, any], insertSeq, readSeq, deleteSeq []int) {
 	// 测试纯粹写入的并发性能
 	routineSize := runtime.NumCPU()
 	handleSize := len(insertSeq) / routineSize
@@ -88,30 +88,58 @@ func testReadWrite(b *testing.B, name string, m mapApi, insertSeq, readSeq, dele
 const maxVal = 1000 * 10000
 const cnt = 100 * 10000
 
+type SyncMap[K comparable, V any] struct {
+	sync.Map
+}
+
+func (s *SyncMap[K, V]) Store(key K, val V) {
+	s.Map.Store(key, val)
+}
+
+func (s *SyncMap[K, V]) Load(key K) (v V, exist bool) {
+	value, ok := s.Map.Load(key)
+	if !ok {
+		exist = false
+		return
+	}
+	return value.(V), true
+}
+
+func (s *SyncMap[K, V]) Delete(key K) {
+	s.Map.Delete(key)
+}
+
 func BenchmarkMap(b *testing.B) {
 	insertSeq := randomSeq(cnt, maxVal)
 	readSeq := shuffle(insertSeq)
 	deleteSeq := shuffle(insertSeq)
-	testReadWrite(b, "concurrentMap", NewConcurrentMap(2048, func(key any) int {
-		return key.(int)
-	}), insertSeq, readSeq, deleteSeq)
-	sMap := &sync.Map{}
-	testReadWrite(b, "syncMap", sMap, insertSeq, readSeq, deleteSeq)
+	testReadWrite(b, "ConcurrentMap", NewNumberKeyConcurrentMap[int, any](2048), insertSeq, readSeq, deleteSeq)
+	testReadWrite(b, "syncMap", &SyncMap[int, any]{}, insertSeq, readSeq, deleteSeq)
 }
 
 func TestMapPadding(t *testing.T) {
-	m := NewConcurrentMap(2048, func(key any) int {
-		return key.(int)
-	})
+	m := NewNumberKeyConcurrentMap[int, struct{}](2048)
 	require.Equal(t, 64, int(unsafe.Sizeof(*m)))
 	t.Log(unsafe.Sizeof(m.size))
 	t.Log(unsafe.Sizeof(m.segMask))
 	t.Log(unsafe.Sizeof(m.hasher))
 	t.Log(unsafe.Sizeof(m.segments))
 	t.Log("=======")
-	ms := mapSegment{}
+	ms := mapSegment[int, struct{}]{}
 	require.Equal(t, 64, int(unsafe.Sizeof(ms)))
 	t.Log(unsafe.Sizeof(ms.RWMutex))
 	t.Log(unsafe.Sizeof(ms.entries))
 	t.Log(unsafe.Sizeof(ms.size))
+}
+
+func TestConcurrentMap(t *testing.T) {
+	m := NewNumberKeyConcurrentMap[int, string](10)
+	str := "xxx"
+	m.Store(1, str)
+	s, ok := m.Load(1)
+	require.True(t, ok)
+	require.Equal(t, str, s)
+	m.Delete(1)
+	_, ok = m.Load(1)
+	require.False(t, ok)
 }

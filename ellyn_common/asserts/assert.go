@@ -50,3 +50,9 @@ func Equals(expect any, actual any) {
 		panic(NewAssertError(fmt.Sprintf("not equals. expect:%+v, actual:%+v", expect, actual)))
 	}
 }
+
+func True(ok bool) {
+	if !ok {
+		panic(NewAssertError("must be true"))
+	}
+}
