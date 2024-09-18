@@ -47,15 +47,35 @@ func parseId(col string) uint32 {
 	return uint32(id)
 }
 
+type Pos struct {
+	Offset int
+	Line   int
+	Column int
+}
+
+func NewPos(offset, line, column int) *Pos {
+	return &Pos{offset, line, column}
+}
+
 //go:embed meta/packages.dat
 var packagesData []byte
 
 var packages []*Package
 
 type Package struct {
-	Id   uint32
+	Id uint32
+	// Name pkg名，如ellyn
 	Name string
+	// Path Pkg全路径，即写代码时的Import path. 如：github.com/lvyahui8/ellyn
 	Path string
+	// Dir pkg在本地文件系统的绝对路径
+	Dir string
+}
+
+func NewPackage(dir, path string) *Package {
+	items := strings.Split(path, "/")
+	name := items[len(items)-1]
+	return &Package{Dir: dir, Name: name, Path: path}
 }
 
 func (p *Package) encodeRow() string {
@@ -94,11 +114,14 @@ var methods []*Method
 
 type Method struct {
 	Id             uint32
-	FullName       string // 完成函数名
+	Name           string
+	FullName       string // 完整函数名
 	FileId         uint32 // 所在文件id
 	PackageId      uint32 // 包id
 	Blocks         []*Block
 	BlockCnt       int
+	Begin          *Pos
+	End            *Pos
 	ArgsTypeList   []reflect.Type
 	ReturnTypeList []reflect.Type
 }
@@ -127,8 +150,11 @@ var blocks []*Block
 
 type Block struct {
 	Id           uint32
+	FileId       uint32
 	MethodId     uint32
 	MethodOffset int
+	Begin        *Pos
+	End          *Pos
 }
 
 func (b *Block) encodeRow() string {

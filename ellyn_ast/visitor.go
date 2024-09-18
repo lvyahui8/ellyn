@@ -11,9 +11,10 @@ import (
 )
 
 type insert struct {
-	offset   int
-	content  []byte
-	priority int
+	offset        int
+	content       []byte
+	contentGetter func() string
+	priority      int
 }
 
 type FileVisitor struct {
@@ -44,7 +45,11 @@ func (f *FileVisitor) mergeInserts() []byte {
 			res = append(res, f.content[pre:item.offset]...)
 			pre = item.offset
 		}
-		res = append(res, item.content...)
+		content := item.content
+		if item.contentGetter != nil {
+			content = utils.String.String2bytes(item.contentGetter())
+		}
+		res = append(res, content...)
 	}
 	res = append(res, f.content[pre:]...)
 	return res
@@ -55,6 +60,14 @@ func (f *FileVisitor) insert(offset int, content string, priority int) {
 		offset:   offset,
 		content:  utils.String.String2bytes(content),
 		priority: priority})
+}
+
+func (f *FileVisitor) insertAtPost(offset int, contentGetter func() string, priority int) {
+	f.inserts = append(f.inserts, &insert{
+		offset:        offset,
+		contentGetter: contentGetter,
+		priority:      priority,
+	})
 }
 
 func (f *FileVisitor) insertBlockVisit(beginPos, endPos token.Pos) {
@@ -206,6 +219,7 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 		fname := fmt.Sprintf("func.L%d.C%d", p.Line, p.Column)
 		fmt.Printf("func %s\n", fname)
 		f.addFuncByLint(fname, n)
+		ast.Walk(f, n.Body)
 		// todo get parent func
 		return nil
 	}
@@ -225,14 +239,16 @@ func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
 }
 
 func (f *FileVisitor) addFunc(fName string, begin, end token.Position, bodyBegin token.Position) {
-	fc := f.prog.addFunc(f.file, fName, begin, end)
+	fc := f.prog.addMethod(f.fileId, fName, begin, end)
 	f.insert(bodyBegin.Offset+1,
-		fmt.Sprintf(`_ellyn_ctx := ellyn_agent.Agent.GetCtx();ellyn_agent.Agent.Push(_ellyn_ctx,%d);defer ellyn_agent.Agent.Pop(_ellyn_ctx);`, fc.id), 1)
+		fmt.Sprintf(`_ellyn_ctx := ellyn_agent.Agent.GetCtx();ellyn_agent.Agent.Push(_ellyn_ctx,%d);defer ellyn_agent.Agent.Pop(_ellyn_ctx);`, fc.Id), 1)
 }
 
 func (f *FileVisitor) addBlock(begin, end token.Pos) {
-	block := f.prog.addBlock(f.file, f.fset.Position(begin), f.fset.Position(end))
-	f.insert(block.begin.Offset, fmt.Sprintf("ellyn_agent.Agent.VisitBlock(_ellyn_ctx,%d);", block.id), 2)
+	block := f.prog.addBlock(f.fileId, f.fset.Position(begin), f.fset.Position(end))
+	f.insertAtPost(block.Begin.Offset, func() string {
+		return fmt.Sprintf("ellyn_agent.Agent.VisitBlock(_ellyn_ctx,%d);", block.MethodOffset)
+	}, 2)
 }
 
 // offset translates a token position into a 0-indexed byte offset.

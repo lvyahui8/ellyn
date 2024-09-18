@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/lvyahui8/ellyn"
+	"github.com/lvyahui8/ellyn/ellyn_agent"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/goroutine"
 	"github.com/lvyahui8/ellyn/ellyn_common/log"
@@ -16,6 +17,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -32,35 +34,35 @@ func (p *ProgramContext) RootPkgPath() string {
 
 // Program 封装程序信息，解析遍历程序的所有包、函数、代码块
 type Program struct {
-	mainPkg           Package
-	rootPkg           Package
-	pkgMap            map[string]Package
-	modFile           string
-	allFuncs          []*GoFunc
-	fileOffsetFuncMap map[string]*treeset.Set
-	funcMutex         sync.RWMutex
-	allBlocks         []*Block
-	blockMutex        sync.Mutex
-	progCtx           *ProgramContext
-	initOnce          sync.Once
-	fileCounter       uint32
-	funcCounter       uint32
-	blockCounter      uint32
-	executor          *goroutine.RoutinePool
-	w                 *sync.WaitGroup
-	targetPath        string
+	mainPkg        *ellyn_agent.Package
+	rootPkg        *ellyn_agent.Package
+	pkgMap         map[string]*ellyn_agent.Package
+	modFile        string
+	allFuncs       []*ellyn_agent.Method
+	fileMethodsMap map[uint32]*treeset.Set
+	funcMutex      sync.RWMutex
+	allBlocks      []*ellyn_agent.Block
+	blockMutex     sync.Mutex
+	progCtx        *ProgramContext
+	initOnce       sync.Once
+	fileCounter    uint32
+	funcCounter    uint32
+	blockCounter   uint32
+	executor       *goroutine.RoutinePool
+	w              *sync.WaitGroup
+	targetPath     string
 }
 
 func NewProgram(mainPkgDir string) *Program {
 	prog := &Program{
-		mainPkg: Package{
+		mainPkg: &ellyn_agent.Package{
 			Dir: mainPkgDir,
 		},
-		pkgMap:            make(map[string]Package),
-		executor:          goroutine.NewRoutinePool(runtime.NumCPU()<<1, false),
-		w:                 &sync.WaitGroup{},
-		fileOffsetFuncMap: make(map[string]*treeset.Set),
-		targetPath:        mainPkgDir + "/target/",
+		pkgMap:         make(map[string]*ellyn_agent.Package),
+		executor:       goroutine.NewRoutinePool(runtime.NumCPU()<<1, false),
+		w:              &sync.WaitGroup{},
+		fileMethodsMap: make(map[uint32]*treeset.Set),
+		targetPath:     mainPkgDir + "/target/",
 	}
 	return prog
 }
@@ -78,33 +80,35 @@ func (p *Program) _init() {
 	p.initOnce.Do(func() {
 		packages := utils.Go.AllPackages(p.mainPkg.Dir)
 		for pkgPath, pkgDir := range packages {
-			p.pkgMap[pkgDir] = NewPackage(pkgDir, pkgPath)
+			p.pkgMap[pkgDir] = ellyn_agent.NewPackage(pkgDir, pkgPath)
 		}
 		p.mainPkg.Name = p.pkgMap[p.mainPkg.Dir].Name
 
 		p.modFile = utils.Go.GetModFile(p.mainPkg.Dir)
 		rootPkgPath := p.getProjectRootPkgPath(p.modFile)
-		p.rootPkg = NewPackage(path.Dir(p.modFile), rootPkgPath)
+		p.rootPkg = ellyn_agent.NewPackage(path.Dir(p.modFile), rootPkgPath)
 		p.progCtx = &ProgramContext{rootPkgPath: rootPkgPath}
 	})
 }
 
-func (p *Program) addFunc(file, fcName string, begin, end token.Position) *GoFunc {
+func (p *Program) addMethod(fileId uint32, fcName string, begin, end token.Position) *ellyn_agent.Method {
 	p.funcMutex.Lock()
 	defer p.funcMutex.Unlock()
-	f := &GoFunc{
-		name:  fcName,
-		begin: begin,
-		end:   end,
-		id:    p.funcCounter,
+
+	f := &ellyn_agent.Method{
+		Id:       p.funcCounter,
+		FileId:   fileId,
+		FullName: fcName,
+		Begin:    ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
+		End:      ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
 	}
 	p.allFuncs = append(p.allFuncs, f)
-	fileAllFuncs := p.fileOffsetFuncMap[file]
+	fileAllFuncs := p.fileMethodsMap[fileId]
 	if fileAllFuncs == nil {
 		fileAllFuncs = treeset.NewWith(func(a, b interface{}) int {
-			return a.(*GoFunc).begin.Offset - b.(*GoFunc).begin.Offset
+			return a.(*ellyn_agent.Method).Begin.Offset - b.(*ellyn_agent.Method).Begin.Offset
 		})
-		p.fileOffsetFuncMap[file] = fileAllFuncs
+		p.fileMethodsMap[fileId] = fileAllFuncs
 	}
 	atomic.AddUint32(&p.funcCounter, 1)
 
@@ -112,32 +116,54 @@ func (p *Program) addFunc(file, fcName string, begin, end token.Position) *GoFun
 	return f
 }
 
-func (p *Program) findFunc(file string, offset int) *GoFunc {
+func (p *Program) findMethod(fileId uint32, offset int) *ellyn_agent.Method {
 	p.funcMutex.RLock()
 	defer p.funcMutex.RUnlock()
-	set := p.fileOffsetFuncMap[file]
+	set := p.fileMethodsMap[fileId]
 	if set == nil {
 		return nil
 	}
 	values := set.Values()
+	var target *ellyn_agent.Method
 	for _, v := range values {
-		f := v.(*GoFunc)
-		if f.begin.Offset >= offset {
-			return f
+		f := v.(*ellyn_agent.Method)
+		if f.Begin.Offset > offset {
+			break
+		}
+		if f.Begin.Offset <= offset && f.End.Offset >= offset {
+			target = f
 		}
 	}
-	return nil
+	return target
 }
 
-func (p *Program) addBlock(file string, begin, end token.Position) *Block {
+// buildMethods 完成方法内容的善后工作
+func (p *Program) buildMethods(fileId uint32) {
+	// 计算Block Offset
+	fileMethods := p.fileMethodsMap[fileId]
+	fileMethods.Each(func(index int, value interface{}) {
+		m := value.(*ellyn_agent.Method)
+		sort.Slice(m.Blocks, func(i, j int) bool {
+			return m.Blocks[i].Begin.Offset-m.Blocks[j].Begin.Offset < 0
+		})
+		for offset, b := range m.Blocks {
+			b.MethodOffset = offset
+		}
+	})
+	// 计算匿名函数名
+}
+
+func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agent.Block {
 	p.blockMutex.Lock()
 	defer p.blockMutex.Unlock()
-	b := &Block{
-		id:    p.blockCounter,
-		fc:    p.findFunc(file, begin.Offset),
-		begin: begin,
-		end:   end,
+	method := p.findMethod(fileId, begin.Offset)
+	b := &ellyn_agent.Block{
+		Id:       p.blockCounter,
+		MethodId: method.Id,
+		Begin:    ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
+		End:      ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
 	}
+	method.Blocks = append(method.Blocks, b)
 	atomic.AddUint32(&p.blockCounter, 1)
 	p.allBlocks = append(p.allBlocks, b)
 	return b
@@ -202,7 +228,7 @@ func (p *Program) copySdk(sdkPath string) {
 	}
 }
 
-func (p *Program) parseFile(pkg Package, file os.DirEntry) {
+func (p *Program) parseFile(pkg *ellyn_agent.Package, file os.DirEntry) {
 	p.w.Add(1)
 	// 这里使用阻塞队列，队列不限制容量，确保文件不会被丢弃
 	p.executor.Submit(func() {
@@ -211,8 +237,9 @@ func (p *Program) parseFile(pkg Package, file os.DirEntry) {
 		content, err := os.ReadFile(fileAbsPath)
 		asserts.IsNil(err)
 		log.Infof("dir %s,file %s", pkg.Dir, file.Name())
+		fileId := atomic.AddUint32(&p.fileCounter, 1)
 		visitor := &FileVisitor{
-			fileId:  atomic.AddUint32(&p.fileCounter, 1),
+			fileId:  fileId,
 			prog:    p,
 			content: content,
 			file:    strings.ReplaceAll(utils.File.FormatFilePath(fileAbsPath), p.mainPkg.Dir, ""),
@@ -221,6 +248,7 @@ func (p *Program) parseFile(pkg Package, file os.DirEntry) {
 		visitor.fset = fset
 		parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
 		ast.Walk(visitor, parsedFile)
+		p.buildMethods(fileId)
 		visitor.WriteTo(p.targetPath)
 	})
 }

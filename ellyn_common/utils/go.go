@@ -4,6 +4,7 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -24,7 +25,7 @@ func (g *goUtils) AllPackages(mainPkgPath string) map[string]string {
 			continue
 		}
 		cols := strings.Split(line, "|#|")
-		res[cols[0]] = cols[1]
+		res[cols[0]] = filepath.ToSlash(cols[1])
 	}
 	return res
 }
