@@ -89,15 +89,15 @@ const maxVal = 1000 * 10000
 const cnt = 100 * 10000
 
 type SyncMap[K comparable, V any] struct {
-	sync.Map
+	m sync.Map
 }
 
 func (s *SyncMap[K, V]) Store(key K, val V) {
-	s.Map.Store(key, val)
+	s.m.Store(key, val)
 }
 
 func (s *SyncMap[K, V]) Load(key K) (v V, exist bool) {
-	value, ok := s.Map.Load(key)
+	value, ok := s.m.Load(key)
 	if !ok {
 		exist = false
 		return
@@ -106,7 +106,7 @@ func (s *SyncMap[K, V]) Load(key K) (v V, exist bool) {
 }
 
 func (s *SyncMap[K, V]) Delete(key K) {
-	s.Map.Delete(key)
+	s.m.Delete(key)
 }
 
 func BenchmarkMap(b *testing.B) {
