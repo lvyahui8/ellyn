@@ -11,14 +11,14 @@ var coll *collector = newCollector()
 
 func newCollector() *collector {
 	c := &collector{
-		buffer: collections.NewRingBuffer(2048),
+		buffer: collections.NewRingBuffer[*graph](2048),
 	}
 	c.start()
 	return c
 }
 
 type collector struct {
-	buffer *collections.RingBuffer
+	buffer *collections.RingBuffer[*graph]
 }
 
 func (c *collector) add(g *graph) {
@@ -29,11 +29,10 @@ func (c *collector) start() {
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go func() {
 			for {
-				v, ok := c.buffer.Dequeue()
+				g, ok := c.buffer.Dequeue()
 				if !ok {
 					continue
 				}
-				g := v.(*graph)
 				fmt.Printf("graph %s\n", utils.Marshal(g))
 			}
 		}()

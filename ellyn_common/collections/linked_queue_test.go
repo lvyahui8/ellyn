@@ -20,41 +20,73 @@ func TestLinkedQueueBasic(t *testing.T) {
 	require.Equal(t, 3, val)
 }
 
-func TestLinkedQueue(t *testing.T) {
-	queue := NewLinkedQueue[int](100)
-	num := 100
-	producerCnt := 10
-	total := num * producerCnt
+func queueReadWrite(queue Queue[int], num, producerCnt, consumerCnt int,
+	block bool) (targetTotal int64, actualProduceCnt int64, actualConsumeCnt int64) {
+	targetTotal = int64(num * producerCnt)
 	producerWait := sync.WaitGroup{}
 	producerWait.Add(producerCnt)
 	for i := 0; i < producerCnt; i++ {
 		go func() {
 			defer producerWait.Done()
 			for i := 0; i < num; i++ {
-				_ = queue.Enqueue(1)
+				suc := queue.Enqueue(1)
+				if suc {
+					atomic.AddInt64(&actualProduceCnt, 1)
+				}
 			}
 		}()
 	}
-	consumerCnt := 5
-	var sum int64 = 0
 	consumerWait := sync.WaitGroup{}
 	consumerWait.Add(consumerCnt)
+	var stoppedConsumerCnt int32
 	for i := 0; i < consumerCnt; i++ {
 		go func() {
 			defer consumerWait.Done()
 			for {
-				val, _ := queue.Dequeue()
-				if val == 0 {
-					break
+				val, ok := queue.Dequeue()
+				if ok {
+					if val == 0 {
+						atomic.AddInt32(&stoppedConsumerCnt, 1)
+						//fmt.Printf("consumer[#%d] stopped\n", runtime.EllynGetGoid())
+						break
+					}
+					atomic.AddInt64(&actualConsumeCnt, 1)
 				}
-				atomic.AddInt64(&sum, int64(val))
 			}
 		}()
 	}
+
 	producerWait.Wait()
-	for i := 0; i < consumerCnt; i++ {
-		queue.Enqueue(0)
+	if block {
+		for i := 0; i < consumerCnt; i++ {
+			queue.Enqueue(0)
+		}
+	} else {
+		for {
+			// 往队列里不断塞0，直到退出所有consumer
+			queue.Enqueue(0)
+			if consumerCnt == int(stoppedConsumerCnt) {
+				break
+			}
+		}
+		// 清空队列
+		for {
+			_, ok := queue.Dequeue()
+			if !ok {
+				break
+			}
+		}
 	}
 	consumerWait.Wait()
-	require.Equal(t, int64(total), sum)
+	return
+}
+
+func TestLinkedQueue(t *testing.T) {
+	queue := NewLinkedQueue[int](100)
+	for i := 0; i < 10; i++ {
+		total, produceCnt, consumeCnt := queueReadWrite(queue, 1000, 10, 10, true)
+		// 阻塞队列一定会写入成功、消费成功，不会丢元素
+		require.Equal(t, total, produceCnt)
+		require.Equal(t, produceCnt, consumeCnt)
+	}
 }

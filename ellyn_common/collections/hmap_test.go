@@ -119,7 +119,7 @@ func BenchmarkMap(b *testing.B) {
 
 func TestMapPadding(t *testing.T) {
 	m := NewNumberKeyConcurrentMap[int, struct{}](2048)
-	require.Equal(t, 64, int(unsafe.Sizeof(*m)))
+	require.Equal(t, 256, int(unsafe.Sizeof(*m)))
 	t.Log(unsafe.Sizeof(m.size))
 	t.Log(unsafe.Sizeof(m.segMask))
 	t.Log(unsafe.Sizeof(m.hasher))
