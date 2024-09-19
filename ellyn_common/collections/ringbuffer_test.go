@@ -92,7 +92,6 @@ func TestRingBufferBasic(t *testing.T) {
 }
 
 func TestRingBufferConcurrent(t *testing.T) {
-	t.Skip()
 	queue := NewRingBuffer[int](100)
 	for i := 0; i < 10; i++ {
 		target, produceCnt, consumeCnt := queueReadWrite(queue, 100000,

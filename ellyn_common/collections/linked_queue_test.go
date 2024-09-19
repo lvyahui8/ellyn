@@ -38,7 +38,7 @@ func queueReadWrite(queue Queue[int], num, producerCnt, consumerCnt int,
 	}
 	consumerWait := sync.WaitGroup{}
 	consumerWait.Add(consumerCnt)
-	var stoppedConsumerCnt int32
+	stoppped := false
 	for i := 0; i < consumerCnt; i++ {
 		go func() {
 			defer consumerWait.Done()
@@ -46,11 +46,16 @@ func queueReadWrite(queue Queue[int], num, producerCnt, consumerCnt int,
 				val, ok := queue.Dequeue()
 				if ok {
 					if val == 0 {
-						atomic.AddInt32(&stoppedConsumerCnt, 1)
 						//fmt.Printf("consumer[#%d] stopped\n", runtime.EllynGetGoid())
+						if !block {
+							stoppped = true
+						}
 						break
 					}
 					atomic.AddInt64(&actualConsumeCnt, 1)
+				}
+				if stoppped {
+					break
 				}
 			}
 		}()
@@ -62,19 +67,7 @@ func queueReadWrite(queue Queue[int], num, producerCnt, consumerCnt int,
 			queue.Enqueue(0)
 		}
 	} else {
-		for {
-			// 往队列里不断塞0，直到退出所有consumer
-			queue.Enqueue(0)
-			if consumerCnt == int(stoppedConsumerCnt) {
-				break
-			}
-		}
-		// 清空队列
-		for {
-			_, ok := queue.Dequeue()
-			if !ok {
-				break
-			}
+		for !queue.Enqueue(0) {
 		}
 	}
 	consumerWait.Wait()
