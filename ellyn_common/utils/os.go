@@ -4,7 +4,6 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 var OS = &osUtils{}
@@ -18,7 +17,7 @@ func (osUtils) GetWorkDir() string {
 }
 
 func (osUtils) WriteTo(file string, content []byte) {
-	osUtils{}.MkDirs(file[0:strings.LastIndex(file, "/")])
+	osUtils{}.MkDirs(filepath.Dir(file))
 	err := os.WriteFile(file, content, os.ModePerm)
 	asserts.IsNil(err)
 }

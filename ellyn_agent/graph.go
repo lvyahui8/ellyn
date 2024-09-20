@@ -7,6 +7,13 @@ type graph struct {
 	edges map[uint64]struct{}
 }
 
+func newGraph() *graph {
+	return &graph{
+		nodes: make(map[uint32]*node),
+		edges: make(map[uint64]struct{}),
+	}
+}
+
 func (g *graph) add(from *methodFrame, to *methodFrame) {
 	fromNode := g.draw(from)
 	toNode := g.draw(to)

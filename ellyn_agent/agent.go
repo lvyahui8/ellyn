@@ -23,6 +23,7 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 		res = &EllynCtx{
 			id:    idGenerator.GenGUID(),
 			stack: collections.NewUnsafeCompressedStack(),
+			g:     newGraph(),
 		}
 		CtxLocal.Set(res)
 	}

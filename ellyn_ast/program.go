@@ -37,22 +37,25 @@ func (p *ProgramContext) RootPkgPath() string {
 type Program struct {
 	mainPkg *ellyn_agent.Package
 	rootPkg *ellyn_agent.Package
-	pkgMap  map[string]*ellyn_agent.Package
-	modFile string
 
+	pkgMap         map[string]*ellyn_agent.Package
+	allFiles       *collections.ConcurrentMap[uint32, *ellyn_agent.File]
+	allMethods     *collections.ConcurrentMap[uint32, *ellyn_agent.Method]
 	fileMethodsMap *collections.ConcurrentMap[uint32, *treeset.Set]
+	allBlocks      *collections.ConcurrentMap[uint32, *ellyn_agent.Block]
 
-	allFuncs  *collections.ConcurrentMap[uint32, *ellyn_agent.Method]
-	allBlocks *collections.ConcurrentMap[uint32, *ellyn_agent.Block]
+	progCtx        *ProgramContext
+	initOnce       sync.Once
+	packageCounter uint32
+	fileCounter    int32
+	methodCounter  int32
+	blockCounter   int32
 
-	progCtx      *ProgramContext
-	initOnce     sync.Once
-	fileCounter  uint32
-	funcCounter  uint32
-	blockCounter uint32
-	executor     *goroutine.RoutinePool
-	w            *sync.WaitGroup
-	targetPath   string
+	executor  *goroutine.RoutinePool
+	fileGroup *sync.WaitGroup
+
+	modFile    string
+	targetPath string
 }
 
 func NewProgram(mainPkgDir string) *Program {
@@ -62,11 +65,15 @@ func NewProgram(mainPkgDir string) *Program {
 		},
 		pkgMap:         make(map[string]*ellyn_agent.Package),
 		executor:       goroutine.NewRoutinePool(runtime.NumCPU()<<1, false),
-		w:              &sync.WaitGroup{},
+		fileGroup:      &sync.WaitGroup{},
+		allFiles:       collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.File](4),
 		fileMethodsMap: collections.NewNumberKeyConcurrentMap[uint32, *treeset.Set](8),
-		allFuncs:       collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.Method](32),
+		allMethods:     collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.Method](32),
 		allBlocks:      collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.Block](32),
 		targetPath:     mainPkgDir + "/target/",
+		fileCounter:    -1,
+		methodCounter:  -1,
+		blockCounter:   -1,
 	}
 	return prog
 }
@@ -77,6 +84,7 @@ func (p *Program) Visit() {
 	p.scanSourceFiles()
 	p.buildApp()
 	p.buildAgent()
+	p.buildMeta()
 }
 
 // _init 初始化基础信息，为文件迭代做准备
@@ -84,7 +92,10 @@ func (p *Program) _init() {
 	p.initOnce.Do(func() {
 		packages := utils.Go.AllPackages(p.mainPkg.Dir)
 		for pkgPath, pkgDir := range packages {
-			p.pkgMap[pkgDir] = ellyn_agent.NewPackage(pkgDir, pkgPath)
+			pkg := ellyn_agent.NewPackage(pkgDir, pkgPath)
+			pkg.Id = p.packageCounter
+			p.packageCounter++
+			p.pkgMap[pkgDir] = pkg
 		}
 		p.mainPkg.Name = p.pkgMap[p.mainPkg.Dir].Name
 
@@ -95,15 +106,25 @@ func (p *Program) _init() {
 	})
 }
 
-func (p *Program) addMethod(fileId uint32, fcName string, begin, end token.Position) *ellyn_agent.Method {
+func (p *Program) addFile(pkgId uint32, file string) *ellyn_agent.File {
+	f := &ellyn_agent.File{
+		FileId:       uint32(atomic.AddInt32(&p.fileCounter, 1)),
+		PackageId:    pkgId,
+		RelativePath: file,
+	}
+	p.allFiles.Store(f.FileId, f)
+	return f
+}
+
+func (p *Program) addMethod(fileId uint32, methodName string, begin, end token.Position) *ellyn_agent.Method {
 	f := &ellyn_agent.Method{
-		Id:       p.funcCounter,
+		Id:       uint32(atomic.AddInt32(&p.methodCounter, 1)),
 		FileId:   fileId,
-		FullName: fcName,
+		FullName: methodName,
 		Begin:    ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
 		End:      ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
 	}
-	p.allFuncs.Store(f.Id, f)
+	p.allMethods.Store(f.Id, f)
 	fileAllFuncs, ok := p.fileMethodsMap.Load(fileId)
 	if !ok {
 		fileAllFuncs = treeset.NewWith(func(a, b interface{}) int {
@@ -111,7 +132,6 @@ func (p *Program) addMethod(fileId uint32, fcName string, begin, end token.Posit
 		})
 		p.fileMethodsMap.Store(fileId, fileAllFuncs)
 	}
-	atomic.AddUint32(&p.funcCounter, 1)
 
 	fileAllFuncs.Add(f)
 	return f
@@ -156,13 +176,12 @@ func (p *Program) buildMethods(fileId uint32) {
 func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agent.Block {
 	method := p.findMethod(fileId, begin.Offset)
 	b := &ellyn_agent.Block{
-		Id:       p.blockCounter,
+		Id:       uint32(atomic.AddInt32(&p.blockCounter, 1)),
 		MethodId: method.Id,
 		Begin:    ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
 		End:      ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
 	}
 	method.Blocks = append(method.Blocks, b)
-	atomic.AddUint32(&p.blockCounter, 1)
 	p.allBlocks.Store(b.Id, b)
 	return b
 }
@@ -195,7 +214,7 @@ func (p *Program) scanSourceFiles() {
 	}
 
 	// 等待所有文件处理完成
-	p.w.Wait()
+	p.fileGroup.Wait()
 	p.executor.Shutdown()
 }
 
@@ -227,26 +246,27 @@ func (p *Program) copySdk(sdkPath string) {
 }
 
 func (p *Program) parseFile(pkg *ellyn_agent.Package, file os.DirEntry) {
-	p.w.Add(1)
+	p.fileGroup.Add(1)
 	// 这里使用阻塞队列，队列不限制容量，确保文件不会被丢弃
 	p.executor.Submit(func() {
-		defer p.w.Done()
+		defer p.fileGroup.Done()
 		fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
 		content, err := os.ReadFile(fileAbsPath)
 		asserts.IsNil(err)
-		log.Infof("dir %s,file %s", pkg.Dir, file.Name())
-		fileId := atomic.AddUint32(&p.fileCounter, 1)
+		relativePath := strings.ReplaceAll(utils.File.FormatFilePath(fileAbsPath), p.mainPkg.Dir, "")
+		log.Infof("dir %s,file %s,relativePath %s", pkg.Dir, file.Name(), relativePath)
+		f := p.addFile(pkg.Id, relativePath)
 		visitor := &FileVisitor{
-			fileId:  fileId,
+			fileId:  f.FileId,
 			prog:    p,
 			content: content,
-			file:    strings.ReplaceAll(utils.File.FormatFilePath(fileAbsPath), p.mainPkg.Dir, ""),
+			file:    relativePath,
 		}
 		fset := token.NewFileSet()
 		visitor.fset = fset
 		parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
 		ast.Walk(visitor, parsedFile)
-		p.buildMethods(fileId)
+		p.buildMethods(f.FileId)
 		visitor.WriteTo(p.targetPath)
 	})
 }
@@ -262,4 +282,14 @@ func (p *Program) getProjectRootPkgPath(modFilePath string) string {
 	modFile, err := modfile.Parse("go.mod", content, nil)
 	asserts.IsNil(err)
 	return modFile.Module.Mod.Path
+}
+
+// buildMeta 构建元数据，将元数据写入项目
+func (p *Program) buildMeta() {
+	metaPath := filepath.Join(p.targetPath, ellyn.MetaRelativePath)
+	utils.OS.MkDirs(metaPath)
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaPackages), ellyn_agent.EncodeCsvRows(utils.GetMapValues(p.pkgMap)))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaFiles), ellyn_agent.EncodeCsvRows(p.allFiles.Values()))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaMethods), ellyn_agent.EncodeCsvRows(p.allMethods.Values()))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaBlocks), ellyn_agent.EncodeCsvRows(p.allBlocks.Values()))
 }

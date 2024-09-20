@@ -1,4 +1,4 @@
-## Ringbuffer性能测试
+### Ringbuffer并发性能测试
 
 测试方法：分别使用{1,10,100,500}个生产者/消费者(数量一致)，每个生产者写入100000个元素，测试并发读写性能
 
@@ -13,7 +13,7 @@ go test -v -run ^$  -bench BenchmarkQueue -benchtime=10s -benchmem
 > - 当生产者消费者较小时（<10），RingBuffer >> linkedBlockQueue > channel 
 > - 当生产者较大时(>100), RingBuffer >> linkedBlockQueue >> channel
 > 
-> 并发冲突越多的时候，ringBuffer性能约明显，当生产者消费者=100时，RingBuffer性能是channel的18倍，是linkedBlockQueue的6倍。并且ringBuffer内存分配很少，而linkedBlockQueue内存分配次数很高。
+> 并发冲突越多时，ringBuffer性能优势越明显，当生产者消费者=100时，RingBuffer性能是channel的18倍，是linkedBlockQueue的6倍。并且ringBuffer内存分配很少，而linkedBlockQueue内存分配次数很高，不仅对内存有影响，链表碎片化严重，频繁的gc也会对性能造成影响。
 
 ```text
 goos: windows

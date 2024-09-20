@@ -14,7 +14,7 @@ import (
 func initMetaData() {
 	packages = initCsvData[*Package](packagesData)
 	files = initCsvData[*File](filesData)
-	methods = initCsvData[*Method](filesData)
+	methods = initCsvData[*Method](methodsData)
 	blocks = initCsvData[*Block](blocksData)
 }
 
@@ -31,14 +31,27 @@ func initCsvData[T CsvRow](compressedContent []byte) []T {
 	lines := strings.Split(csvContent, "\n")
 	var res []T
 	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
 		cols := strings.Split(line, ",")
 		var t T
-		val := reflect.ValueOf(t)
-		val.Set(reflect.New(val.Elem().Type()))
+		val := reflect.New(reflect.ValueOf(t).Type().Elem())
+		t = val.Interface().(T)
 		t.parse(cols)
 		res = append(res, t)
 	}
 	return res
+}
+
+func EncodeCsvRows[T CsvRow](rows []T) []byte {
+	var res []byte
+	for _, row := range rows {
+		res = append(res, row.encodeRow()...)
+		res = append(res, '\n')
+	}
+	return utils.Gzip.Compress(res)
 }
 
 func parseId(col string) uint32 {
@@ -95,16 +108,18 @@ var files []*File
 
 type File struct {
 	FileId       uint32
+	PackageId    uint32
 	RelativePath string
 }
 
 func (f *File) encodeRow() string {
-	return fmt.Sprintf("%d,%s", f.FileId, f.RelativePath)
+	return fmt.Sprintf("%d,%d,%s", f.FileId, f.PackageId, f.RelativePath)
 }
 
 func (f *File) parse(cols []string) {
 	f.FileId = parseId(cols[0])
-	f.RelativePath = cols[1]
+	f.PackageId = parseId(cols[1])
+	f.RelativePath = cols[2]
 }
 
 //go:embed meta/methods.dat
@@ -127,7 +142,7 @@ type Method struct {
 }
 
 func (m *Method) encodeRow() string {
-	return fmt.Sprintf("%d,%s,%d,%d,%d", m.Id, m.FullName, m.FileId, m.PackageId, m.BlockCnt)
+	return fmt.Sprintf("%d,%s,%d,%d,%d", m.Id, m.FullName, m.FileId, m.PackageId, len(m.Blocks))
 }
 
 func (m *Method) parse(cols []string) {

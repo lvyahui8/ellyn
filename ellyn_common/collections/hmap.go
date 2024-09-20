@@ -2,6 +2,7 @@ package collections
 
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/definitions"
+	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"sync"
 )
 
@@ -69,6 +70,17 @@ func (m *ConcurrentMap[K, V]) Size() int {
 		size += s.Size()
 	}
 	return size
+}
+
+func (m *ConcurrentMap[K, V]) Values() (res []V) {
+	for _, seg := range m.segments {
+		func() {
+			seg.RLock()
+			defer seg.RUnlock()
+			res = append(res, utils.GetMapValues(seg.entries)...)
+		}()
+	}
+	return
 }
 
 type mapSegment[K comparable, V any] struct {
