@@ -54,7 +54,7 @@ func EncodeCsvRows[T CsvRow](rows []T) []byte {
 	return utils.Gzip.Compress(res)
 }
 
-func parseId(col string) uint32 {
+func parseUint32(col string) uint32 {
 	id, err := strconv.ParseUint(col, 10, 32)
 	asserts.IsNil(err)
 	return uint32(id)
@@ -68,6 +68,20 @@ type Pos struct {
 
 func NewPos(offset, line, column int) *Pos {
 	return &Pos{offset, line, column}
+}
+
+func (p *Pos) String() string {
+	return fmt.Sprintf("L%dC%d:%d", p.Line, p.Column, p.Offset)
+}
+
+func ParsePos(encodedPos string) *Pos {
+	colIdx := strings.Index(encodedPos, "C")
+	offsetIdx := strings.Index(encodedPos, ":")
+	return &Pos{
+		Line:   int(parseUint32(encodedPos[1:colIdx])),
+		Column: int(parseUint32(encodedPos[colIdx+1 : offsetIdx])),
+		Offset: int(parseUint32(encodedPos[offsetIdx+1:])),
+	}
 }
 
 //go:embed meta/packages.dat
@@ -96,7 +110,7 @@ func (p *Package) encodeRow() string {
 }
 
 func (p *Package) parse(cols []string) {
-	p.Id = parseId(cols[0])
+	p.Id = parseUint32(cols[0])
 	p.Name = cols[1]
 	p.Path = cols[2]
 }
@@ -117,8 +131,8 @@ func (f *File) encodeRow() string {
 }
 
 func (f *File) parse(cols []string) {
-	f.FileId = parseId(cols[0])
-	f.PackageId = parseId(cols[1])
+	f.FileId = parseUint32(cols[0])
+	f.PackageId = parseUint32(cols[1])
 	f.RelativePath = cols[2]
 }
 
@@ -142,20 +156,22 @@ type Method struct {
 }
 
 func (m *Method) encodeRow() string {
-	return fmt.Sprintf("%d,%s,%d,%d,%d", m.Id, m.FullName, m.FileId, m.PackageId, len(m.Blocks))
+	return fmt.Sprintf("%d,%s,%d,%d,%d,%s,%s", m.Id, m.FullName, m.FileId, m.PackageId, len(m.Blocks), m.Begin, m.End)
 }
 
 func (m *Method) parse(cols []string) {
-	m.Id = parseId(cols[0])
+	m.Id = parseUint32(cols[0])
 	m.FullName = cols[1]
-	m.FileId = parseId(cols[2])
-	m.PackageId = parseId(cols[3])
-	m.BlockCnt = int(parseId(cols[4]))
+	m.FileId = parseUint32(cols[2])
+	m.PackageId = parseUint32(cols[3])
+	m.BlockCnt = int(parseUint32(cols[4]))
 	m.Blocks = make([]*Block, m.BlockCnt)
+	m.Begin = ParsePos(cols[5])
+	m.End = ParsePos(cols[6])
 }
 
 func newMethodBlockBits(methodId uint32) *collections.BitMap {
-	return collections.NewBitMap(uint(len(methods[methodId].Blocks)))
+	return collections.NewBitMap(uint(methods[methodId].BlockCnt))
 }
 
 //go:embed meta/blocks.dat
@@ -173,13 +189,15 @@ type Block struct {
 }
 
 func (b *Block) encodeRow() string {
-	return fmt.Sprintf("%d,%d,%d", b.Id, b.MethodId, b.MethodOffset)
+	return fmt.Sprintf("%d,%d,%d,%s,%s", b.Id, b.MethodId, b.MethodOffset, b.Begin, b.End)
 }
 
 func (b *Block) parse(cols []string) {
-	b.Id = parseId(cols[0])
-	b.MethodId = parseId(cols[1])
-	b.MethodOffset = int(parseId(cols[2]))
+	b.Id = parseUint32(cols[0])
+	b.MethodId = parseUint32(cols[1])
+	b.MethodOffset = int(parseUint32(cols[2]))
 	method := methods[b.MethodId]
 	method.Blocks[b.MethodOffset] = b
+	b.Begin = ParsePos(cols[3])
+	b.End = ParsePos(cols[4])
 }
