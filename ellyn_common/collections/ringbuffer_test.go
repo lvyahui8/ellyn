@@ -101,8 +101,9 @@ func TestRingBufferConcurrent(t *testing.T) {
 	}
 }
 
-// BenchmarkRingBuffer10000 go test -v -run ^$  -bench BenchmarkRingBuffer10000 -benchtime=5s -benchmem -memprofile memprofile.pprof -cpuprofile profile.pprof
-// $ go tool pprof -http=":8081" memprofile.pprof
+// BenchmarkRingBuffer10000
+// go test -v -run ^$  -bench BenchmarkRingBuffer10000 -benchtime=5s -benchmem -memprofile memprofile.pprof -cpuprofile profile.pprof
+// go tool pprof -http=":8081" memprofile.pprof
 func BenchmarkRingBuffer10000(b *testing.B) {
 	q := NewRingBuffer[int](capacity)
 	for i := 0; i < b.N; i++ {

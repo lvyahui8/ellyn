@@ -9,6 +9,6 @@ var CtxLocal = &goroutine.RoutineLocal[*EllynCtx]{}
 
 type EllynCtx struct {
 	id    uint64
-	stack collections.Stack
+	stack collections.Stack[*methodFrame]
 	g     *graph
 }

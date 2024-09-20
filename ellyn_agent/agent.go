@@ -22,7 +22,7 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 	if !exist {
 		res = &EllynCtx{
 			id:    idGenerator.GenGUID(),
-			stack: collections.NewUnsafeCompressedStack(),
+			stack: collections.NewUnsafeCompressedStack[*methodFrame](),
 			g:     newGraph(),
 		}
 		CtxLocal.Set(res)
@@ -37,8 +37,8 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32) {
 
 func (agent *ellynAgent) Pop(ctx *EllynCtx) {
 	// 弹栈，加到调用链
-	pop := ctx.stack.Pop().(*methodFrame)
-	top := ctx.stack.Pop().(*methodFrame)
+	pop := ctx.stack.Pop()
+	top := ctx.stack.Pop()
 	if top != nil {
 		if pop.methodId == top.methodId {
 			// 方法递归中，未完全弹出
@@ -54,6 +54,6 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx) {
 
 func (agent *ellynAgent) VisitBlock(ctx *EllynCtx, blockOffset int) {
 	// 取栈顶元素，标记block覆盖请求
-	top := ctx.stack.Top().(*methodFrame)
+	top := ctx.stack.Top()
 	top.blocks.Set(uint(blockOffset))
 }

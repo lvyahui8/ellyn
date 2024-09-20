@@ -8,7 +8,7 @@ type methodFrame struct {
 	recursion bool
 }
 
-func (mf *methodFrame) Equals(value any) bool {
+func (mf *methodFrame) Equals(value collections.Frame) bool {
 	if f, ok := value.(*methodFrame); ok {
 		return mf.methodId == f.methodId
 	} else {
@@ -20,7 +20,7 @@ func (mf *methodFrame) Init() {
 	mf.blocks = newMethodBlockBits(mf.methodId)
 }
 
-func (mf *methodFrame) Refresh() {
+func (mf *methodFrame) ReEnter() {
 	if !mf.recursion {
 		mf.recursion = true
 	}

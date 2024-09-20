@@ -2,125 +2,114 @@ package collections
 
 import "container/list"
 
-type Stack interface {
-	Push(val any)
-	Pop() any
-	Top() any
+type Stack[T any] interface {
+	Push(val T)
+	Pop() T
+	Top() T
 	Size() int
 }
 
-type UnsafeStack struct {
-	elements *list.List
+type UnsafeStack[T any] struct {
+	elements  *list.List
+	_padding0 [56]byte
 }
 
-func NewUnsafeStack() *UnsafeStack {
-	return &UnsafeStack{
+func NewUnsafeStack[T any]() *UnsafeStack[T] {
+	return &UnsafeStack[T]{
 		elements: list.New(),
 	}
 }
 
-func (u UnsafeStack) Push(val any) {
+func (u UnsafeStack[T]) Push(val T) {
 	u.elements.PushBack(val)
 }
 
-func (u UnsafeStack) Pop() any {
+func (u UnsafeStack[T]) Pop() (t T) {
 	v := u.elements.Back()
 	if v != nil {
 		u.elements.Remove(v)
-		return v.Value
+		t = v.Value.(T)
 	}
-	return nil
+	return
 }
 
-func (u UnsafeStack) Top() any {
+func (u UnsafeStack[T]) Top() (t T) {
 	v := u.elements.Back()
 	if v != nil {
-		return v.Value
-	} else {
-		return nil
+		t = v.Value.(T)
 	}
+	return
 }
 
-func (u UnsafeStack) Size() int {
+func (u UnsafeStack[T]) Size() int {
 	return u.elements.Len()
 }
 
 // UnsafeCompressedStack 非并发安全的Stack
-type UnsafeCompressedStack struct {
-	elements *list.List
-	count    int
+type UnsafeCompressedStack[T Frame] struct {
+	elements  *list.List
+	_padding0 [56]byte
+	count     int
+	_padding1 [56]byte
 }
 
 type Frame interface {
-	Equals(value any) bool
+	Equals(value Frame) bool
 	Init()
-	Refresh()
+	ReEnter()
 }
 
-type stackElement struct {
-	val   any
+type stackElement[T Frame] struct {
+	val   T
 	max   int
 	count int
 }
 
-func NewUnsafeCompressedStack() *UnsafeCompressedStack {
-	return &UnsafeCompressedStack{
+func NewUnsafeCompressedStack[T Frame]() *UnsafeCompressedStack[T] {
+	return &UnsafeCompressedStack[T]{
 		elements: list.New(),
 	}
 }
 
-func (s *UnsafeCompressedStack) Push(val any) {
+func (s *UnsafeCompressedStack[T]) Push(val T) {
 	s.count++
 	back := s.elements.Back()
-	f, _ := val.(Frame)
-
 	if back != nil {
-		ele := back.Value.(*stackElement)
-		var eq bool
-		if f != nil {
-			eq = f.Equals(ele.val)
-			if eq {
-				f.Refresh()
-			}
-		} else {
-			eq = ele.val == val
-		}
-		if eq {
+		ele := back.Value.(*stackElement[T])
+		if val.Equals(ele.val) {
+			val.ReEnter()
 			ele.max++
 			ele.count++
 			return
 		}
 	}
-	if f != nil {
-		f.Init()
-	}
-	s.elements.PushBack(&stackElement{val: val, max: 1, count: 1})
+	val.Init()
+	s.elements.PushBack(&stackElement[T]{val: val, max: 1, count: 1})
 }
 
-func (s *UnsafeCompressedStack) Pop() any {
+func (s *UnsafeCompressedStack[T]) Pop() (t T) {
 	e := s.elements.Back()
 	if e != nil {
-		ele := e.Value.(*stackElement)
+		ele := e.Value.(*stackElement[T])
 		if ele.count == 1 {
 			s.elements.Remove(e)
 		} else {
 			ele.count--
 		}
 		s.count--
-		return ele.val
-	} else {
-		return nil
+		t = ele.val
 	}
+	return
 }
 
-func (s *UnsafeCompressedStack) Top() any {
+func (s *UnsafeCompressedStack[T]) Top() (t T) {
 	e := s.elements.Back()
 	if e != nil {
-		return e.Value.(*stackElement).val
+		t = e.Value.(*stackElement[T]).val
 	}
-	return nil
+	return
 }
 
-func (s *UnsafeCompressedStack) Size() int {
+func (s *UnsafeCompressedStack[T]) Size() int {
 	return s.count
 }
