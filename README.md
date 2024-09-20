@@ -31,7 +31,7 @@
   - [routineLocal性能测试](./ellyn_common/goroutine/routine_local_test.go)
 - [routinePool](./ellyn_common/goroutine/routine_pool.go): 协程池，并发处理文件
 - [Uint64GUIDGenerator](./ellyn_common/guid/guid.go)
-
+- [RingBuffer与Map性能对比测试](./ellyn_common/collections/ring_buffer_vs_map.md)
 ### Q&A 
 
 #### Q:为什么要实现部分集合库，而不是直接使用开源方案？
