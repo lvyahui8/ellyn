@@ -3,6 +3,7 @@ package utils
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -28,8 +29,9 @@ func (osUtils) MkDirs(dir string) {
 }
 
 func (osUtils) CopyFile(source, target string) {
-	file, err := os.ReadFile(source)
+	content, err := os.ReadFile(source)
 	asserts.IsNil(err)
-	err = os.WriteFile(target, file, os.ModePerm)
+	osUtils{}.MkDirs(filepath.Dir(target))
+	err = os.WriteFile(target, content, os.ModePerm)
 	asserts.IsNil(err)
 }

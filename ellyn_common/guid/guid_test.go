@@ -31,9 +31,7 @@ func TestUint64GUIDGenerator_GenGUID(t *testing.T) {
 func TestUint64GUIDGenerator_GenGUID_Concurrent(t *testing.T) {
 	g := NewGuidGenerator()
 	cnt := 600
-	m := collections.NewConcurrentMap(1<<10, func(key any) int {
-		return int(key.(uint64))
-	})
+	m := collections.NewNumberKeyConcurrentMap[uint64, struct{}](1 << 10)
 	gCnt := 10
 	w := &sync.WaitGroup{}
 	w.Add(gCnt)
