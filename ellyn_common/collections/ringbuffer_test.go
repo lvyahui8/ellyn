@@ -109,3 +109,38 @@ func BenchmarkRingBuffer10000(b *testing.B) {
 		queueReadWrite(q, 10000, 10, 5, false)
 	}
 }
+
+// BenchmarkRingBufferAndMap
+// go test -v -run ^$  -bench BenchmarkRingBufferAndMap -benchtime=10s -benchmem
+func BenchmarkRingBufferAndMap(b *testing.B) {
+	b.Run("ringBuffer", func(b *testing.B) {
+		q := NewRingBuffer[int](capacity)
+		for i := 0; i < b.N; i++ {
+			q.Enqueue(1)
+		}
+	})
+	b.Run("mapSeqWrite", func(b *testing.B) {
+		m := make(map[int]struct{})
+		for i := 0; i < b.N; i++ {
+			m[i] = struct{}{}
+		}
+	})
+	b.Run("mapEachWrite", func(b *testing.B) {
+		m := make(map[int]struct{})
+		idx := 0
+		maxMask := 1<<8 - 1
+		for i := 0; i < b.N; i++ {
+			idx++
+			m[idx&maxMask] = struct{}{}
+		}
+	})
+	b.Run("mapNormalWrite", func(b *testing.B) {
+		m := make(map[int]struct{})
+		for i := 0; i < 300; i++ {
+			m[i] = struct{}{}
+		}
+		for i := 0; i < b.N; i++ {
+			m[150] = struct{}{}
+		}
+	})
+}
