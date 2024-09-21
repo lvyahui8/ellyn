@@ -10,5 +10,5 @@ func TestSum(t *testing.T) {
 	ellyn_api.Agent.SetAutoClear(false)
 	Sum(1, 2)
 	graph := ellyn_api.Agent.GetGraph()
-	require.Nil(t, graph)
+	require.NotNil(t, graph)
 }

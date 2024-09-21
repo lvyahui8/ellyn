@@ -7,7 +7,6 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
-	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
@@ -17,7 +16,7 @@ import (
 var meta embed.FS
 
 func getDat(file string) []byte {
-	data, _ := meta.ReadFile(filepath.Join("meta", file))
+	data, _ := meta.ReadFile("meta/" + file)
 	return data
 }
 

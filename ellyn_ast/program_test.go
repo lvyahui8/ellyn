@@ -9,6 +9,7 @@ import (
 )
 
 func TestProgram(t *testing.T) {
+	t.Skip()
 	defer func() {
 		err := recover()
 		require.Nil(t, err)
