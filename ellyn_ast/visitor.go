@@ -240,13 +240,15 @@ func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
 func (f *FileVisitor) addFunc(fName string, begin, end token.Position, bodyBegin token.Position) {
 	fc := f.prog.addMethod(f.fileId, fName, begin, end)
 	f.insert(bodyBegin.Offset+1,
-		fmt.Sprintf(`_ellyn_ctx := ellyn_agent.Agent.GetCtx();ellyn_agent.Agent.Push(_ellyn_ctx,%d);defer ellyn_agent.Agent.Pop(_ellyn_ctx);`, fc.Id), 1)
+		fmt.Sprintf(
+			`_ellynCtx := ellyn_agent.Agent.GetCtx();ellyn_agent.Agent.Push(_ellynCtx,%d);defer ellyn_agent.Agent.Pop(_ellynCtx);`, fc.Id),
+		1)
 }
 
 func (f *FileVisitor) addBlock(begin, end token.Pos) {
 	block := f.prog.addBlock(f.fileId, f.fset.Position(begin), f.fset.Position(end))
 	f.insertAtPost(block.Begin.Offset, func() string {
-		return fmt.Sprintf("ellyn_agent.Agent.VisitBlock(_ellyn_ctx,%d);", block.MethodOffset)
+		return fmt.Sprintf("ellyn_agent.Agent.VisitBlock(_ellynCtx,%d);", block.MethodOffset)
 	}, 2)
 }
 

@@ -2,6 +2,7 @@ package ellyn
 
 import (
 	"embed"
+	"strings"
 )
 
 //go:embed ellyn_agent ellyn_common
@@ -23,3 +24,12 @@ const (
 	ApiFile = "ellyn_agent/api.go"
 	ApiPkg  = "github.com/lvyahui8/ellyn/ellyn_api"
 )
+
+func IsSdkPkg(pkgPath string) bool {
+	for _, sdkPath := range SdkPaths {
+		if strings.Contains(pkgPath, sdkPath) {
+			return true
+		}
+	}
+	return false
+}

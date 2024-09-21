@@ -34,3 +34,8 @@ func (osUtils) CopyFile(source, target string) {
 	err = os.WriteFile(target, content, os.ModePerm)
 	asserts.IsNil(err)
 }
+
+func (osUtils) Remove(file string) {
+	err := os.RemoveAll(file)
+	asserts.IsNil(err)
+}

@@ -75,3 +75,7 @@ func (g *goUtils) IsAutoGenContent(content []byte) bool {
 	head := content[0:idx]
 	return autoGenMarkReg.Match(head)
 }
+
+func (g *goUtils) Build(mainPkgDir string) {
+	Shell.Exec(mainPkgDir, "go", "build", "./...")
+}

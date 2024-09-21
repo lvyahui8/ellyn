@@ -44,7 +44,6 @@ type Program struct {
 	fileMethodsMap *collections.ConcurrentMap[uint32, *treeset.Set]
 	allBlocks      *collections.ConcurrentMap[uint32, *ellyn_agent.Block]
 
-	progCtx        *ProgramContext
 	initOnce       sync.Once
 	packageCounter uint32
 	fileCounter    int32
@@ -87,7 +86,7 @@ func (p *Program) Visit() {
 	defer func() {
 		err := recover()
 		if err != nil {
-			p.rollbackUpdatedFiles()
+			p.rollbackAll()
 		}
 	}()
 	p.scanSourceFiles()
@@ -112,7 +111,6 @@ func (p *Program) _init() {
 		p.modFile = p.parseModFile(p.modFilePath)
 		rootPkgPath := p.modFile.Module.Mod.Path
 		p.rootPkg = ellyn_agent.NewPackage(path.Dir(p.modFilePath), rootPkgPath)
-		p.progCtx = &ProgramContext{rootPkgPath: rootPkgPath}
 	})
 }
 
@@ -198,7 +196,7 @@ func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agen
 
 func (p *Program) scanSourceFiles() {
 	for pkgDir, pkg := range p.dir2pkgMap {
-		if !strings.HasPrefix(pkg.Path, p.progCtx.RootPkgPath()) {
+		if !strings.HasPrefix(pkg.Path, p.rootPkg.Path) {
 			continue
 		}
 		files, err := os.ReadDir(pkgDir)
@@ -206,6 +204,7 @@ func (p *Program) scanSourceFiles() {
 		for _, file := range files {
 			if !strings.HasSuffix(file.Name(), ".go") ||
 				file.IsDir() ||
+				ellyn.IsSdkPkg(pkg.Path) ||
 				utils.Go.IsTestFile(file.Name()) ||
 				utils.Go.IsAutoGenFile(pkg.Dir+string(os.PathSeparator)+file.Name()) {
 				continue
@@ -314,17 +313,26 @@ func (p *Program) require(pkgPath string) bool {
 }
 
 func (p *Program) backup(fileAbsPath string) {
-	utils.OS.CopyFile(fileAbsPath, fileAbsPath+".bak")
+	bakFile := fileAbsPath + ".bak"
+	fmt.Printf("backup file:%s, target file:%s\n", fileAbsPath, bakFile)
+	utils.OS.CopyFile(fileAbsPath, bakFile)
 }
 
 func (p *Program) rollback(fileAbsPath string) {
 	bakFile := fileAbsPath + ".bak"
+	fmt.Printf("rollback file:%s, target file:%s\n", bakFile, fileAbsPath)
 	utils.OS.CopyFile(bakFile, fileAbsPath)
+	utils.OS.Remove(bakFile)
 }
 
-func (p *Program) rollbackUpdatedFiles() {
+func (p *Program) rollbackAll() {
 	for _, f := range p.updatedFiles {
 		p.rollback(f)
+	}
+	for _, sdkPath := range ellyn.SdkPaths {
+		sdkDir := path.Join(p.targetPath, sdkPath)
+		fmt.Printf("remove sdk package:%s\n", sdkDir)
+		utils.OS.Remove(sdkDir)
 	}
 }
 
