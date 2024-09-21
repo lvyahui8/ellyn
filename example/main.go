@@ -82,6 +82,9 @@ func Trade() {
 }
 
 func N(n int) int {
+	if n == 0 {
+		return 1
+	}
 	return n * N(n-1)
 }
 
