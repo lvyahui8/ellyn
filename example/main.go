@@ -81,6 +81,10 @@ func Trade() {
 	}()
 }
 
+func N(n int) int {
+	return n * N(n-1)
+}
+
 func main() {
 	fmt.Println(Sum(1, 1))
 	Trade()
