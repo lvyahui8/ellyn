@@ -1,21 +1,31 @@
 package ellyn_agent
 
 import (
+	"embed"
 	_ "embed"
 	"fmt"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
 )
 
+//go:embed meta
+var meta embed.FS
+
+func getDat(file string) []byte {
+	data, _ := meta.ReadFile(filepath.Join("meta", file))
+	return data
+}
+
 func initMetaData() {
-	packages = initCsvData[*Package](packagesData)
-	files = initCsvData[*File](filesData)
-	methods = initCsvData[*Method](methodsData)
-	blocks = initCsvData[*Block](blocksData)
+	packages = initCsvData[*Package](getDat("packages.dat"))
+	files = initCsvData[*File](getDat("files.dat"))
+	methods = initCsvData[*Method](getDat("methods.dat"))
+	blocks = initCsvData[*Block](getDat("blocks.dat"))
 }
 
 type CsvRow interface {
@@ -84,9 +94,6 @@ func ParsePos(encodedPos string) *Pos {
 	}
 }
 
-//go:embed meta/packages.dat
-var packagesData []byte
-
 var packages []*Package
 
 type Package struct {
@@ -115,9 +122,6 @@ func (p *Package) parse(cols []string) {
 	p.Path = cols[2]
 }
 
-//go:embed meta/files.dat
-var filesData []byte
-
 var files []*File
 
 type File struct {
@@ -135,9 +139,6 @@ func (f *File) parse(cols []string) {
 	f.PackageId = parseUint32(cols[1])
 	f.RelativePath = cols[2]
 }
-
-//go:embed meta/methods.dat
-var methodsData []byte
 
 var methods []*Method
 
@@ -173,9 +174,6 @@ func (m *Method) parse(cols []string) {
 func newMethodBlockBits(methodId uint32) *collections.BitMap {
 	return collections.NewBitMap(uint(methods[methodId].BlockCnt))
 }
-
-//go:embed meta/blocks.dat
-var blocksData []byte
 
 var blocks []*Block
 

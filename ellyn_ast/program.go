@@ -53,10 +53,12 @@ type Program struct {
 	executor  *goroutine.RoutinePool
 	fileGroup *sync.WaitGroup
 
-	modFilePath  string
-	modFile      *modfile.File
-	targetPath   string
-	updatedFiles []string
+	sdkImportPkgPath string
+	modFilePath      string
+	modFile          *modfile.File
+	targetPath       string
+	updatedFiles     []string
+	specifySdkDir    string
 }
 
 func NewProgram(mainPkgDir string) *Program {
@@ -77,22 +79,8 @@ func NewProgram(mainPkgDir string) *Program {
 		methodCounter:  -1,
 		blockCounter:   -1,
 	}
+	prog._init()
 	return prog
-}
-
-// Visit 触发项目扫描处理动作
-func (p *Program) Visit() {
-	p._init()
-	defer func() {
-		err := recover()
-		if err != nil {
-			p.rollbackAll()
-		}
-	}()
-	p.scanSourceFiles()
-	p.buildApp()
-	p.buildAgent()
-	p.buildMeta()
 }
 
 // _init 初始化基础信息，为文件迭代做准备
@@ -111,7 +99,22 @@ func (p *Program) _init() {
 		p.modFile = p.parseModFile(p.modFilePath)
 		rootPkgPath := p.modFile.Module.Mod.Path
 		p.rootPkg = ellyn_agent.NewPackage(path.Dir(p.modFilePath), rootPkgPath)
+		p.sdkImportPkgPath = fmt.Sprintf("%s/ellyn_agent", p.rootPkg.Path)
 	})
+}
+
+// Visit 触发项目扫描处理动作
+func (p *Program) Visit() {
+	defer func() {
+		err := recover()
+		if err != nil {
+			p.rollbackAll()
+		}
+	}()
+	p.scanSourceFiles()
+	p.buildApp()
+	p.buildAgent()
+	p.buildMeta()
 }
 
 func (p *Program) addFile(pkgId uint32, file string) *ellyn_agent.File {
@@ -220,6 +223,9 @@ func (p *Program) scanSourceFiles() {
 }
 
 func (p *Program) buildAgent() {
+	if len(p.specifySdkDir) > 0 {
+		return
+	}
 	for _, sdkPath := range ellyn.SdkPaths {
 		p.copySdk(sdkPath)
 	}
@@ -338,7 +344,11 @@ func (p *Program) rollbackAll() {
 
 // buildMeta 构建元数据，将元数据写入项目
 func (p *Program) buildMeta() {
-	metaPath := filepath.Join(p.targetPath, ellyn.MetaRelativePath)
+	target := p.targetPath
+	if len(p.specifySdkDir) > 0 {
+		target = p.specifySdkDir
+	}
+	metaPath := filepath.Join(target, ellyn.MetaRelativePath)
 	utils.OS.MkDirs(metaPath)
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaPackages), ellyn_agent.EncodeCsvRows(utils.GetMapValues(p.dir2pkgMap)))
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaFiles), ellyn_agent.EncodeCsvRows(p.allFiles.Values()))

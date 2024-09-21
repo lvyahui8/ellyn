@@ -10,7 +10,10 @@ var SdkFs embed.FS
 
 var SdkPaths = []string{"ellyn_agent", "ellyn_common"}
 
-const SdkRawRootPkg = "github.com/lvyahui8/ellyn"
+const (
+	SdkRawRootPkg = "github.com/lvyahui8/ellyn"
+	SdkAgentPkg   = "github.com/lvyahui8/ellyn/ellyn_agent"
+)
 
 const (
 	MetaRelativePath = "ellyn_agent/meta"

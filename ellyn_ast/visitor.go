@@ -226,7 +226,7 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 }
 
 func (f *FileVisitor) addAgentImport(pos token.Pos) {
-	f.insert(f.fset.Position(pos).Offset, fmt.Sprintf(";import \"%s/ellyn_agent\";", f.prog.rootPkg.Path), 1)
+	f.insert(f.fset.Position(pos).Offset, fmt.Sprintf(";import \"%s\";", f.prog.sdkImportPkgPath), 1)
 }
 
 func (f *FileVisitor) addFuncByLint(fName string, lit *ast.FuncLit) {
