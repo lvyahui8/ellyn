@@ -15,9 +15,11 @@ func newGraph() *graph {
 }
 
 func (g *graph) add(from *methodFrame, to *methodFrame) {
-	fromNode := g.draw(from)
 	toNode := g.draw(to)
-	g.addEdges(fromNode, toNode)
+	if from != nil {
+		fromNode := g.draw(from)
+		g.addEdges(fromNode, toNode)
+	}
 	if to.recursion {
 		g.addEdges(toNode, toNode)
 	}

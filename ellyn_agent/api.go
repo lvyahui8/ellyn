@@ -22,7 +22,10 @@ func (e *ellynApiImpl) SetAutoClear(auto bool) {
 func (e *ellynApiImpl) GetGraph() *ellyn_api.Graph {
 	ctx := Agent.GetCtx()
 	g := ctx.g
-	res := &ellyn_api.Graph{}
+	res := &ellyn_api.Graph{
+		Nodes: make(map[uint32]*ellyn_api.Node),
+		Edges: make(map[uint64]struct{}),
+	}
 	res.Edges = utils.CopyMap(g.edges)
 	for methodId, n := range g.nodes {
 		method := methods[n.methodId]

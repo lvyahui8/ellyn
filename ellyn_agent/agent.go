@@ -40,14 +40,13 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx) {
 	// 弹栈，加到调用链
 	pop := ctx.stack.Pop()
 	top := ctx.stack.Pop()
-	if top != nil {
-		if pop.methodId == top.methodId {
-			// 方法递归中，未完全弹出
-			return
-		}
-		// 记录调用链
-		ctx.g.add(top, pop)
-	} else {
+	if top != nil && pop.methodId == top.methodId {
+		// 方法递归中，未完全弹出
+		return
+	}
+	// 记录调用链
+	ctx.g.add(top, pop)
+	if top == nil {
 		// 已经完全弹空， 调用链路追加到队列
 		coll.add(ctx.g)
 		if ctx.autoClear {
