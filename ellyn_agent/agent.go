@@ -50,7 +50,9 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx) {
 	} else {
 		// 已经完全弹空， 调用链路追加到队列
 		coll.add(ctx.g)
-		CtxLocal.Clear()
+		if ctx.autoClear {
+			CtxLocal.Clear()
+		}
 	}
 }
 

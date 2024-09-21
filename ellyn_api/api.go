@@ -1,4 +1,4 @@
-package elly_api
+package ellyn_api
 
 import "sync"
 

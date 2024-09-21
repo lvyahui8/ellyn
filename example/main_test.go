@@ -1,10 +1,14 @@
 package main
 
 import (
-	"github.com/lvyahui8/ellyn/elly_api"
+	"github.com/lvyahui8/ellyn/ellyn_api"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 func TestSum(t *testing.T) {
-	elly_api.Agent.SetAutoClear(false)
+	ellyn_api.Agent.SetAutoClear(false)
+	Sum(1, 2)
+	graph := ellyn_api.Agent.GetGraph()
+	require.NotNil(t, graph)
 }

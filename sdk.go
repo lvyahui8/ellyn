@@ -21,5 +21,5 @@ const (
 
 const (
 	ApiFile = "ellyn_agent/api.go"
-	ApiPkg  = "github.com/lvyahui8/ellyn/elly_api"
+	ApiPkg  = "github.com/lvyahui8/ellyn/ellyn_api"
 )

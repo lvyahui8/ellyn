@@ -13,3 +13,11 @@ func GetMapValues[K comparable, V any](m map[K]V) (res []V) {
 	}
 	return
 }
+
+func CopyMap[K comparable, V any](m map[K]V) (res map[K]V) {
+	res = make(map[K]V)
+	for k, v := range m {
+		res[k] = v
+	}
+	return res
+}
