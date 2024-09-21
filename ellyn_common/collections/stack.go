@@ -91,10 +91,9 @@ func (s *UnsafeCompressedStack[T]) Pop() (t T) {
 	e := s.elements.Back()
 	if e != nil {
 		ele := e.Value.(*stackElement[T])
+		ele.count--
 		if ele.count == 0 {
 			s.elements.Remove(e)
-		} else {
-			ele.count--
 		}
 		s.count--
 		t = ele.val

@@ -39,7 +39,7 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32) {
 func (agent *ellynAgent) Pop(ctx *EllynCtx) {
 	// 弹栈，加到调用链
 	pop := ctx.stack.Pop()
-	top := ctx.stack.Pop()
+	top := ctx.stack.Top()
 	if top != nil && pop.methodId == top.methodId {
 		// 方法递归中，未完全弹出
 		return
