@@ -8,7 +8,6 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"github.com/lvyahui8/ellyn/ellyn_common/goroutine"
-	"github.com/lvyahui8/ellyn/ellyn_common/log"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"go/ast"
 	"go/parser"
@@ -55,9 +54,10 @@ type Program struct {
 	executor  *goroutine.RoutinePool
 	fileGroup *sync.WaitGroup
 
-	modFilePath string
-	modFile     *modfile.File
-	targetPath  string
+	modFilePath  string
+	modFile      *modfile.File
+	targetPath   string
+	updatedFiles []string
 }
 
 func NewProgram(mainPkgDir string) *Program {
@@ -73,7 +73,7 @@ func NewProgram(mainPkgDir string) *Program {
 		fileMethodsMap: collections.NewNumberKeyConcurrentMap[uint32, *treeset.Set](8),
 		allMethods:     collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.Method](32),
 		allBlocks:      collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.Block](32),
-		targetPath:     mainPkgDir + "/target/",
+		targetPath:     mainPkgDir,
 		fileCounter:    -1,
 		methodCounter:  -1,
 		blockCounter:   -1,
@@ -84,6 +84,12 @@ func NewProgram(mainPkgDir string) *Program {
 // Visit 触发项目扫描处理动作
 func (p *Program) Visit() {
 	p._init()
+	defer func() {
+		err := recover()
+		if err != nil {
+			p.rollbackUpdatedFiles()
+		}
+	}()
 	p.scanSourceFiles()
 	p.buildApp()
 	p.buildAgent()
@@ -198,22 +204,14 @@ func (p *Program) scanSourceFiles() {
 		files, err := os.ReadDir(pkgDir)
 		asserts.IsNil(err)
 		for _, file := range files {
-			if !strings.HasSuffix(file.Name(), ".go") {
+			if !strings.HasSuffix(file.Name(), ".go") ||
+				file.IsDir() ||
+				utils.Go.IsTestFile(file.Name()) ||
+				utils.Go.IsAutoGenFile(pkg.Dir+string(os.PathSeparator)+file.Name()) {
 				continue
 			}
-			if file.IsDir() {
-				continue
-			}
-
-			if utils.Go.IsTestFile(file.Name()) {
-				continue
-			}
-			if utils.Go.IsAutoGenFile(pkg.Dir + string(os.PathSeparator) + file.Name()) {
-				continue
-			}
-
 			// 将文件加入遍历队列并发处理，加快文件处理速度
-			p.parseFile(pkg, file)
+			p.handleFile(pkg, file)
 		}
 	}
 
@@ -235,7 +233,7 @@ func (p *Program) copySdk(sdkPath string) {
 		if !file.IsDir() && !utils.Go.IsSourceFile(file.Name()) {
 			continue
 		}
-		fmt.Printf("sdk file :%s\n", file.Name())
+		fmt.Printf("sdk relativePath :%s\n", file.Name())
 		rPath := path.Join(sdkPath, file.Name())
 		if file.IsDir() {
 			p.copySdk(rPath)
@@ -260,30 +258,37 @@ func (p *Program) copySdk(sdkPath string) {
 	}
 }
 
-func (p *Program) parseFile(pkg *ellyn_agent.Package, file os.DirEntry) {
+func (p *Program) handleFile(pkg *ellyn_agent.Package, file os.DirEntry) {
 	p.fileGroup.Add(1)
 	// 这里使用阻塞队列，队列不限制容量，确保文件不会被丢弃
 	p.executor.Submit(func() {
 		defer p.fileGroup.Done()
 		fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
-		content, err := os.ReadFile(fileAbsPath)
-		asserts.IsNil(err)
-		relativePath := strings.ReplaceAll(utils.File.FormatFilePath(fileAbsPath), p.mainPkg.Dir, "")
-		log.Infof("dir %s,file %s,relativePath %s", pkg.Dir, file.Name(), relativePath)
-		f := p.addFile(pkg.Id, relativePath)
-		visitor := &FileVisitor{
-			fileId:  f.FileId,
-			prog:    p,
-			content: content,
-			file:    relativePath,
-		}
-		fset := token.NewFileSet()
-		visitor.fset = fset
-		parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
-		ast.Walk(visitor, parsedFile)
-		p.buildMethods(f.FileId)
-		visitor.WriteTo(p.targetPath)
+		fmt.Printf("dir %s,relativePath %s\n", pkg.Dir, file.Name())
+		p.updateFile(pkg, fileAbsPath)
 	})
+}
+
+func (p *Program) updateFile(pkg *ellyn_agent.Package, fileAbsPath string) {
+	p.backup(fileAbsPath)
+	relativePath := strings.ReplaceAll(utils.File.FormatFilePath(fileAbsPath), p.mainPkg.Dir, "")
+	f := p.addFile(pkg.Id, relativePath)
+	content, err := os.ReadFile(fileAbsPath)
+	asserts.IsNil(err)
+	visitor := &FileVisitor{
+		fileId:       f.FileId,
+		prog:         p,
+		content:      content,
+		relativePath: relativePath,
+	}
+	fset := token.NewFileSet()
+	visitor.fset = fset
+	parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
+	asserts.IsNil(err)
+	ast.Walk(visitor, parsedFile)
+	p.buildMethods(f.FileId)
+	visitor.WriteTo(fileAbsPath)
+	p.updatedFiles = append(p.updatedFiles, fileAbsPath)
 }
 
 func (p *Program) buildApp() {
@@ -306,6 +311,21 @@ func (p *Program) require(pkgPath string) bool {
 		}
 	}
 	return false
+}
+
+func (p *Program) backup(fileAbsPath string) {
+	utils.OS.CopyFile(fileAbsPath, fileAbsPath+".bak")
+}
+
+func (p *Program) rollback(fileAbsPath string) {
+	bakFile := fileAbsPath + ".bak"
+	utils.OS.CopyFile(bakFile, fileAbsPath)
+}
+
+func (p *Program) rollbackUpdatedFiles() {
+	for _, f := range p.updatedFiles {
+		p.rollback(f)
+	}
 }
 
 // buildMeta 构建元数据，将元数据写入项目

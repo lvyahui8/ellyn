@@ -7,7 +7,6 @@ import (
 	"go/ast"
 	"go/token"
 	"sort"
-	"strings"
 )
 
 type insert struct {
@@ -18,17 +17,17 @@ type insert struct {
 }
 
 type FileVisitor struct {
-	fileId  uint32
-	file    string
-	fset    *token.FileSet
-	content []byte
-	prog    *Program
-	inserts []*insert
+	fileId       uint32
+	relativePath string
+	fset         *token.FileSet
+	content      []byte
+	prog         *Program
+	inserts      []*insert
 }
 
-func (f *FileVisitor) WriteTo(rootPath string) {
+func (f *FileVisitor) WriteTo(absPath string) {
 	newContent := f.mergeInserts()
-	utils.OS.WriteTo(strings.Trim(rootPath, "/")+f.file, newContent)
+	utils.OS.WriteTo(absPath, newContent)
 }
 
 func (f *FileVisitor) mergeInserts() []byte {
