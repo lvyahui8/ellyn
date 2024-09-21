@@ -21,9 +21,10 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 	res, exist := CtxLocal.Get()
 	if !exist {
 		res = &EllynCtx{
-			id:    idGenerator.GenGUID(),
-			stack: collections.NewUnsafeCompressedStack[*methodFrame](),
-			g:     newGraph(),
+			id:        idGenerator.GenGUID(),
+			stack:     collections.NewUnsafeCompressedStack[*methodFrame](),
+			g:         newGraph(),
+			autoClear: true,
 		}
 		CtxLocal.Set(res)
 	}
@@ -49,6 +50,7 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx) {
 	} else {
 		// 已经完全弹空， 调用链路追加到队列
 		coll.add(ctx.g)
+		CtxLocal.Clear()
 	}
 }
 

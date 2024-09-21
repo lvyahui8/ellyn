@@ -4,13 +4,11 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 )
 
-var m = collections.NewNumberKeyConcurrentMap[uint64, map[any]any](2048)
+var m = collections.NewNumberKeyConcurrentMap[uint64, map[any]any](4096)
 
 type RoutineLocal[T any] struct {
-	// 两个作用：
-	// - 缓存行填充
 	// - 不能用空结构体，空结构体地址是一样，多个local会变成同一个key
-	_padding [64]byte
+	_ byte
 }
 
 func (rl *RoutineLocal[T]) Set(val T) {

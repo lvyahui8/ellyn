@@ -38,7 +38,8 @@ type Program struct {
 	mainPkg *ellyn_agent.Package
 	rootPkg *ellyn_agent.Package
 
-	pkgMap         map[string]*ellyn_agent.Package
+	path2pkgMap    map[string]*ellyn_agent.Package
+	dir2pkgMap     map[string]*ellyn_agent.Package
 	allFiles       *collections.ConcurrentMap[uint32, *ellyn_agent.File]
 	allMethods     *collections.ConcurrentMap[uint32, *ellyn_agent.Method]
 	fileMethodsMap *collections.ConcurrentMap[uint32, *treeset.Set]
@@ -54,8 +55,9 @@ type Program struct {
 	executor  *goroutine.RoutinePool
 	fileGroup *sync.WaitGroup
 
-	modFile    string
-	targetPath string
+	modFilePath string
+	modFile     *modfile.File
+	targetPath  string
 }
 
 func NewProgram(mainPkgDir string) *Program {
@@ -63,7 +65,8 @@ func NewProgram(mainPkgDir string) *Program {
 		mainPkg: &ellyn_agent.Package{
 			Dir: mainPkgDir,
 		},
-		pkgMap:         make(map[string]*ellyn_agent.Package),
+		path2pkgMap:    make(map[string]*ellyn_agent.Package),
+		dir2pkgMap:     make(map[string]*ellyn_agent.Package),
 		executor:       goroutine.NewRoutinePool(runtime.NumCPU()<<1, false),
 		fileGroup:      &sync.WaitGroup{},
 		allFiles:       collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.File](4),
@@ -95,13 +98,14 @@ func (p *Program) _init() {
 			pkg := ellyn_agent.NewPackage(pkgDir, pkgPath)
 			pkg.Id = p.packageCounter
 			p.packageCounter++
-			p.pkgMap[pkgDir] = pkg
+			p.dir2pkgMap[pkgDir] = pkg
+			p.path2pkgMap[pkgPath] = pkg
 		}
-		p.mainPkg.Name = p.pkgMap[p.mainPkg.Dir].Name
-
-		p.modFile = utils.Go.GetModFile(p.mainPkg.Dir)
-		rootPkgPath := p.getProjectRootPkgPath(p.modFile)
-		p.rootPkg = ellyn_agent.NewPackage(path.Dir(p.modFile), rootPkgPath)
+		p.mainPkg.Name = p.dir2pkgMap[p.mainPkg.Dir].Name
+		p.modFilePath = utils.Go.GetModFile(p.mainPkg.Dir)
+		p.modFile = p.parseModFile(p.modFilePath)
+		rootPkgPath := p.modFile.Module.Mod.Path
+		p.rootPkg = ellyn_agent.NewPackage(path.Dir(p.modFilePath), rootPkgPath)
 		p.progCtx = &ProgramContext{rootPkgPath: rootPkgPath}
 	})
 }
@@ -187,7 +191,7 @@ func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agen
 }
 
 func (p *Program) scanSourceFiles() {
-	for pkgDir, pkg := range p.pkgMap {
+	for pkgDir, pkg := range p.dir2pkgMap {
 		if !strings.HasPrefix(pkg.Path, p.progCtx.RootPkgPath()) {
 			continue
 		}
@@ -236,11 +240,22 @@ func (p *Program) copySdk(sdkPath string) {
 		if file.IsDir() {
 			p.copySdk(rPath)
 		} else {
+			isApiFile := false
+			if strings.HasSuffix(filepath.ToSlash(rPath), ellyn.ApiFile) {
+				if !p.require(ellyn.ApiPkg) {
+					continue
+				}
+				isApiFile = true
+			}
 			bytes, err := ellyn.SdkFs.ReadFile(rPath)
 			asserts.IsNil(err)
-			updated := strings.ReplaceAll(
-				utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path)
-			utils.OS.WriteTo(path.Join(p.targetPath, rPath), utils.String.String2bytes(updated))
+			if !isApiFile {
+				updated := strings.ReplaceAll(
+					utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path)
+				bytes = utils.String.String2bytes(updated)
+			}
+
+			utils.OS.WriteTo(path.Join(p.targetPath, rPath), bytes)
 		}
 	}
 }
@@ -272,23 +287,32 @@ func (p *Program) parseFile(pkg *ellyn_agent.Package, file os.DirEntry) {
 }
 
 func (p *Program) buildApp() {
-	utils.OS.CopyFile(p.modFile, filepath.Join(p.targetPath, "go.mod"))
+	utils.OS.CopyFile(p.modFilePath, filepath.Join(p.targetPath, "go.mod"))
 }
 
-// getProjectRootPkgPath 获取项目go.mod文件所在的package name
-func (p *Program) getProjectRootPkgPath(modFilePath string) string {
+// parseModFile 获取项目go.mod文件所在的package name
+func (p *Program) parseModFile(modFilePath string) *modfile.File {
 	content, err := os.ReadFile(modFilePath)
 	asserts.IsNil(err)
 	modFile, err := modfile.Parse("go.mod", content, nil)
 	asserts.IsNil(err)
-	return modFile.Module.Mod.Path
+	return modFile
+}
+
+func (p *Program) require(pkgPath string) bool {
+	for _, r := range p.modFile.Require {
+		if strings.HasPrefix(pkgPath, r.Mod.Path) {
+			return true
+		}
+	}
+	return false
 }
 
 // buildMeta 构建元数据，将元数据写入项目
 func (p *Program) buildMeta() {
 	metaPath := filepath.Join(p.targetPath, ellyn.MetaRelativePath)
 	utils.OS.MkDirs(metaPath)
-	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaPackages), ellyn_agent.EncodeCsvRows(utils.GetMapValues(p.pkgMap)))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaPackages), ellyn_agent.EncodeCsvRows(utils.GetMapValues(p.dir2pkgMap)))
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaFiles), ellyn_agent.EncodeCsvRows(p.allFiles.Values()))
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaMethods), ellyn_agent.EncodeCsvRows(p.allMethods.Values()))
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaBlocks), ellyn_agent.EncodeCsvRows(p.allBlocks.Values()))

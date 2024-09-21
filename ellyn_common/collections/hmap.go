@@ -84,10 +84,12 @@ func (m *ConcurrentMap[K, V]) Values() (res []V) {
 }
 
 type mapSegment[K comparable, V any] struct {
-	sync.RWMutex          // 24
-	entries      map[K]V  // 8
+	sync.RWMutex // 24
+	_padding0    [40]byte
+	entries      map[K]V // 8
+	_padding1    [56]byte
 	size         int      // 8
-	_padding     [24]byte //
+	_padding2    [56]byte //
 }
 
 func (s *mapSegment[K, V]) Store(key K, val V) {

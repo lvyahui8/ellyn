@@ -8,7 +8,8 @@ import (
 var CtxLocal = &goroutine.RoutineLocal[*EllynCtx]{}
 
 type EllynCtx struct {
-	id    uint64
-	stack collections.Stack[*methodFrame]
-	g     *graph
+	id        uint64
+	stack     collections.Stack[*methodFrame]
+	g         *graph
+	autoClear bool
 }
