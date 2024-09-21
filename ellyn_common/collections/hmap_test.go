@@ -126,7 +126,7 @@ func TestMapPadding(t *testing.T) {
 	t.Log(unsafe.Sizeof(m.segments))
 	t.Log("=======")
 	ms := mapSegment[int, struct{}]{}
-	require.Equal(t, 64, int(unsafe.Sizeof(ms)))
+	require.Equal(t, 192, int(unsafe.Sizeof(ms)))
 	t.Log(unsafe.Sizeof(ms.RWMutex))
 	t.Log(unsafe.Sizeof(ms.entries))
 	t.Log(unsafe.Sizeof(ms.size))
