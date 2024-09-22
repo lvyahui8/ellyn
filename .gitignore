@@ -30,3 +30,4 @@ example/ellyn_agent
 example/ellyn_common
 *.bak
 *.dat
+*.src
