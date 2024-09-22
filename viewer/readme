@@ -1,0 +1,7 @@
+
+
+```shell
+# 构建
+npm install
+npm run dev
+```
