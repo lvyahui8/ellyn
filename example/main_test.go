@@ -21,6 +21,9 @@ func TestSum(t *testing.T) {
 	Sum(1, 2)
 	graph := ellyn_api.Agent.GetGraph()
 	require.NotNil(t, graph)
+	node := getNode(graph, "Sum")
+	require.NotNil(t, node)
+	require.True(t, len(graph.Edges) == 0)
 }
 
 func TestTrade(t *testing.T) {
@@ -28,6 +31,8 @@ func TestTrade(t *testing.T) {
 	Trade()
 	graph := ellyn_api.Agent.GetGraph()
 	require.NotNil(t, graph)
+	node := getNode(graph, "Trade")
+	require.NotNil(t, node)
 }
 
 func TestN(t *testing.T) {
@@ -35,6 +40,7 @@ func TestN(t *testing.T) {
 	N(4)
 	graph := ellyn_api.Agent.GetGraph()
 	require.NotNil(t, graph)
+	require.True(t, len(graph.Nodes) == 1)
 	node := getNode(graph, "N")
 	require.NotNil(t, node)
 	require.True(t, len(graph.Edges) > 0)
