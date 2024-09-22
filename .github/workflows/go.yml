@@ -33,11 +33,14 @@ jobs:
     - name: Build
       run: go build -v ./...
 
+    - name: Evn setup
+      run: export ELLYN_PKGS="$(go list -mod=mod ./... | tr '\n' ',')"
+
     - name: Test Ellyn
-      run: go test -v -coverprofile="coverage.txt" -coverpkg="$(go list -mod=mod ./... | tr '\n' ',')" ./... 2>&1 | tee output.txt && cat output.txt |  go-junit-report -set-exit-code > junit.xml
+      run: go test -v -coverprofile="coverage.txt" -coverpkg="$ELLYN_PKGS" ./... 2>&1 | tee output.txt && cat output.txt |  go-junit-report -set-exit-code > junit.xml
 
     - name: Test Example
-      run: cd example && go test -v -coverprofile="coverage_example.txt" -coverpkg="example,github.com/lvyahui8/ellyn" ./... 2>&1 | tee output.txt && cat output.txt |  go-junit-report -set-exit-code > ../junit_example.xml
+      run: cd example && go test -v -coverprofile="coverage_example.txt" -coverpkg="example,$ELLYN_PKGS" ./... 2>&1 | tee output.txt && cat output.txt |  go-junit-report -set-exit-code > ../junit_example.xml
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
