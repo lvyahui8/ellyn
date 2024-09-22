@@ -221,6 +221,8 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 		ast.Walk(f, n.Body)
 		// todo get parent func
 		return nil
+	case *ast.GoStmt:
+
 	}
 	return f
 }

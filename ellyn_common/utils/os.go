@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"os"
 	"path/filepath"
@@ -38,4 +39,9 @@ func (osUtils) CopyFile(source, target string) {
 func (osUtils) Remove(file string) {
 	err := os.RemoveAll(file)
 	asserts.IsNil(err)
+}
+
+func (osUtils) NotExists(file string) bool {
+	_, err := os.Stat("/path/to/whatever")
+	return errors.Is(err, os.ErrNotExist)
 }

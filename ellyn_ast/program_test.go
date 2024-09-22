@@ -25,6 +25,7 @@ func TestExample(t *testing.T) {
 		require.Nil(t, err)
 	}()
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	prog.rollbackAll()
 	prog.specifySdkDir = ellyn_testing.GetRepoRootPath()
 	prog.sdkImportPkgPath = ellyn.SdkAgentPkg
 	prog.Visit()

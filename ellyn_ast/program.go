@@ -23,6 +23,8 @@ import (
 	"sync/atomic"
 )
 
+type fileHandler func(pkg *ellyn_agent.Package, fileAbsPath string)
+
 type ProgramContext struct {
 	rootPkgPath string
 	extra       sync.Map
@@ -111,7 +113,7 @@ func (p *Program) Visit() {
 			p.rollbackAll()
 		}
 	}()
-	p.scanSourceFiles()
+	p.scanSourceFiles(p.updateFile)
 	p.buildApp()
 	p.buildAgent()
 	p.buildMeta()
@@ -197,7 +199,7 @@ func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agen
 	return b
 }
 
-func (p *Program) scanSourceFiles() {
+func (p *Program) scanSourceFiles(handler fileHandler) {
 	for pkgDir, pkg := range p.dir2pkgMap {
 		if !strings.HasPrefix(pkg.Path, p.rootPkg.Path) {
 			continue
@@ -213,7 +215,7 @@ func (p *Program) scanSourceFiles() {
 				continue
 			}
 			// 将文件加入遍历队列并发处理，加快文件处理速度
-			p.handleFile(pkg, file)
+			p.handleFile(pkg, file, handler)
 		}
 	}
 
@@ -263,14 +265,14 @@ func (p *Program) copySdk(sdkPath string) {
 	}
 }
 
-func (p *Program) handleFile(pkg *ellyn_agent.Package, file os.DirEntry) {
+func (p *Program) handleFile(pkg *ellyn_agent.Package, file os.DirEntry, handler fileHandler) {
 	p.fileGroup.Add(1)
 	// 这里使用阻塞队列，队列不限制容量，确保文件不会被丢弃
 	p.executor.Submit(func() {
 		defer p.fileGroup.Done()
 		fileAbsPath := pkg.Dir + string(os.PathSeparator) + file.Name()
 		fmt.Printf("dir %s,relativePath %s\n", pkg.Dir, file.Name())
-		p.updateFile(pkg, fileAbsPath)
+		handler(pkg, fileAbsPath)
 	})
 }
 
@@ -326,15 +328,25 @@ func (p *Program) backup(fileAbsPath string) {
 
 func (p *Program) rollback(fileAbsPath string) {
 	bakFile := fileAbsPath + ".bak"
+	if utils.OS.NotExists(bakFile) {
+		return
+	}
 	fmt.Printf("rollback file:%s, target file:%s\n", bakFile, fileAbsPath)
 	utils.OS.CopyFile(bakFile, fileAbsPath)
 	utils.OS.Remove(bakFile)
 }
 
 func (p *Program) rollbackAll() {
-	for _, f := range p.updatedFiles {
-		p.rollback(f)
+	if p.updatedFiles != nil {
+		for _, f := range p.updatedFiles {
+			p.rollback(f)
+		}
+	} else {
+		p.scanSourceFiles(func(pkg *ellyn_agent.Package, fileAbsPath string) {
+			p.rollback(fileAbsPath)
+		})
 	}
+
 	for _, sdkPath := range ellyn.SdkPaths {
 		sdkDir := path.Join(p.targetPath, sdkPath)
 		fmt.Printf("remove sdk package:%s\n", sdkDir)
