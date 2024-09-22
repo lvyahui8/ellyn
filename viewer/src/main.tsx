@@ -1,11 +1,15 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App.tsx'
 import TrafficGraph from './Graph.tsx'
+import Meta from './Meta.tsx'
+import Menus from './Menus.tsx'
+import { Router, Route } from 'react-router'
 import './index.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <TrafficGraph />
+      <Menus/>
+      <TrafficGraph/>
+      <Meta/>
   </StrictMode>,
 )

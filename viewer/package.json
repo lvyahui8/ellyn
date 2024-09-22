@@ -14,8 +14,10 @@
     "@antv/g6-extension-react": "^0.1.7",
     "@uiw/react-codemirror": "^4.23.2",
     "antd": "^5.20.6",
+    "axios": "^1.7.7",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "react-router": "^6.26.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",
