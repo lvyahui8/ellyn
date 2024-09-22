@@ -77,7 +77,7 @@ func (s *UnsafeCompressedStack[T]) Push(val T) {
 	if back != nil {
 		ele := back.Value.(*stackElement[T])
 		if val.Equals(ele.val) {
-			val.ReEnter()
+			ele.val.ReEnter()
 			ele.max++
 			ele.count++
 			return
