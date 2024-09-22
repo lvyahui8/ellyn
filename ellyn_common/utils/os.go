@@ -42,6 +42,6 @@ func (osUtils) Remove(file string) {
 }
 
 func (osUtils) NotExists(file string) bool {
-	_, err := os.Stat("/path/to/whatever")
+	_, err := os.Stat(file)
 	return errors.Is(err, os.ErrNotExist)
 }

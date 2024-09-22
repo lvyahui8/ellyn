@@ -222,7 +222,12 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 		// todo get parent func
 		return nil
 	case *ast.GoStmt:
-
+		switch expr := n.Call.Fun.(type) {
+		case *ast.Ident:
+			f.insert(f.offset(expr.Pos()), "func(){", 1)
+			f.insert(f.offset(n.Call.End()), "}()", 1)
+		case *ast.FuncLit:
+		}
 	}
 	return f
 }
