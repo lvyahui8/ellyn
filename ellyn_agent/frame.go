@@ -9,11 +9,8 @@ type methodFrame struct {
 }
 
 func (mf *methodFrame) Equals(value collections.Frame) bool {
-	if f, ok := value.(*methodFrame); ok {
-		return mf.methodId == f.methodId
-	} else {
-		return false
-	}
+	f, ok := value.(*methodFrame)
+	return ok && mf.methodId == f.methodId
 }
 
 func (mf *methodFrame) Init() {
