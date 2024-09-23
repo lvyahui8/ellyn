@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	_ "net/http/pprof"
 )
 import "github.com/gin-gonic/gin"
 
@@ -154,6 +156,9 @@ func setupRouter() *gin.Engine {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe(":6060", nil))
+	}()
 	r := setupRouter()
 	// Listen and Server in 0.0.0.0:8080
 	r.Run(":8080")
