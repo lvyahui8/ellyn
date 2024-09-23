@@ -5,10 +5,17 @@ import (
 	"encoding/json"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"net/http"
+	"path/filepath"
 )
 
 //go:embed sources
 var targetSources embed.FS
+
+const (
+	SourcesDir          = "sources"
+	SourcesRelativePath = "ellyn_agent/sources"
+	SourcesFileExt      = ".src"
+)
 
 func init() {
 	go func() {
@@ -52,6 +59,13 @@ func newServer() {
 	})
 	register("/traffic", func(writer http.ResponseWriter, request *http.Request) {
 		// 单个流量明细
+	})
+	register("/source/0", func(writer http.ResponseWriter, request *http.Request) {
+		bytes, err := targetSources.ReadFile(filepath.ToSlash(filepath.Join(SourcesDir, files[0].RelativePath)) + SourcesFileExt)
+		if err != nil {
+			_, _ = writer.Write([]byte(err.Error()))
+		}
+		_, _ = writer.Write(bytes)
 	})
 	err := http.ListenAndServe(":19898", nil)
 	asserts.IsNil(err)

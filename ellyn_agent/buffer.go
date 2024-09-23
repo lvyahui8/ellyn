@@ -32,6 +32,7 @@ func (c *collector) start() {
 			for {
 				g, ok := c.buffer.Dequeue()
 				if !ok {
+					// 避免取不到数据CPU空转
 					time.Sleep(1 * time.Nanosecond)
 					continue
 				}

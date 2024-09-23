@@ -278,10 +278,11 @@ func (p *Program) handleFile(pkg *ellyn_agent.Package, file os.DirEntry, handler
 
 func (p *Program) updateFile(pkg *ellyn_agent.Package, fileAbsPath string) {
 	p.backup(fileAbsPath)
-	relativePath := strings.ReplaceAll(utils.File.FormatFilePath(fileAbsPath), p.mainPkg.Dir, "")
+	relativePath := strings.ReplaceAll(filepath.ToSlash(fileAbsPath), filepath.ToSlash(p.mainPkg.Dir), "")
 	f := p.addFile(pkg.Id, relativePath)
 	content, err := os.ReadFile(fileAbsPath)
 	asserts.IsNil(err)
+	p.copySource(relativePath, content)
 	visitor := &FileVisitor{
 		fileId:       f.FileId,
 		prog:         p,
@@ -296,6 +297,15 @@ func (p *Program) updateFile(pkg *ellyn_agent.Package, fileAbsPath string) {
 	p.buildMethods(f.FileId)
 	visitor.WriteTo(fileAbsPath)
 	p.updatedFiles = append(p.updatedFiles, fileAbsPath)
+}
+
+func (p *Program) copySource(relativePath string, content []byte) {
+	target := p.targetPath
+	if len(p.specifySdkDir) > 0 {
+		target = p.specifySdkDir
+	}
+	sourcesPath := filepath.Join(target, ellyn_agent.SourcesRelativePath)
+	utils.OS.WriteTo(filepath.Join(sourcesPath, relativePath)+ellyn_agent.SourcesFileExt, content)
 }
 
 func (p *Program) buildApp() {

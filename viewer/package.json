@@ -12,6 +12,8 @@
   "dependencies": {
     "@antv/g6": "^5.0.23",
     "@antv/g6-extension-react": "^0.1.7",
+    "@codemirror/legacy-modes": "^6.4.1",
+    "@uiw/codemirror-theme-white": "^4.23.3",
     "@uiw/react-codemirror": "^4.23.2",
     "antd": "^5.20.6",
     "axios": "^1.7.7",

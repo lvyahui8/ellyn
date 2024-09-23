@@ -48,6 +48,7 @@ func TestN(t *testing.T) {
 	require.True(t, exist)
 }
 
+// Run With 'CPU Profiler'
 //func TestRunMain(t *testing.T) {
 //	go func() {
 //		main()
