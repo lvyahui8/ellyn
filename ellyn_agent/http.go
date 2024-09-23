@@ -2,6 +2,7 @@ package ellyn_agent
 
 import (
 	"embed"
+	"encoding/json"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"net/http"
 )
@@ -15,14 +16,41 @@ func init() {
 	}()
 }
 
+func setupCORS(w *http.ResponseWriter, req *http.Request) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+}
+
+func wrapper(handler func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+	return func(response http.ResponseWriter, request *http.Request) {
+		setupCORS(&response, request)
+		if request.Method == "OPTIONS" {
+			return
+		}
+		handler(response, request)
+	}
+}
+
+func register(path string, handler func(writer http.ResponseWriter, request *http.Request)) {
+	http.HandleFunc(path, wrapper(handler))
+}
+
 func newServer() {
-	http.HandleFunc("/meta", func(writer http.ResponseWriter, request *http.Request) {
+	register("/meta/methods", func(writer http.ResponseWriter, request *http.Request) {
 		// 元数据检索配置，配置方法采集，配置mock等
+		header := writer.Header()
+		header.Set("Content-Type", "application/json")
+		m, err := json.Marshal(methods)
+		if err != nil {
+			_, _ = writer.Write([]byte(err.Error()))
+		}
+		_, _ = writer.Write(m)
 	})
-	http.HandleFunc("/list", func(writer http.ResponseWriter, request *http.Request) {
+	register("/list", func(writer http.ResponseWriter, request *http.Request) {
 		// 流量列表
 	})
-	http.HandleFunc("/traffic", func(writer http.ResponseWriter, request *http.Request) {
+	register("/traffic", func(writer http.ResponseWriter, request *http.Request) {
 		// 单个流量明细
 	})
 	err := http.ListenAndServe(":19898", nil)

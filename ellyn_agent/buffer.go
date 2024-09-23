@@ -5,6 +5,7 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"runtime"
+	"time"
 )
 
 var coll *collector = newCollector()
@@ -31,6 +32,7 @@ func (c *collector) start() {
 			for {
 				g, ok := c.buffer.Dequeue()
 				if !ok {
+					time.Sleep(1 * time.Nanosecond)
 					continue
 				}
 				fmt.Printf("graph %s\n", utils.Marshal(g))

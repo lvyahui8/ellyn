@@ -8,7 +8,7 @@ function Meta() {
     const [error, setError] = useState(null)
 
     useEffect(() => {
-        axios.get('')
+        axios.get('http://localhost:19898/meta/methods')
             .then(resp => {
                 setData(resp.data)
                 setLoading(false)
@@ -26,39 +26,21 @@ function Meta() {
         return <div>Error: {error}</div>
     }
 
-    const dataSource = [
-        {
-            key: '1',
-            name: '胡彦斌',
-            age: 32,
-            address: '西湖区湖底公园1号',
-        },
-        {
-            key: '2',
-            name: '胡彦祖',
-            age: 42,
-            address: '西湖区湖底公园1号',
-        },
-    ];
-
     const columns = [
         {
-            title: '姓名',
-            dataIndex: 'name',
-            key: 'name',
+            title: '函数id',
+            dataIndex: 'Id',
         },
         {
-            title: '年龄',
-            dataIndex: 'age',
-            key: 'age',
+            title: '函数名',
+            dataIndex: 'FullName',
         },
         {
-            title: '住址',
-            dataIndex: 'address',
-            key: 'address',
+            title: 'Block数',
+            dataIndex: 'BlockCnt',
         },
     ];
-    return <Table dataSource={dataSource} columns={columns} />
+    return <Table dataSource={data} columns={columns} rowKey={"Id"} />
 }
 
 export default Meta
