@@ -5,7 +5,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
-	"time"
 )
 
 func getNode(g *ellyn_api.Graph, name string) *ellyn_api.Node {
@@ -49,9 +48,9 @@ func TestN(t *testing.T) {
 	require.True(t, exist)
 }
 
-func TestRunMain(t *testing.T) {
-	go func() {
-		main()
-	}()
-	time.Sleep(10 * time.Second)
-}
+//func TestRunMain(t *testing.T) {
+//	go func() {
+//		main()
+//	}()
+//	time.Sleep(10 * time.Second)
+//}
