@@ -6,6 +6,7 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"net/http"
 	"path/filepath"
+	"sync"
 )
 
 //go:embed sources
@@ -17,10 +18,14 @@ const (
 	SourcesFileExt      = ".src"
 )
 
+var serviceOnce sync.Once
+
 func init() {
-	go func() {
-		newServer()
-	}()
+	serviceOnce.Do(func() {
+		go func() {
+			newServer()
+		}()
+	})
 }
 
 func setupCORS(w *http.ResponseWriter, req *http.Request) {
