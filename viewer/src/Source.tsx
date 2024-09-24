@@ -24,6 +24,6 @@ function SourceView() {
         return <div>Error: {error}</div>
     }
 
-    return <CodeMirror value={value} height="600px" extensions={[StreamLanguage.define(go)]} theme={whiteLight}/>;
+    return <CodeMirror value={value} height="600px" extensions={[StreamLanguage.define(go)]} theme={whiteLight} editable={false}/>;
 }
 export default SourceView;

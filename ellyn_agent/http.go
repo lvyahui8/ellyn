@@ -3,7 +3,6 @@ package ellyn_agent
 import (
 	"embed"
 	"encoding/json"
-	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"net/http"
 	"path/filepath"
 	"sync"
@@ -73,5 +72,7 @@ func newServer() {
 		_, _ = writer.Write(bytes)
 	})
 	err := http.ListenAndServe(":19898", nil)
-	asserts.IsNil(err)
+	if err != nil {
+		log.Error("elly server start failed.err: %v", err)
+	}
 }
