@@ -16,6 +16,13 @@ func getNode(g *ellyn_api.Graph, name string) *ellyn_api.Node {
 	return nil
 }
 
+func TestAutoClean(t *testing.T) {
+	Sum(1, 2)
+	graph := ellyn_api.Agent.GetGraph()
+	require.NotNil(t, graph.Nodes)
+	require.True(t, len(graph.Nodes) == 0)
+}
+
 func TestSum(t *testing.T) {
 	ellyn_api.Agent.SetAutoClear(false)
 	Sum(1, 2)
