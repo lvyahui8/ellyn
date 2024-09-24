@@ -20,10 +20,11 @@ func init() {
 func (agent *ellynAgent) GetCtx() *EllynCtx {
 	res, exist := CtxLocal.Get()
 	if !exist {
+		trafficId := idGenerator.GenGUID()
 		res = &EllynCtx{
-			id:        idGenerator.GenGUID(),
+			id:        trafficId,
 			stack:     collections.NewUnsafeCompressedStack[*methodFrame](),
-			g:         newGraph(),
+			g:         newGraph(trafficId),
 			autoClear: true,
 		}
 		CtxLocal.Set(res)

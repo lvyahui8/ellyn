@@ -1,12 +1,12 @@
 package ellyn_agent
 
 import (
-	"fmt"
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
-	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"runtime"
 	"time"
 )
+
+var graphCache *collections.LRUCache[uint64] = collections.NewLRUCache[uint64](1024)
 
 var coll *collector = newCollector()
 
@@ -36,7 +36,7 @@ func (c *collector) start() {
 					time.Sleep(1 * time.Nanosecond)
 					continue
 				}
-				fmt.Printf("graph %s\n", utils.Marshal(g))
+				graphCache.Set(g.id, g)
 			}
 		}()
 	}

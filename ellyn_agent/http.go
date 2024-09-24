@@ -39,6 +39,8 @@ func wrapper(handler func(http.ResponseWriter, *http.Request)) func(http.Respons
 		if request.Method == "OPTIONS" {
 			return
 		}
+		header := response.Header()
+		header.Set("Content-Type", "application/json")
 		handler(response, request)
 	}
 }
@@ -50,18 +52,21 @@ func register(path string, handler func(writer http.ResponseWriter, request *htt
 func newServer() {
 	register("/meta/methods", func(writer http.ResponseWriter, request *http.Request) {
 		// 元数据检索配置，配置方法采集，配置mock等
-		header := writer.Header()
-		header.Set("Content-Type", "application/json")
 		m, err := json.Marshal(methods)
 		if err != nil {
 			_, _ = writer.Write([]byte(err.Error()))
 		}
 		_, _ = writer.Write(m)
 	})
-	register("/list", func(writer http.ResponseWriter, request *http.Request) {
+	register("/traffic/list", func(writer http.ResponseWriter, request *http.Request) {
 		// 流量列表
+		bytes, err := json.Marshal(graphCache.Values())
+		if err != nil {
+			_, _ = writer.Write([]byte(err.Error()))
+		}
+		_, _ = writer.Write(bytes)
 	})
-	register("/traffic", func(writer http.ResponseWriter, request *http.Request) {
+	register("/traffic/detail", func(writer http.ResponseWriter, request *http.Request) {
 		// 单个流量明细
 	})
 	register("/source/0", func(writer http.ResponseWriter, request *http.Request) {
