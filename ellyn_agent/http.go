@@ -99,13 +99,19 @@ func newServer() {
 	}
 }
 
+type CoveredBlock struct {
+	Begin Pos `json:"begin"`
+	End   Pos `json:"end"`
+}
+
 type Node struct {
-	Id       uint32 `json:"id"`
-	Name     string `json:"name"`
-	File     string `json:"file"`
-	BlockCnt int    `json:"block_cnt"`
-	Begin    Pos    `json:"begin"`
-	End      Pos    `json:"end"`
+	Id            uint32         `json:"id"`
+	Name          string         `json:"name"`
+	File          string         `json:"file"`
+	BlockCnt      int            `json:"block_cnt"`
+	Begin         Pos            `json:"begin"`
+	End           Pos            `json:"end"`
+	CoveredBlocks []CoveredBlock `json:"covered_blocks"`
 }
 
 type Edge struct {
@@ -127,14 +133,23 @@ func toTraffic(g *graph) *Traffic {
 	for _, n := range g.nodes {
 		method := methods[n.methodId]
 		file := files[method.FileId]
-		t.Nodes = append(t.Nodes, &Node{
+		item := &Node{
 			Id:       n.methodId,
 			Name:     method.FullName,
 			File:     file.RelativePath,
 			BlockCnt: method.BlockCnt,
 			Begin:    *method.Begin,
 			End:      *method.End,
-		})
+		}
+		for _, block := range method.Blocks {
+			if n.blocks.Get(uint(block.MethodOffset)) {
+				item.CoveredBlocks = append(item.CoveredBlocks, CoveredBlock{
+					Begin: *block.Begin,
+					End:   *block.End,
+				})
+			}
+		}
+		t.Nodes = append(t.Nodes, item)
 	}
 	for edge := range g.edges {
 		t.Edges = append(t.Edges, &Edge{

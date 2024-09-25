@@ -3,17 +3,22 @@ import { createRoot } from 'react-dom/client'
 import TrafficGraph from './Graph.tsx'
 import Meta from './Meta.tsx'
 import Menus from './Menus.tsx'
-import { Router, Route } from 'react-router'
 import './index.css'
 import SourceView from "./Source.tsx";
 import TrafficList from "./TrafficList.tsx"
+import {BrowserRouter as Router,Routes,Route} from 'react-router-dom';
+import SiteLayout from "./Layout.tsx";
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-      <Menus/>
-      <TrafficGraph/>
-      <Meta/>
-      <SourceView/>
-      <TrafficList/>
+        {/*<Menus/>*/}
+        {/*<TrafficGraph/>*/}
+        {/*<Meta/>*/}
+        {/*<SourceView/>*/}
+        {/*<TrafficList/>*/}
+         <Router>
+
+             <SiteLayout/>
+         </Router>
   </StrictMode>,
 )
