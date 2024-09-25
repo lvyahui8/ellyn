@@ -1,9 +1,13 @@
 package ellyn_agent
 
-import "github.com/lvyahui8/ellyn/ellyn_common/asserts"
+import (
+	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
+	"time"
+)
 
 type graph struct {
 	id    uint64
+	time  int64
 	nodes map[uint32]*node
 	edges map[uint64]struct{}
 }
@@ -11,6 +15,7 @@ type graph struct {
 func newGraph(id uint64) *graph {
 	return &graph{
 		id:    id,
+		time:  time.Now().UnixMilli(),
 		nodes: make(map[uint32]*node),
 		edges: make(map[uint64]struct{}),
 	}

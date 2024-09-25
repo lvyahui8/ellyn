@@ -33,6 +33,10 @@ function TrafficList() {
             dataIndex: 'id',
         },
         {
+            title : '发生时间',
+            dataIndex: 'time',
+        },
+        {
             title: '节点数量',
             render : function(text, record, index) {
                 if (record.nodes == null) {

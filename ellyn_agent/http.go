@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"sync"
+	"time"
 )
 
 //go:embed sources
@@ -112,14 +114,16 @@ type Edge struct {
 }
 
 type Traffic struct {
-	Id    uint64  `json:"id"`
-	Nodes []*Node `json:"nodes"`
-	Edges []*Edge `json:"edges"`
+	Id    string    `json:"id"`
+	Time  time.Time `json:"time"`
+	Nodes []*Node   `json:"nodes"`
+	Edges []*Edge   `json:"edges"`
 }
 
 func toTraffic(g *graph) *Traffic {
 	t := &Traffic{}
-	t.Id = g.id
+	t.Id = strconv.FormatUint(g.id, 10) // uint64转成字符串发给前端显示，否则前端会精度丢失
+	t.Time = time.UnixMilli(g.time)
 	for _, n := range g.nodes {
 		method := methods[n.methodId]
 		file := files[method.FileId]
