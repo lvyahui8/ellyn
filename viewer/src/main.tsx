@@ -6,6 +6,7 @@ import Menus from './Menus.tsx'
 import { Router, Route } from 'react-router'
 import './index.css'
 import SourceView from "./Source.tsx";
+import TrafficList from "./TrafficList.tsx"
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -13,5 +14,6 @@ createRoot(document.getElementById('root')!).render(
       <TrafficGraph/>
       <Meta/>
       <SourceView/>
+      <TrafficList/>
   </StrictMode>,
 )

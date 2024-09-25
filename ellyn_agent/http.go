@@ -49,35 +49,94 @@ func register(path string, handler func(writer http.ResponseWriter, request *htt
 	http.HandleFunc(path, wrapper(handler))
 }
 
+func metaMethods(writer http.ResponseWriter, request *http.Request) {
+	// 元数据检索配置，配置方法采集，配置mock等
+	m, err := json.Marshal(methods)
+	if err != nil {
+		_, _ = writer.Write([]byte(err.Error()))
+	}
+	_, _ = writer.Write(m)
+}
+
+func trafficList(writer http.ResponseWriter, request *http.Request) {
+	// 流量列表
+	allGraphs := graphCache.Values()
+	var res []*Traffic
+	for _, g := range allGraphs {
+		res = append(res, toTraffic(g.(*graph)))
+	}
+	bytes, err := json.Marshal(res)
+	if err != nil {
+		_, _ = writer.Write([]byte(err.Error()))
+	}
+	_, _ = writer.Write(bytes)
+}
+
+func trafficDetail(writer http.ResponseWriter, request *http.Request) {
+	// 单个流量明细
+}
+
+func sourceFile(writer http.ResponseWriter, request *http.Request) {
+	bytes, err := targetSources.ReadFile(
+		filepath.ToSlash(filepath.Join(SourcesDir, files[0].RelativePath)) + SourcesFileExt)
+	if err != nil {
+		_, _ = writer.Write([]byte(err.Error()))
+	}
+	_, _ = writer.Write(bytes)
+}
+
 func newServer() {
-	register("/meta/methods", func(writer http.ResponseWriter, request *http.Request) {
-		// 元数据检索配置，配置方法采集，配置mock等
-		m, err := json.Marshal(methods)
-		if err != nil {
-			_, _ = writer.Write([]byte(err.Error()))
-		}
-		_, _ = writer.Write(m)
-	})
-	register("/traffic/list", func(writer http.ResponseWriter, request *http.Request) {
-		// 流量列表
-		bytes, err := json.Marshal(graphCache.Values())
-		if err != nil {
-			_, _ = writer.Write([]byte(err.Error()))
-		}
-		_, _ = writer.Write(bytes)
-	})
-	register("/traffic/detail", func(writer http.ResponseWriter, request *http.Request) {
-		// 单个流量明细
-	})
-	register("/source/0", func(writer http.ResponseWriter, request *http.Request) {
-		bytes, err := targetSources.ReadFile(filepath.ToSlash(filepath.Join(SourcesDir, files[0].RelativePath)) + SourcesFileExt)
-		if err != nil {
-			_, _ = writer.Write([]byte(err.Error()))
-		}
-		_, _ = writer.Write(bytes)
-	})
+	register("/meta/methods", metaMethods)
+	register("/traffic/list", trafficList)
+	register("/traffic/detail", trafficDetail)
+	register("/source/0", sourceFile)
+
 	err := http.ListenAndServe(":19898", nil)
 	if err != nil {
 		log.Error("elly server start failed.err: %v", err)
 	}
+}
+
+type Node struct {
+	Id       uint32 `json:"id"`
+	Name     string `json:"name"`
+	File     string `json:"file"`
+	BlockCnt int    `json:"block_cnt"`
+	Begin    Pos    `json:"begin"`
+	End      Pos    `json:"end"`
+}
+
+type Edge struct {
+	Source uint32 `json:"source"`
+	Target uint32 `json:"target"`
+}
+
+type Traffic struct {
+	Id    uint64  `json:"id"`
+	Nodes []*Node `json:"nodes"`
+	Edges []*Edge `json:"edges"`
+}
+
+func toTraffic(g *graph) *Traffic {
+	t := &Traffic{}
+	t.Id = g.id
+	for _, n := range g.nodes {
+		method := methods[n.methodId]
+		file := files[method.FileId]
+		t.Nodes = append(t.Nodes, &Node{
+			Id:       n.methodId,
+			Name:     method.FullName,
+			File:     file.RelativePath,
+			BlockCnt: method.BlockCnt,
+			Begin:    *method.Begin,
+			End:      *method.End,
+		})
+	}
+	for edge := range g.edges {
+		t.Edges = append(t.Edges, &Edge{
+			Source: uint32(edge >> 32),
+			Target: uint32(edge),
+		})
+	}
+	return t
 }

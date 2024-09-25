@@ -70,9 +70,9 @@ func parseUint32(col string) uint32 {
 }
 
 type Pos struct {
-	Offset int
-	Line   int
-	Column int
+	Offset int `json:"offset"`
+	Line   int `json:"line"`
+	Column int `json:"column"`
 }
 
 func NewPos(offset, line, column int) *Pos {
