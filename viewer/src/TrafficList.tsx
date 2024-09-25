@@ -1,7 +1,10 @@
 
-import { Col, Row, Table } from 'antd';
+import {Col, MenuProps, Row, Table} from 'antd';
+import { Button,Input,Space} from 'antd';
+
 import {useEffect, useState} from "react";
 import axios from "axios";
+
 
 function TrafficList() {
     const [data, setData] = useState(null)
@@ -26,6 +29,10 @@ function TrafficList() {
     if (error) {
         return <div>Error: {error}</div>
     }
+
+    const onClick: MenuProps['onClick'] = (e) => {
+        console.log(e.data)
+    };
 
     const columns = [
         {
@@ -54,6 +61,12 @@ function TrafficList() {
                 return record.edges.length
             },
         },
+        {
+            title : '操作',
+            render : function(text, record, index) {
+                return <Button type={"primary"}  data={"/traffic/detail/" + record.id} onClick={onClick} >查看</Button>
+            }
+        }
     ];
     return <Table dataSource={data} columns={columns} rowKey={"id"} />
 }

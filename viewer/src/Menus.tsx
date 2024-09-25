@@ -6,7 +6,7 @@ import {useNavigate} from 'react-router-dom'
 
 
 const Menus =  ({menuItems}) => {
-    const [current, setCurrent] = useState('/traffic/list');
+    const [current, setCurrent] = useState(String(menuItems[0].key));
     const navigate = useNavigate()
 
     useEffect(() => {

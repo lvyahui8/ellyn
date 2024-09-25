@@ -1,6 +1,8 @@
 import { Graph } from '@antv/g6';
-import { Button } from 'antd';
+import { Button,Input,Space} from 'antd';
+const { Search } = Input;
 import { Col, Row } from 'antd';
+
 
 import { ExtensionCategory, register } from '@antv/g6';
 import { GNode, Group, Image, Rect, Text } from '@antv/g6-extension-react';
@@ -130,14 +132,16 @@ function TrafficGraph() {
         <>
            <Row>
                <Col span={24}>
-                   <div className="App">
-                       <Button type="primary" onClick={readerView}>Button</Button>
-                   </div>
+                   <Space.Compact>
+                       <Input defaultValue=""  placeholder={"输入流量id"} />
+                       <Button type="primary" onClick={readerView}>查询</Button>
+                   </Space.Compact>
                </Col>
            </Row>
+            <br/>
             <Row>
                 <Col span={24}>
-                    <div id="container" style={{width: '900px',height: '600px', background:'#cccccc'}}></div>
+                    <div id="container" style={{width: '100%',height: '700px', background:'#cccccc'}}></div>
                 </Col>
             </Row>
         </>
