@@ -5,8 +5,29 @@ import {Route, Routes} from "react-router-dom";
 import TrafficList from "./TrafficList.tsx";
 import TrafficGraph from "./Graph.tsx";
 import Meta from "./Meta.tsx";
+import {AppstoreOutlined, MailOutlined} from "@ant-design/icons";
 const { Header, Content, Footer } = Layout;
 
+const menuItems = [
+    {
+        label: '流量列表',
+        key: '/traffic/list',
+        icon: <MailOutlined />,
+        element : <TrafficList/>,
+    },
+    {
+        label: '流量查询',
+        key: '/traffic/query',
+        icon: <AppstoreOutlined />,
+        element: <TrafficGraph/>,
+    },
+    {
+        label: '元数据管理',
+        key: '/meta',
+        icon: <AppstoreOutlined />,
+        element: <Meta/>,
+    },
+]
 
 const SiteLayout = () => {
     const {
@@ -21,7 +42,7 @@ const SiteLayout = () => {
                 }}
             >
                 <div className="demo-logo" />
-                <Menus/>
+                <Menus menuItems={menuItems}/>
             </Header>
             <Content
                 style={{
@@ -37,9 +58,11 @@ const SiteLayout = () => {
                     }}
                 >
                     <Routes>
-                        <Route path = '/traffic/list' element = {<TrafficList/>} />
-                        <Route path = '/traffic/query' element = {<TrafficGraph/>} />
-                        <Route path = '/meta' element = {<Meta/>} />
+                        {
+                            menuItems.map((item ) => (
+                                <Route path={item.key} element={item.element} key={item.key}/>
+                            ))
+                        }
                     </Routes>
                 </div>
             </Content>
