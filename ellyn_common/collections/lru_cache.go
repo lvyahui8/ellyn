@@ -28,13 +28,14 @@ func NewLRUCache[K comparable](capacity int) *LRUCache[K] {
 }
 
 func (cache *LRUCache[K]) Get(key K) (any, bool) {
-	cache.lock.RLock()
-	defer cache.lock.RUnlock()
+	cache.lock.Lock()
+	defer cache.lock.Unlock()
 
 	item := cache.table[key]
 	if item == nil {
 		return nil, false
 	}
+	cache.moveToFirst(item)
 	return item.val, true
 }
 
@@ -76,6 +77,9 @@ func (cache *LRUCache[K]) Values() (res []any) {
 }
 
 func (cache *LRUCache[K]) moveToFirst(item *cacheItem[K]) {
+	if cache.head != nil && cache.head.key == item.key {
+		return
+	}
 	// 将元素从原链表摘出
 	cache.removeItemFromLink(item)
 
