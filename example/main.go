@@ -113,6 +113,9 @@ func setupRouter() *gin.Engine {
 		if ok {
 			c.JSON(http.StatusOK, gin.H{"user": user, "value": value})
 		} else {
+			Callback(func() {
+				Sum(1, 2)
+			})
 			c.JSON(http.StatusOK, gin.H{"user": user, "status": "no value"})
 		}
 	})
