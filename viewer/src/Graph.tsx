@@ -97,6 +97,19 @@ function TrafficGraph() {
                 size: [180, 60],
                 component: (data) => <Node data={data} size={[180, 60]} />,
             },
+            animation : false
+        },
+        edge: {
+            type: 'cubic-horizontal',
+            style : {
+                endArrow: true,
+            }
+        },
+        layout: {
+            type: 'dendrogram',
+            direction: 'LR', // H / V / LR / RL / TB / BT
+            nodeSep: 36,
+            rankSep: 250,
         },
         behaviors: ['drag-element', 'zoom-canvas', 'drag-canvas'],
         plugins: [
