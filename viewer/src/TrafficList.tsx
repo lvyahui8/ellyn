@@ -4,12 +4,14 @@ import { Button,Input,Space} from 'antd';
 
 import {useEffect, useState} from "react";
 import axios from "axios";
+import {useLocation, useNavigate} from 'react-router-dom'
 
 
 function TrafficList() {
     const [data, setData] = useState(null)
     const [loading,setLoading] = useState(true)
     const [error, setError] = useState(null)
+    const navigate = useNavigate()
 
     useEffect(() => {
         axios.get('http://localhost:19898/traffic/list')
@@ -30,8 +32,9 @@ function TrafficList() {
         return <div>Error: {error}</div>
     }
 
-    const onClick: MenuProps['onClick'] = (e) => {
-        console.log(e.data)
+    const onClick: MenuProps['onClick'] = (e, target) => {
+        console.log("click to " + target)
+        navigate('/traffic/query?id=' + target)
     };
 
     const columns = [
@@ -64,7 +67,7 @@ function TrafficList() {
         {
             title : '操作',
             render : function(text, record, index) {
-                return <Button type={"primary"}  data={"/traffic/detail/" + record.id} onClick={onClick} >查看</Button>
+                return <Button type={"primary"}  data={"/traffic/detail/" + record.id} onClick={(e) => onClick(e,record.id)} >查看</Button>
             }
         }
     ];

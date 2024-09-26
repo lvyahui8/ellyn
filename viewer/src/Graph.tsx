@@ -3,6 +3,7 @@ import { Button,Input,Space} from 'antd';
 const { Search } = Input;
 import { Col, Row } from 'antd';
 
+import {useSearchParams} from 'react-router-dom'
 
 import { ExtensionCategory, register } from '@antv/g6';
 import { GNode, Group, Image, Rect, Text } from '@antv/g6-extension-react';
@@ -77,6 +78,7 @@ const Node = ({ data, size }) => {
 
 
 function TrafficGraph() {
+    const [searchParams] = useSearchParams();
     // 初始化图表实例
     const graph = new Graph({
         container: 'container',
@@ -133,7 +135,7 @@ function TrafficGraph() {
            <Row>
                <Col span={24}>
                    <Space.Compact>
-                       <Input defaultValue=""  placeholder={"输入流量id"} />
+                       <Input value={searchParams.get('id')}  placeholder={"输入流量id"} />
                        <Button type="primary" onClick={readerView}>查询</Button>
                    </Space.Compact>
                </Col>
