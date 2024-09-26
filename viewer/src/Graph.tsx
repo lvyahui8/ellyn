@@ -8,6 +8,9 @@ import {useSearchParams} from 'react-router-dom'
 import { ExtensionCategory, register } from '@antv/g6';
 import { GNode, Group, Image, Rect, Text } from '@antv/g6-extension-react';
 
+import axios from "axios";
+import {useState} from "react";
+
 register(ExtensionCategory.NODE, 'g', GNode);
 
 const Node = ({ data, size }) => {
@@ -79,6 +82,7 @@ const Node = ({ data, size }) => {
 
 function TrafficGraph() {
     const [searchParams] = useSearchParams();
+    const [loading,setLoading] = useState(false)
     // 初始化图表实例
     const graph = new Graph({
         container: 'container',
@@ -126,8 +130,32 @@ function TrafficGraph() {
         ],
     });
 
-    function readerView() {
-        graph.render();
+    let id : string = searchParams.get('id')
+
+    function setTrafficId(event) {
+        id = event.target.value
+    }
+
+    function loadGraph() {
+        if (! id) {
+            return
+        }
+        // 获取input中的id值
+        console.log("query id :" + id)
+        // 调用后端获取到图数据
+        setLoading(true)
+        axios.get('http://localhost:19898/traffic/detail?id=' +id)
+            .then(resp => {
+                // 设置到graph中
+                console.log(resp.data)
+                // 渲染graph
+                graph.render();
+                setLoading(false)
+            })
+            .catch(err => {
+                console.log(err)
+                setLoading(false)
+            })
     }
 
     return (
@@ -135,8 +163,8 @@ function TrafficGraph() {
            <Row>
                <Col span={24}>
                    <Space.Compact>
-                       <Input value={searchParams.get('id')}  placeholder={"输入流量id"} />
-                       <Button type="primary" onClick={readerView}>查询</Button>
+                       <Input defaultValue={searchParams.get('id')} onChange={setTrafficId}  placeholder={"输入流量id"} disabled={loading} />
+                       <Button type="primary" onClick={loadGraph} disabled={loading}>查询</Button>
                    </Space.Compact>
                </Col>
            </Row>

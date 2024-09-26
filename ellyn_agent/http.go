@@ -3,6 +3,7 @@ package ellyn_agent
 import (
 	"embed"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -53,11 +54,7 @@ func register(path string, handler func(writer http.ResponseWriter, request *htt
 
 func metaMethods(writer http.ResponseWriter, request *http.Request) {
 	// 元数据检索配置，配置方法采集，配置mock等
-	m, err := json.Marshal(methods)
-	if err != nil {
-		_, _ = writer.Write([]byte(err.Error()))
-	}
-	_, _ = writer.Write(m)
+	responseJson(writer, methods)
 }
 
 func trafficList(writer http.ResponseWriter, request *http.Request) {
@@ -65,22 +62,44 @@ func trafficList(writer http.ResponseWriter, request *http.Request) {
 	allGraphs := graphCache.Values()
 	var res []*Traffic
 	for _, g := range allGraphs {
-		res = append(res, toTraffic(g.(*graph)))
+		res = append(res, toTraffic(g.(*graph), false))
 	}
-	bytes, err := json.Marshal(res)
-	if err != nil {
-		_, _ = writer.Write([]byte(err.Error()))
-	}
-	_, _ = writer.Write(bytes)
+	responseJson(writer, res)
 }
 
 func trafficDetail(writer http.ResponseWriter, request *http.Request) {
 	// 单个流量明细
+	query := request.URL.Query()
+	idStr := query.Get("id")
+	id, err := strconv.ParseUint(idStr, 10, 64)
+	if err != nil {
+		responseError(writer, err)
+		return
+	}
+	g, ok := graphCache.Get(id)
+	if !ok {
+		responseError(writer, errors.New("traffic not found"))
+		return
+	}
+	responseJson(writer, toTraffic(g.(*graph), true))
 }
 
 func sourceFile(writer http.ResponseWriter, request *http.Request) {
 	bytes, err := targetSources.ReadFile(
 		filepath.ToSlash(filepath.Join(SourcesDir, files[0].RelativePath)) + SourcesFileExt)
+	if err != nil {
+		responseError(writer, err)
+		return
+	}
+	_, _ = writer.Write(bytes)
+}
+
+func responseError(writer http.ResponseWriter, err error) {
+	_, _ = writer.Write([]byte(err.Error()))
+}
+
+func responseJson(writer http.ResponseWriter, res any) {
+	bytes, err := json.Marshal(res)
 	if err != nil {
 		_, _ = writer.Write([]byte(err.Error()))
 	}
@@ -126,7 +145,7 @@ type Traffic struct {
 	Edges []*Edge   `json:"edges"`
 }
 
-func toTraffic(g *graph) *Traffic {
+func toTraffic(g *graph, withDetail bool) *Traffic {
 	t := &Traffic{}
 	t.Id = strconv.FormatUint(g.id, 10) // uint64转成字符串发给前端显示，否则前端会精度丢失
 	t.Time = time.UnixMilli(g.time)
@@ -141,12 +160,14 @@ func toTraffic(g *graph) *Traffic {
 			Begin:    *method.Begin,
 			End:      *method.End,
 		}
-		for _, block := range method.Blocks {
-			if n.blocks.Get(uint(block.MethodOffset)) {
-				item.CoveredBlocks = append(item.CoveredBlocks, CoveredBlock{
-					Begin: *block.Begin,
-					End:   *block.End,
-				})
+		if withDetail {
+			for _, block := range method.Blocks {
+				if n.blocks.Get(uint(block.MethodOffset)) {
+					item.CoveredBlocks = append(item.CoveredBlocks, CoveredBlock{
+						Begin: *block.Begin,
+						End:   *block.End,
+					})
+				}
 			}
 		}
 		t.Nodes = append(t.Nodes, item)

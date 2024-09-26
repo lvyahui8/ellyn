@@ -5,26 +5,26 @@ import {Route, Routes} from "react-router-dom";
 import TrafficList from "./TrafficList.tsx";
 import TrafficGraph from "./Graph.tsx";
 import Meta from "./Meta.tsx";
-import {AppstoreOutlined, MailOutlined} from "@ant-design/icons";
+import {ClusterOutlined, BarsOutlined,ProjectOutlined} from "@ant-design/icons";
 const { Header, Content, Footer } = Layout;
 
 const menuItems = [
     {
         label: '流量列表',
         key: '/traffic/list',
-        icon: <MailOutlined />,
+        icon: <BarsOutlined />,
         element : <TrafficList/>,
     },
     {
         label: '流量查询',
         key: '/traffic/query',
-        icon: <AppstoreOutlined />,
+        icon:<ClusterOutlined />,
         element: <TrafficGraph/>,
     },
     {
         label: '元数据管理',
         key: '/meta',
-        icon: <AppstoreOutlined />,
+        icon: <ProjectOutlined />,
         element: <Meta/>,
     },
 ]
@@ -71,7 +71,7 @@ const SiteLayout = () => {
                     textAlign: 'center',
                 }}
             >
-                Ant Design ©{new Date().getFullYear()} Created by Ant UED
+                Ellyn ©{new Date().getFullYear()} Created by lvyahui8(Feego)
             </Footer>
         </Layout>
     );
