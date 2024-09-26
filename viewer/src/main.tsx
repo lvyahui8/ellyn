@@ -10,15 +10,10 @@ import {BrowserRouter as Router,Routes,Route} from 'react-router-dom';
 import SiteLayout from "./Layout.tsx";
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-        {/*<Menus/>*/}
-        {/*<TrafficGraph/>*/}
-        {/*<Meta/>*/}
-        {/*<SourceView/>*/}
-        {/*<TrafficList/>*/}
+  // <StrictMode>
          <Router>
 
              <SiteLayout/>
          </Router>
-  </StrictMode>,
+  // </StrictMode>,
 )

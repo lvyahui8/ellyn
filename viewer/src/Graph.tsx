@@ -9,26 +9,29 @@ import { ExtensionCategory, register } from '@antv/g6';
 import { GNode, Group, Image, Rect, Text } from '@antv/g6-extension-react';
 
 import axios from "axios";
-import {useState} from "react";
+import {useEffect, useState} from "react";
+import {Simulate} from "react-dom/test-utils";
+import load = Simulate.load;
 
 register(ExtensionCategory.NODE, 'g', GNode);
 
 const Node = ({ data, size }) => {
     const [width, height] = size;
 
-    const { name, type, status, success, time, failure } = data.data;
-    const color = status === 'success' ? '#30BF78' : '#F4664A';
+    const { name, type, file, begin, end,covered_rate, covered_blocks,has_error,cost } = data;
+    const color = has_error ? '#30BF78' : '#F4664A';
     const radius = 4;
-
+    const methodLine = end.line - begin.line + 1
     const titleMap = {
-        success: 'Success',
-        time: 'Time',
-        failure: 'Failure',
+        covered_rate: 'Covered',
+        methodLine : 'Line',
+        cost: 'Time',
     };
 
+
     const format = (category, value) => {
-        if (category === 'success') return `${value}%`;
-        if (category === 'time') return `${value}min`;
+        if (category === 'covered_rate') return `${value.toFixed(2)}%`;
+        if (category === 'cost') return `${value}s`;
         return value.toString();
     };
 
@@ -66,7 +69,7 @@ const Node = ({ data, size }) => {
                     <Text text={name} textBaseline="top" fill="#fff" fontSize={14} dx={20} dy={2} />
                 </Rect>
                 <Group transform="translate(5,40)">
-                    {Object.entries({ success, time, failure }).map(([key, value], index) => (
+                    {Object.entries({ covered_rate, cost, methodLine }).map(([key, value], index) => (
                         <Group key={index} transform={`translate(${(index * width) / 3}, 0)`}>
                             <Text text={titleMap[key]} fontSize={12} fill="gray" />
                             <Text text={format(key, value)} fontSize={12} dy={16} fill={highlight(key, value)} />
@@ -79,28 +82,15 @@ const Node = ({ data, size }) => {
 };
 
 
-
 function TrafficGraph() {
     const [searchParams] = useSearchParams();
     const [loading,setLoading] = useState(false)
+    const [id ,setId] = useState(searchParams.get('id'))
+
     // 初始化图表实例
-    const graph = new Graph({
+    const [graph] = useState(new Graph({
         container: 'container',
-        data: {
-            nodes: [
-                {
-                    id: 'node-1',
-                    data: { name: 'Module', type: 'module', status: 'success', success: 90, time: 58, failure: 8 },
-                    style: { x: 100, y: 100 },
-                },
-                {
-                    id: 'node-2',
-                    data: { name: 'Process', type: 'process', status: 'error', success: 11, time: 12, failure: 26 },
-                    style: { x: 300, y: 100 },
-                },
-            ],
-            edges: [{ source: 'node-1', target: 'node-2' }],
-        },
+        data: {},
         node: {
             type: 'g',
             style: {
@@ -128,13 +118,13 @@ function TrafficGraph() {
                 },
             },
         ],
-    });
-
-    let id : string = searchParams.get('id')
+    }));
 
     function setTrafficId(event) {
-        id = event.target.value
+        setId(event.target.value)
     }
+
+    console.log("draw graph")
 
     function loadGraph() {
         if (! id) {
@@ -147,16 +137,26 @@ function TrafficGraph() {
         axios.get('http://localhost:19898/traffic/detail?id=' +id)
             .then(resp => {
                 // 设置到graph中
+                console.log("loaded")
                 console.log(resp.data)
-                // 渲染graph
-                graph.render();
+                graph.setData(resp.data)
                 setLoading(false)
+                graph.render()
             })
             .catch(err => {
                 console.log(err)
                 setLoading(false)
             })
     }
+
+    useEffect(() => {
+        console.log('graph effect')
+        if (id) {
+            loadGraph()
+        } else {
+            graph.render()
+        }
+    },[])
 
     return (
         <>

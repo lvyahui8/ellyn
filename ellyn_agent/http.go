@@ -124,18 +124,21 @@ type CoveredBlock struct {
 }
 
 type Node struct {
-	Id            uint32         `json:"id"`
+	Id            string         `json:"id"`
 	Name          string         `json:"name"`
 	File          string         `json:"file"`
 	BlockCnt      int            `json:"block_cnt"`
 	Begin         Pos            `json:"begin"`
 	End           Pos            `json:"end"`
 	CoveredBlocks []CoveredBlock `json:"covered_blocks"`
+	CoveredRate   float32        `json:"covered_rate"`
+	HasErr        bool           `json:"has_err"`
+	Cost          int32          `json:"cost"`
 }
 
 type Edge struct {
-	Source uint32 `json:"source"`
-	Target uint32 `json:"target"`
+	Source string `json:"source"`
+	Target string `json:"target"`
 }
 
 type Traffic struct {
@@ -146,14 +149,17 @@ type Traffic struct {
 }
 
 func toTraffic(g *graph, withDetail bool) *Traffic {
-	t := &Traffic{}
+	t := &Traffic{
+		Nodes: make([]*Node, 0),
+		Edges: make([]*Edge, 0),
+	}
 	t.Id = strconv.FormatUint(g.id, 10) // uint64转成字符串发给前端显示，否则前端会精度丢失
 	t.Time = time.UnixMilli(g.time)
 	for _, n := range g.nodes {
 		method := methods[n.methodId]
 		file := files[method.FileId]
 		item := &Node{
-			Id:       n.methodId,
+			Id:       strconv.Itoa(int(n.methodId)),
 			Name:     method.FullName,
 			File:     file.RelativePath,
 			BlockCnt: method.BlockCnt,
@@ -161,21 +167,24 @@ func toTraffic(g *graph, withDetail bool) *Traffic {
 			End:      *method.End,
 		}
 		if withDetail {
+			coveredNum := 0
 			for _, block := range method.Blocks {
 				if n.blocks.Get(uint(block.MethodOffset)) {
+					coveredNum += block.End.Line - block.Begin.Line + 1
 					item.CoveredBlocks = append(item.CoveredBlocks, CoveredBlock{
 						Begin: *block.Begin,
 						End:   *block.End,
 					})
 				}
 			}
+			item.CoveredRate = float32(coveredNum) / float32(method.End.Line-method.Begin.Line+1) * 100
 		}
 		t.Nodes = append(t.Nodes, item)
 	}
 	for edge := range g.edges {
 		t.Edges = append(t.Edges, &Edge{
-			Source: uint32(edge >> 32),
-			Target: uint32(edge),
+			Source: strconv.Itoa(int(uint32(edge >> 32))),
+			Target: strconv.Itoa(int(uint32(edge))),
 		})
 	}
 	return t
