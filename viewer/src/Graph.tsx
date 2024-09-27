@@ -9,17 +9,22 @@ import { ExtensionCategory, register } from '@antv/g6';
 import { GNode, Group, Image, Rect, Text } from '@antv/g6-extension-react';
 
 import axios from "axios";
-import {useEffect, useState} from "react";
+import {createContext, useEffect, useState} from "react";
 import {Simulate} from "react-dom/test-utils";
 import load = Simulate.load;
+import {NodeExpand} from "@antv/g6/lib/animations";
+import NodeDetail from "./NodeDetail.tsx";
+import {IElementEvent, IPointerEvent} from "@antv/g6/src/types/event.ts";
 
 register(ExtensionCategory.NODE, 'g', GNode);
+
+export const graphCtx = createContext({})
 
 const Node = ({ data, size }) => {
     const [width, height] = size;
 
     const { name, type, file, begin, end,covered_rate, covered_blocks,has_error,cost } = data;
-    const color = has_error ? '#30BF78' : '#F4664A';
+    const color = !has_error ? '#30BF78' : '#F4664A';
     const radius = 4;
     const methodLine = end.line - begin.line + 1
     const titleMap = {
@@ -31,24 +36,22 @@ const Node = ({ data, size }) => {
 
     const format = (category, value) => {
         if (category === 'covered_rate') return `${value.toFixed(2)}%`;
-        if (category === 'cost') return `${value}s`;
+        if (category === 'cost') return `${value}ms`;
         return value.toString();
     };
 
     const highlight = (category, value) => {
-        if (category === 'success') {
+        if (category === 'covered_rate') {
             if (value >= 90) return 'green';
             if (value < 60) return 'red';
             return 'gray';
         }
-        if (category === 'time') {
+        if (category === 'cost') {
             if (value <= 10) return 'green';
             if (value >= 30) return 'red';
             return 'gray';
         }
-        if (value >= 20) return 'red';
-        if (value >= 5) return 'orange';
-        return 'gray';
+        return 'orange';
     };
 
     return (
@@ -69,7 +72,7 @@ const Node = ({ data, size }) => {
                     <Text text={name} textBaseline="top" fill="#fff" fontSize={14} dx={20} dy={2} />
                 </Rect>
                 <Group transform="translate(5,40)">
-                    {Object.entries({ covered_rate, cost, methodLine }).map(([key, value], index) => (
+                    {Object.entries({ covered_rate, methodLine, cost }).map(([key, value], index) => (
                         <Group key={index} transform={`translate(${(index * width) / 3}, 0)`}>
                             <Text text={titleMap[key]} fontSize={12} fill="gray" />
                             <Text text={format(key, value)} fontSize={12} dy={16} fill={highlight(key, value)} />
@@ -86,7 +89,8 @@ function TrafficGraph() {
     const [searchParams] = useSearchParams();
     const [loading,setLoading] = useState(false)
     const [id ,setId] = useState(searchParams.get('id'))
-
+    const [detailView,setDetailView] = useState(false)
+    const closeDetail = () => setDetailView(false)
     // 初始化图表实例
     const [graph] = useState(new Graph({
         container: 'container',
@@ -97,7 +101,7 @@ function TrafficGraph() {
                 size: [180, 60],
                 component: (data) => <Node data={data} size={[180, 60]} />,
             },
-            animation : false
+            animation : false,
         },
         edge: {
             type: 'cubic-horizontal',
@@ -129,6 +133,14 @@ function TrafficGraph() {
                         { id: 'reset', value: 'reset' },
                     ];
                 },
+            },
+            {
+                type: 'watermark',
+                text: 'github.com/lvyahui8/ellyn',
+                textFontSize: 14,
+                textFontFamily: 'Microsoft YaHei',
+                fill: 'rgba(0, 0, 0, 0.01)',
+                rotate: Math.PI / 12,
             },
         ],
     }));
@@ -164,6 +176,10 @@ function TrafficGraph() {
 
     useEffect(() => {
         console.log('graph effect')
+        graph.on('node:click',function ( evt : IElementEvent) {
+            console.log(evt.target.id)
+            setDetailView(true)
+        })
         if (id) {
             loadGraph()
         } else {
@@ -172,7 +188,7 @@ function TrafficGraph() {
     },[])
 
     return (
-        <>
+        <graphCtx.Provider value={{detailView,closeDetail}}>
            <Row>
                <Col span={24}>
                    <Space.Compact>
@@ -184,10 +200,19 @@ function TrafficGraph() {
             <br/>
             <Row>
                 <Col span={24}>
-                    <div id="container" style={{width: '100%',height: '700px', background:'#cccccc'}}></div>
+                    <div id="container" style={{
+                        position: 'relative',
+                        with: '100%',
+                        height: '700px',
+                        padding: 48,
+                        overflow: 'hidden',
+                        background: '#cccccc',
+                    }}>
+                        <NodeDetail/>
+                    </div>
                 </Col>
             </Row>
-        </>
+        </graphCtx.Provider>
     )
 }
 

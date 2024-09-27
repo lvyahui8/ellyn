@@ -1,4 +1,4 @@
-import { Col, Row, Table } from 'antd';
+import {Button, Col, Row, Table} from 'antd';
 import {useEffect, useState} from "react";
 import axios from "axios";
 
@@ -39,6 +39,12 @@ function Meta() {
             title: 'Block数',
             dataIndex: 'BlockCnt',
         },
+        {
+            title : '操作',
+            render : function(text, record, index) {
+                return <Button type={"primary"}  data={"/traffic/detail/" + record.id}  >配置mock</Button>
+            }
+        }
     ];
     return <Table dataSource={data} columns={columns} rowKey={"Id"} />
 }
