@@ -40,6 +40,14 @@ function Meta() {
             dataIndex: 'BlockCnt',
         },
         {
+            title: '参数列表',
+            dataIndex: 'ArgsList',
+        },
+        {
+            title: '返回值列表',
+            dataIndex: 'ReturnList',
+        },
+        {
             title : '操作',
             render : function(text, record, index) {
                 return <Button type={"primary"}  data={"/traffic/detail/" + record.id}  >配置mock</Button>

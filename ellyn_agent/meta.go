@@ -3,6 +3,7 @@ package ellyn_agent
 import (
 	"embed"
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
@@ -184,6 +185,10 @@ func (vdl *VarDefList) Name(idx int) string {
 
 func (vdl *VarDefList) Count() int {
 	return len(vdl.idx2name)
+}
+
+func (vdl *VarDefList) MarshalJSON() ([]byte, error) {
+	return json.Marshal(vdl.Encode())
 }
 
 func decodeVarDef(str string) *VarDefList {
