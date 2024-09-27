@@ -12,6 +12,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"go/types"
 	"golang.org/x/mod/modfile"
 	"os"
 	"path"
@@ -129,14 +130,21 @@ func (p *Program) addFile(pkgId uint32, file string) *ellyn_agent.File {
 	return f
 }
 
-func (p *Program) addMethod(fileId uint32, methodName string, begin, end token.Position) *ellyn_agent.Method {
+func (p *Program) addMethod(fileId uint32, methodName string, begin, end token.Position, funcType *ast.FuncType) *ellyn_agent.Method {
 	f := &ellyn_agent.Method{
-		Id:       uint32(atomic.AddInt32(&p.methodCounter, 1)),
-		FileId:   fileId,
-		FullName: methodName,
-		Begin:    ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
-		End:      ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
+		Id:         uint32(atomic.AddInt32(&p.methodCounter, 1)),
+		FileId:     fileId,
+		FullName:   methodName,
+		Begin:      ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
+		End:        ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
+		ArgsList:   p.filedList2VarDefList(funcType.Params),
+		ReturnList: p.filedList2VarDefList(funcType.Results),
 	}
+
+	//for i, field := range funcType.Results.List {
+	//	//f.ReturnTypeList[i] = field.Type
+	//}
+
 	p.allMethods.Store(f.Id, f)
 	fileAllFuncs, ok := p.fileMethodsMap.Load(fileId)
 	if !ok {
@@ -148,6 +156,24 @@ func (p *Program) addMethod(fileId uint32, methodName string, begin, end token.P
 
 	fileAllFuncs.Add(f)
 	return f
+}
+
+func (p *Program) filedList2VarDefList(fieldList *ast.FieldList) *ellyn_agent.VarDefList {
+	if fieldList == nil || fieldList.List == nil {
+		return ellyn_agent.NewVarDefList(nil)
+	}
+	var list []*ellyn_agent.VarDef
+	for _, field := range fieldList.List {
+		var names []string
+		for _, name := range field.Names {
+			names = append(names, name.Name)
+		}
+		list = append(list, &ellyn_agent.VarDef{
+			Names: names,
+			Type:  types.ExprString(field.Type), // 获取type的string表示
+		})
+	}
+	return ellyn_agent.NewVarDefList(list)
 }
 
 func (p *Program) findMethod(fileId uint32, offset int) *ellyn_agent.Method {

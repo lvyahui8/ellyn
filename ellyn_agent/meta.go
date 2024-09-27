@@ -139,24 +139,87 @@ func (f *File) parse(cols []string) {
 	f.RelativePath = cols[2]
 }
 
+type VarDef struct {
+	Names []string
+	Type  string
+}
+
+type VarDefList struct {
+	list     []*VarDef
+	idx2name []string
+	idx2type []string
+}
+
+func NewVarDefList(list []*VarDef) *VarDefList {
+	res := &VarDefList{
+		list: list,
+	}
+	if list == nil {
+		return res
+	}
+	for _, def := range list {
+		for _, name := range def.Names {
+			res.idx2type = append(res.idx2type, def.Type)
+			res.idx2name = append(res.idx2name, name)
+		}
+	}
+	return res
+}
+
+func (vdl *VarDefList) Encode() string {
+	var list []string
+	for _, def := range vdl.list {
+		list = append(list, fmt.Sprintf("%s[%s]", def.Type, strings.Join(def.Names, ":")))
+	}
+	return strings.Join(list, ";")
+}
+
+func (vdl *VarDefList) Type(idx int) string {
+	return vdl.idx2type[idx]
+}
+
+func (vdl *VarDefList) Name(idx int) string {
+	return vdl.idx2name[idx]
+}
+
+func (vdl *VarDefList) Count() int {
+	return len(vdl.idx2name)
+}
+
+func decodeVarDef(str string) *VarDefList {
+	if str == "" {
+		return NewVarDefList(nil)
+	}
+	items := strings.Split(str, ";")
+	var list []*VarDef
+	for _, item := range items {
+		idx := strings.Index(item, "[")
+		list = append(list, &VarDef{strings.Split(item[idx+1:len(item)-1], ":"), item[0:idx]})
+	}
+	return NewVarDefList(list)
+}
+
 var methods []*Method
 
 type Method struct {
-	Id             uint32
-	Name           string
-	FullName       string // 完整函数名
-	FileId         uint32 // 所在文件id
-	PackageId      uint32 // 包id
-	Blocks         []*Block
-	BlockCnt       int
-	Begin          *Pos
-	End            *Pos
-	ArgsTypeList   []reflect.Type
-	ReturnTypeList []reflect.Type
+	Id         uint32
+	Name       string
+	FullName   string // 完整函数名
+	FileId     uint32 // 所在文件id
+	PackageId  uint32 // 包id
+	Blocks     []*Block
+	BlockCnt   int
+	Begin      *Pos
+	End        *Pos
+	ArgsList   *VarDefList
+	ReturnList *VarDefList
 }
 
 func (m *Method) encodeRow() string {
-	return fmt.Sprintf("%d,%s,%d,%d,%d,%s,%s", m.Id, m.FullName, m.FileId, m.PackageId, len(m.Blocks), m.Begin, m.End)
+	return fmt.Sprintf("%d,%s,%d,%d,%d,%s,%s,%s,%s",
+		m.Id, m.FullName, m.FileId, m.PackageId, len(m.Blocks), m.Begin, m.End,
+		m.ArgsList.Encode(),
+		m.ReturnList.Encode())
 }
 
 func (m *Method) parse(cols []string) {
@@ -168,6 +231,8 @@ func (m *Method) parse(cols []string) {
 	m.Blocks = make([]*Block, m.BlockCnt)
 	m.Begin = ParsePos(cols[5])
 	m.End = ParsePos(cols[6])
+	m.ArgsList = decodeVarDef(cols[7])
+	m.ReturnList = decodeVarDef(cols[8])
 }
 
 func newMethodBlockBits(methodId uint32) *collections.BitMap {

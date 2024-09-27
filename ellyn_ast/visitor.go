@@ -237,7 +237,7 @@ func (f *FileVisitor) parseVarLists() {
 	// - 未命名需要增加命名，要考虑匿名参数
 	// - 判断参数类型，考虑到值传递参数拷贝对性能影响，只拷贝小对象
 	// 	- 传递：基础类型、slice、pointer、iface、 string（限制长度）、error
-	//  - 不传递：Array,struct,eface
+	//  - 不传递：Array,struct,eface、方法等
 
 }
 
@@ -246,15 +246,15 @@ func (f *FileVisitor) addAgentImport(pos token.Pos) {
 }
 
 func (f *FileVisitor) addFuncByLint(fName string, lit *ast.FuncLit) {
-	f.addFunc(fName, f.fset.Position(lit.Pos()), f.fset.Position(lit.End()), f.fset.Position(lit.Body.Pos()))
+	f.addFunc(fName, f.fset.Position(lit.Pos()), f.fset.Position(lit.End()), f.fset.Position(lit.Body.Pos()), lit.Type)
 }
 
 func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
-	f.addFunc(fName, f.fset.Position(decl.Pos()), f.fset.Position(decl.End()), f.fset.Position(decl.Body.Pos()))
+	f.addFunc(fName, f.fset.Position(decl.Pos()), f.fset.Position(decl.End()), f.fset.Position(decl.Body.Pos()), decl.Type)
 }
 
-func (f *FileVisitor) addFunc(fName string, begin, end token.Position, bodyBegin token.Position) {
-	fc := f.prog.addMethod(f.fileId, fName, begin, end)
+func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position, funcType *ast.FuncType) {
+	fc := f.prog.addMethod(f.fileId, fName, begin, end, funcType)
 	f.insert(bodyBegin.Offset+1,
 		fmt.Sprintf(
 			`_ellynCtx := ellyn_agent.Agent.GetCtx();ellyn_agent.Agent.Push(_ellynCtx,%d);defer ellyn_agent.Agent.Pop(_ellynCtx);`, fc.Id),

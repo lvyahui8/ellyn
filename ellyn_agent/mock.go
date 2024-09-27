@@ -23,16 +23,15 @@ type Monkey struct {
 func (m *Monkey) FilterMockRule(methodId uint32, methodArgs ...any) *MockRule {
 	// 比对参数，看是否全部命中
 	mtd := methods[methodId]
-	typeList := mtd.ArgsTypeList
 	rules, exist := m.RuleMap.Get(int(methodId))
 	if !exist {
 		return nil
 	}
 	for _, rule := range rules {
-		for i := 0; i < len(typeList); i++ {
-			argType := typeList[i]
+		for i := 0; i < mtd.ArgsList.Count(); i++ {
+			argType := mtd.ArgsList.Type(i)
 			actualVal := methodArgs[i]
-			if reflect.ValueOf(actualVal).Type() != argType {
+			if reflect.ValueOf(actualVal).Type().String() != argType {
 				continue
 			}
 			filterVal := rule.args[i]
@@ -48,27 +47,26 @@ func (m *Monkey) FilterMockRule(methodId uint32, methodArgs ...any) *MockRule {
 	return nil
 }
 
-func (m *Monkey) BuildReturn(methodId uint32, rule *MockRule) (methodReturns []any) {
+func (m *Monkey) BuildReturn(methodId uint32, rule *MockRule, rawReturns []any) (methodReturns []any) {
 	// 按照mock配置构造返回值
 	mtd := methods[methodId]
-	list := mtd.ReturnTypeList
-	methodReturns = make([]any, len(list))
-	for i := 0; i < len(list); i++ {
-		returnType := list[i]
+	methodReturns = make([]any, mtd.ReturnList.Count())
+	for i := 0; i < mtd.ReturnList.Count(); i++ {
+		returnType := mtd.ReturnList.Type(i)
 		returnRawVal := rule.returnValues[i]
 		switch n := returnRawVal.(type) {
 		case string:
-			if returnType.Kind() == reflect.Ptr && returnType.Elem().Kind() == reflect.Struct {
-				v := reflect.New(returnType.Elem())
+			if returnType == reflect.Ptr.String() && returnType == "*"+reflect.Struct.String() {
+				v := reflect.New(reflect.TypeOf(rawReturns[i]))
 				_ = json.Unmarshal([]byte(n), v.Interface())
 				methodReturns[i] = v.Interface()
 			}
 		case int:
-			if returnType.Kind() == reflect.Int {
+			if returnType == reflect.Int.String() {
 				methodReturns[i] = n
 			}
 		case int64:
-			if returnType.Kind() == reflect.Int64 {
+			if returnType == reflect.Int64.String() {
 				methodReturns[i] = n
 			}
 		case float64, float32:
