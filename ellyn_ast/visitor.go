@@ -232,6 +232,15 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 	return f
 }
 
+func (f *FileVisitor) parseVarLists() {
+	// - 参数列表和返回值列表
+	// - 未命名需要增加命名，要考虑匿名参数
+	// - 判断参数类型，考虑到值传递参数拷贝对性能影响，只拷贝小对象
+	// 	- 传递：基础类型、slice、pointer、iface、 string（限制长度）、error
+	//  - 不传递：Array,struct,eface
+
+}
+
 func (f *FileVisitor) addAgentImport(pos token.Pos) {
 	f.insert(f.fset.Position(pos).Offset, fmt.Sprintf(";import \"%s\";", f.prog.sdkImportPkgPath), 1)
 }
