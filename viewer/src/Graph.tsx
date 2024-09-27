@@ -95,6 +95,7 @@ function TrafficGraph() {
     const [graph] = useState(new Graph({
         container: 'container',
         data: {},
+        zoomRange: [0.5,1],
         node: {
             type: 'g',
             style: {
@@ -121,7 +122,16 @@ function TrafficGraph() {
                 type: 'toolbar',
                 position: 'top-left',
                 onClick: (item) => {
-
+                    switch (item) {
+                        case 'zoom-in' :
+                            graph.zoomTo(graph.getZoom() + 0.1,false); break;
+                        case 'zoom-out' :
+                            graph.zoomTo(graph.getZoom() - 0.1,false); break;
+                        case 'auto-fit' :
+                            graph.fitCenter(false); break;
+                        case 'reset' :
+                            graph.render();graph.zoomTo(1,false) ;break
+                    }
                 },
                 getItems: () => {
                     // G6 内置了 9 个 icon，分别是 zoom-in、zoom-out、redo、undo、edit、delete、auto-fit、export、reset
@@ -129,7 +139,7 @@ function TrafficGraph() {
                         { id: 'zoom-in', value: 'zoom-in' },
                         { id: 'zoom-out', value: 'zoom-out' },
                         { id: 'auto-fit', value: 'auto-fit' },
-                        { id: 'export', value: 'export' },
+                        // { id: 'export', value: 'export' },
                         { id: 'reset', value: 'reset' },
                     ];
                 },
@@ -204,7 +214,6 @@ function TrafficGraph() {
                         position: 'relative',
                         with: '100%',
                         height: '700px',
-                        padding: 48,
                         overflow: 'hidden',
                         background: '#cccccc',
                     }}>
