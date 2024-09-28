@@ -134,6 +134,7 @@ func (p *Program) addMethod(fileId uint32, methodName string, begin, end token.P
 	f := &ellyn_agent.Method{
 		Id:         uint32(atomic.AddInt32(&p.methodCounter, 1)),
 		FileId:     fileId,
+		Name:       methodName,
 		FullName:   methodName,
 		Begin:      ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
 		End:        ellyn_agent.NewPos(end.Offset, end.Line, end.Column),

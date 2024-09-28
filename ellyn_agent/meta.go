@@ -170,7 +170,7 @@ func NewVarDefList(list []*VarDef) *VarDefList {
 func (vdl *VarDefList) Encode() string {
 	var list []string
 	for _, def := range vdl.list {
-		list = append(list, fmt.Sprintf("%s[%s]", def.Type, strings.Join(def.Names, ":")))
+		list = append(list, fmt.Sprintf("{%s}%s", def.Type, strings.Join(def.Names, ":")))
 	}
 	return strings.Join(list, ";")
 }
@@ -198,8 +198,8 @@ func decodeVarDef(str string) *VarDefList {
 	items := strings.Split(str, ";")
 	var list []*VarDef
 	for _, item := range items {
-		idx := strings.Index(item, "[")
-		list = append(list, &VarDef{strings.Split(item[idx+1:len(item)-1], ":"), item[0:idx]})
+		idx := strings.Index(item, "}")
+		list = append(list, &VarDef{strings.Split(item[1:idx], ":"), item[idx+1 : len(item)]})
 	}
 	return NewVarDefList(list)
 }
