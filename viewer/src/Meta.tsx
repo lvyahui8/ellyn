@@ -29,23 +29,31 @@ function Meta() {
     const columns = [
         {
             title: '函数id',
-            dataIndex: 'Id',
+            dataIndex: ['method','Id'],
         },
         {
             title: '函数名',
-            dataIndex: 'FullName',
+            dataIndex: 'method.FullName'.split('.'),
+        },
+        {
+            title: '文件',
+            dataIndex: 'file',
+        },
+        {
+            title: '包',
+            dataIndex: 'package',
         },
         {
             title: 'Block数',
-            dataIndex: 'BlockCnt',
+            dataIndex: 'method.BlockCnt'.split('.'),
         },
         {
             title: '参数列表',
-            dataIndex: 'ArgsList',
+            dataIndex: 'method.ArgsList'.split('.'),
         },
         {
             title: '返回值列表',
-            dataIndex: 'ReturnList',
+            dataIndex: 'method.ReturnList'.split('.'),
         },
         {
             title : '操作',

@@ -131,11 +131,15 @@ func (p *Program) addFile(pkgId uint32, file string) *ellyn_agent.File {
 }
 
 func (p *Program) addMethod(fileId uint32, methodName string, begin, end token.Position, funcType *ast.FuncType) *ellyn_agent.Method {
+	file, ok := p.allFiles.Load(fileId)
+	asserts.True(ok)
+
 	f := &ellyn_agent.Method{
 		Id:         uint32(atomic.AddInt32(&p.methodCounter, 1)),
 		FileId:     fileId,
 		Name:       methodName,
 		FullName:   methodName,
+		PackageId:  file.PackageId,
 		Begin:      ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
 		End:        ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
 		ArgsList:   p.filedList2VarDefList(funcType.Params),
@@ -399,7 +403,11 @@ func (p *Program) buildMeta() {
 	}
 	metaPath := filepath.Join(target, ellyn.MetaRelativePath)
 	utils.OS.MkDirs(metaPath)
-	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaPackages), ellyn_agent.EncodeCsvRows(utils.GetMapValues(p.dir2pkgMap)))
+	pkgList := utils.GetMapValues(p.dir2pkgMap)
+	sort.Slice(pkgList, func(i, j int) bool {
+		return pkgList[i].Id < pkgList[j].Id
+	})
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaPackages), ellyn_agent.EncodeCsvRows(pkgList))
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaFiles), ellyn_agent.EncodeCsvRows(p.allFiles.Values()))
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaMethods), ellyn_agent.EncodeCsvRows(p.allMethods.Values()))
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaBlocks), ellyn_agent.EncodeCsvRows(p.allBlocks.Values()))

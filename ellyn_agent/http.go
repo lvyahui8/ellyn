@@ -54,7 +54,17 @@ func register(path string, handler func(writer http.ResponseWriter, request *htt
 
 func metaMethods(writer http.ResponseWriter, request *http.Request) {
 	// 元数据检索配置，配置方法采集，配置mock等
-	responseJson(writer, methods)
+	var res []*MethodInfo
+	for _, m := range methods {
+		file := files[m.FileId]
+		pkg := packages[m.PackageId]
+		res = append(res, &MethodInfo{
+			Method:  m,
+			File:    file.RelativePath,
+			Package: pkg.Path,
+		})
+	}
+	responseJson(writer, res)
 }
 
 func trafficList(writer http.ResponseWriter, request *http.Request) {
@@ -188,4 +198,10 @@ func toTraffic(g *graph, withDetail bool) *Traffic {
 		})
 	}
 	return t
+}
+
+type MethodInfo struct {
+	Method  *Method `json:"method"`
+	File    string  `json:"file"`
+	Package string  `json:"package"`
 }
