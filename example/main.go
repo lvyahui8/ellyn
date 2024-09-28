@@ -5,10 +5,12 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"time"
 )
 import "github.com/gin-gonic/gin"
 
 func Sum(a, b int) int {
+	time.Sleep(10 * time.Millisecond)
 	return a + b
 }
 
@@ -39,6 +41,8 @@ func Trade() {
 	}()
 
 	defer Sum(1, 2)
+
+	time.Sleep(5 * time.Millisecond)
 
 	if a > 10 {
 		a += 10

@@ -10,6 +10,10 @@ const { Header, Content, Footer } = Layout;
 
 const menuItems = [
     {
+        label: '测试请求',
+        key: '/test',
+    },
+    {
         label: '流量列表',
         key: '/traffic/list',
         icon: <BarsOutlined />,
@@ -27,6 +31,10 @@ const menuItems = [
         icon: <ProjectOutlined />,
         element: <Meta/>,
     },
+    {
+        label: '全局覆盖率',
+        key: '/global/covered',
+    },
 ]
 
 const SiteLayout = () => {
@@ -37,7 +45,6 @@ const SiteLayout = () => {
         <Layout>
             <Header
                 style={{
-                    display: 'flex',
                     alignItems: 'center',
                 }}
             >

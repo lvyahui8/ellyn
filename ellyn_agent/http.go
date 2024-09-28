@@ -175,6 +175,7 @@ func toTraffic(g *graph, withDetail bool) *Traffic {
 			BlockCnt: method.BlockCnt,
 			Begin:    *method.Begin,
 			End:      *method.End,
+			Cost:     int32(n.cost),
 		}
 		if withDetail {
 			coveredNum := 0

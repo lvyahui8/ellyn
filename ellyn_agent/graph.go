@@ -33,7 +33,9 @@ func (g *graph) add(from *methodFrame, to *methodFrame) {
 }
 
 func (g *graph) draw(f *methodFrame) *node {
+	cost := time.Now().UnixMilli() - f.begin
 	if n, ok := g.nodes[f.methodId]; ok {
+		n.cost += cost // 累计耗时、取最大值
 		err := n.blocks.Merge(f.blocks)
 		asserts.IsNil(err)
 		return n
@@ -41,6 +43,7 @@ func (g *graph) draw(f *methodFrame) *node {
 		n = &node{
 			methodId: f.methodId,
 			blocks:   f.blocks,
+			cost:     cost,
 		}
 		g.nodes[f.methodId] = n
 		return n

@@ -1,11 +1,15 @@
 package ellyn_agent
 
-import "github.com/lvyahui8/ellyn/ellyn_common/collections"
+import (
+	"github.com/lvyahui8/ellyn/ellyn_common/collections"
+	"time"
+)
 
 type methodFrame struct {
 	methodId  uint32
 	blocks    *collections.BitMap
 	recursion bool
+	begin     int64
 }
 
 func (mf *methodFrame) Equals(value collections.Frame) bool {
@@ -15,6 +19,7 @@ func (mf *methodFrame) Equals(value collections.Frame) bool {
 
 func (mf *methodFrame) Init() {
 	mf.blocks = newMethodBlockBits(mf.methodId)
+	mf.begin = time.Now().UnixMilli()
 }
 
 func (mf *methodFrame) ReEnter() {
