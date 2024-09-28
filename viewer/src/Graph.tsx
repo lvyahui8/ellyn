@@ -47,9 +47,9 @@ const Node = ({ data, size }) => {
             return 'gray';
         }
         if (category === 'cost') {
-            if (value <= 10) return 'green';
-            if (value >= 30) return 'red';
-            return 'gray';
+            if (value <= 50) return 'green';
+            if (value >= 100) return 'red';
+            return 'lightgreen';
         }
         return 'orange';
     };

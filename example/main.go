@@ -95,6 +95,7 @@ func N(n int) int {
 	if n == 0 {
 		return 1
 	}
+	time.Sleep(10 * time.Millisecond)
 	return n * N(n-1)
 }
 
@@ -107,6 +108,7 @@ func setupRouter() *gin.Engine {
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {
+		time.Sleep(101 * time.Millisecond)
 		c.String(http.StatusOK, "pong")
 	})
 
