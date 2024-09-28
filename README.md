@@ -9,6 +9,14 @@
 
 - Go Version >= 1.18
 
+### Abilities
+
+- 流量信息收集（调用链、出入参、异常、耗时、覆盖率）
+- 方法Mock引擎
+- 全量、增量覆盖率信息
+
+![graph.png](.assets/graph.png)
+
 ### key
 
 - 避免资源冲突/锁竞争， 无锁优先
