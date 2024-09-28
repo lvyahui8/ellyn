@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -101,6 +102,9 @@ func N(n int) int {
 
 func WithUnusualParam(a, b int, c string, _ bool, bool int) (x, y int, _ error) {
 	time.Sleep(10 * time.Millisecond)
+	if bool == 0 {
+		return 0, 0, errors.New("test")
+	}
 	return 0, 0, nil
 }
 
