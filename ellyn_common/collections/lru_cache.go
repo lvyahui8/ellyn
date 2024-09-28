@@ -1,7 +1,6 @@
 package collections
 
 import (
-	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"sync"
 )
 
@@ -69,9 +68,9 @@ func (cache *LRUCache[K]) Values() (res []any) {
 	cache.lock.RLock()
 	defer cache.lock.RUnlock()
 
-	values := utils.GetMapValues[K, *cacheItem[K]](cache.table)
-	for _, value := range values {
-		res = append(res, value.val)
+	for cur := cache.head; cur != nil; {
+		res = append(res, cur.val)
+		cur = cur.next
 	}
 	return
 }
