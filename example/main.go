@@ -19,7 +19,7 @@ func Callback(fn func()) {
 }
 
 func Handle() {
-
+	_, _, _ = WithUnusualParam(1, 2, "ccc", true, 0)
 }
 
 func Trade() {
@@ -97,6 +97,11 @@ func N(n int) int {
 	}
 	time.Sleep(10 * time.Millisecond)
 	return n * N(n-1)
+}
+
+func WithUnusualParam(a, b int, c string, _ bool, bool int) (x, y int, _ error) {
+	time.Sleep(10 * time.Millisecond)
+	return 0, 0, nil
 }
 
 var db = make(map[string]string)
