@@ -4,9 +4,13 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"net/http"
 	"path/filepath"
+	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -42,8 +46,15 @@ func wrapper(handler func(http.ResponseWriter, *http.Request)) func(http.Respons
 		if request.Method == "OPTIONS" {
 			return
 		}
+		defer func() {
+			err := recover()
+			if err != nil {
+				responseError(response, errors.New(fmt.Sprintf("panic: %v", err)))
+			}
+		}()
 		header := response.Header()
 		header.Set("Content-Type", "application/json")
+
 		handler(response, request)
 	}
 }
@@ -79,14 +90,8 @@ func trafficList(writer http.ResponseWriter, request *http.Request) {
 
 func trafficDetail(writer http.ResponseWriter, request *http.Request) {
 	// 单个流量明细
-	query := request.URL.Query()
-	idStr := query.Get("id")
-	id, err := strconv.ParseUint(idStr, 10, 64)
-	if err != nil {
-		responseError(writer, err)
-		return
-	}
-	g, ok := graphCache.Get(id)
+	id := queryVal[uint](request, "id")
+	g, ok := graphCache.Get(uint64(id))
 	if !ok {
 		responseError(writer, errors.New("traffic not found"))
 		return
@@ -95,13 +100,55 @@ func trafficDetail(writer http.ResponseWriter, request *http.Request) {
 }
 
 func sourceFile(writer http.ResponseWriter, request *http.Request) {
+	_, _ = writer.Write(readCode(0))
+}
+
+func readCode(fileId uint32) []byte {
 	bytes, err := targetSources.ReadFile(
-		filepath.ToSlash(filepath.Join(SourcesDir, files[0].RelativePath)) + SourcesFileExt)
-	if err != nil {
-		responseError(writer, err)
-		return
+		filepath.ToSlash(filepath.Join(SourcesDir, files[fileId].RelativePath)) + SourcesFileExt)
+	asserts.IsNil(err)
+	return bytes
+}
+
+func nodeDetail(writer http.ResponseWriter, request *http.Request) {
+	graphId := uint64(queryVal[uint](request, "graphId"))
+	nodeId := uint32(queryVal[uint](request, "nodeId"))
+	g, ok := graphCache.Get(graphId)
+	asserts.True(ok)
+	n := (g.(*graph)).nodes[nodeId]
+	resNode := transferNode(n, true)
+	mtd := methods[n.methodId]
+	code := readCode(mtd.FileId)
+	//funcCode := string(code[mtd.Begin.Offset:mtd.End.Offset])
+	funcCode := strings.Join(strings.Split(string(code), "\n")[mtd.Begin.Line-1:mtd.End.Line], "\n")
+	responseJson(writer, map[string]any{
+		"resNode":  resNode,
+		"funcCode": funcCode,
+	})
+}
+
+// queryVal 工具方法
+func queryVal[T string | int | uint](request *http.Request, key string) T {
+	query := request.URL.Query()
+	valStr := query.Get(key)
+
+	v := reflect.ValueOf(new(T))
+
+	switch v.Type().Elem().Kind() {
+	case reflect.String:
+		v.Elem().Set(reflect.ValueOf(valStr))
+	case reflect.Int:
+		val, err := strconv.Atoi(valStr)
+		asserts.IsNil(err)
+		v.Elem().Set(reflect.ValueOf(val))
+	case reflect.Uint:
+		val, err := strconv.ParseUint(valStr, 10, 64)
+		asserts.IsNil(err)
+		v.Elem().Set(reflect.ValueOf(uint(val)))
+	default:
+		panic("invalid type")
 	}
-	_, _ = writer.Write(bytes)
+	return v.Elem().Interface().(T)
 }
 
 func responseError(writer http.ResponseWriter, err error) {
@@ -121,6 +168,7 @@ func newServer() {
 	register("/traffic/list", trafficList)
 	register("/traffic/detail", trafficDetail)
 	register("/source/0", sourceFile)
+	register("/node/detail", nodeDetail)
 
 	err := http.ListenAndServe(":19898", nil)
 	if err != nil {
@@ -166,31 +214,7 @@ func toTraffic(g *graph, withDetail bool) *Traffic {
 	t.Id = strconv.FormatUint(g.id, 10) // uint64转成字符串发给前端显示，否则前端会精度丢失
 	t.Time = time.UnixMilli(g.time)
 	for _, n := range g.nodes {
-		method := methods[n.methodId]
-		file := files[method.FileId]
-		item := &Node{
-			Id:       strconv.Itoa(int(n.methodId)),
-			Name:     method.FullName,
-			File:     file.RelativePath,
-			BlockCnt: method.BlockCnt,
-			Begin:    *method.Begin,
-			End:      *method.End,
-			Cost:     int32(n.cost),
-		}
-		if withDetail {
-			coveredNum := 0
-			for _, block := range method.Blocks {
-				if n.blocks.Get(uint(block.MethodOffset)) {
-					coveredNum += block.End.Line - block.Begin.Line + 1
-					item.CoveredBlocks = append(item.CoveredBlocks, CoveredBlock{
-						Begin: *block.Begin,
-						End:   *block.End,
-					})
-				}
-			}
-			item.CoveredRate = float32(coveredNum) / float32(method.End.Line-method.Begin.Line+1) * 100
-		}
-		t.Nodes = append(t.Nodes, item)
+		t.Nodes = append(t.Nodes, transferNode(n, withDetail))
 	}
 	for edge := range g.edges {
 		t.Edges = append(t.Edges, &Edge{
@@ -199,6 +223,34 @@ func toTraffic(g *graph, withDetail bool) *Traffic {
 		})
 	}
 	return t
+}
+
+func transferNode(n *node, withDetail bool) *Node {
+	method := methods[n.methodId]
+	file := files[method.FileId]
+	item := &Node{
+		Id:       strconv.Itoa(int(n.methodId)),
+		Name:     method.FullName,
+		File:     file.RelativePath,
+		BlockCnt: method.BlockCnt,
+		Begin:    *method.Begin,
+		End:      *method.End,
+		Cost:     int32(n.cost),
+	}
+	if withDetail {
+		coveredNum := 0
+		for _, block := range method.Blocks {
+			if n.blocks.Get(uint(block.MethodOffset)) {
+				coveredNum += block.End.Line - block.Begin.Line + 1
+				item.CoveredBlocks = append(item.CoveredBlocks, CoveredBlock{
+					Begin: *block.Begin,
+					End:   *block.End,
+				})
+			}
+		}
+		item.CoveredRate = float32(coveredNum) / float32(method.End.Line-method.Begin.Line+1) * 100
+	}
+	return item
 }
 
 type MethodInfo struct {

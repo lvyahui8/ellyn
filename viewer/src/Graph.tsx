@@ -90,6 +90,7 @@ function TrafficGraph() {
     const [loading,setLoading] = useState(false)
     const [id ,setId] = useState(searchParams.get('id'))
     const [detailView,setDetailView] = useState(false)
+    const [nodeId ,setNodeId] = useState("-1")
     const closeDetail = () => setDetailView(false)
     // 初始化图表实例
     const [graph] = useState(new Graph({
@@ -188,6 +189,7 @@ function TrafficGraph() {
         console.log('graph effect')
         graph.on('node:click',function ( evt : IElementEvent) {
             console.log(evt.target.id)
+            setNodeId(evt.target.id)
             setDetailView(true)
         })
         if (id) {
@@ -198,7 +200,7 @@ function TrafficGraph() {
     },[])
 
     return (
-        <graphCtx.Provider value={{detailView,closeDetail}}>
+        <graphCtx.Provider value={{detailView,closeDetail,id,nodeId}}>
            <Row>
                <Col span={24}>
                    <Space.Compact>
