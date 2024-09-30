@@ -170,7 +170,7 @@ func NewVarDefList(list []*VarDef) *VarDefList {
 func (vdl *VarDefList) Encode() string {
 	var list []string
 	for _, def := range vdl.list {
-		list = append(list, fmt.Sprintf("{%s}%s", def.Type, strings.Join(def.Names, ":")))
+		list = append(list, fmt.Sprintf("{%s}%s", strings.Join(def.Names, ":"), def.Type))
 	}
 	return strings.Join(list, ";")
 }
