@@ -28,7 +28,7 @@ jobs:
       run: go install github.com/jstemmer/go-junit-report/v2@latest
 
     - name: Clean
-      run: rm -fr example/target && rm -fr example/ellyn_common && rm -fr example/ellyn_agent
+      run: rm -f elly_agent/meta/*.dat && rm -fr example/target && rm -fr example/ellyn_common && rm -fr example/ellyn_agent
 
     - name: Build
       run: go build -v ./...
