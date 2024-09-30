@@ -1,10 +1,13 @@
 import {Drawer} from "antd";
 import {useContext, useEffect, useState} from "react";
+import { ProDescriptions } from '@ant-design/pro-components';
+
 
 import {graphCtx} from './Graph.tsx'
 import axios from "axios";
 
 import CodeMirror, {EditorView} from '@uiw/react-codemirror';
+import { lineNumbers } from "@codemirror/view";
 import { StreamLanguage } from '@codemirror/language';
 import { go } from '@codemirror/legacy-modes/mode/go';
 import {whiteLight} from '@uiw/codemirror-theme-white'
@@ -22,6 +25,7 @@ const NodeDetail = () => {
     const {detailView,closeDetail,id,nodeId} = useContext(graphCtx)
     const [code,setCode] = useState("")
     const [data,setData] = useState()
+    const [lineNumberOffset, setLineNumberOffset] = useState(0)
 
     const onClose = () => {
         console.log("close trigger")
@@ -37,6 +41,7 @@ const NodeDetail = () => {
         axios.get('http://localhost:19898/node/detail?graphId=' + id + "&nodeId=" + nodeId)
             .then(resp => {
                 console.log(resp.data)
+                setLineNumberOffset(resp.data.resNode.begin.line)
                 setData(resp.data)
                 setCode(resp.data.funcCode)
             })
@@ -61,12 +66,69 @@ const NodeDetail = () => {
         },
     });
 
+    const lineNumberExt =  lineNumbers({
+        formatNumber: (n, s) => {
+            return (n + lineNumberOffset - 1).toString();
+        }
+    })
+
     // 抽屉显示方法出入参数、代码行，覆盖明细，耗时，异常等信息
     return (
-        <Drawer title="name" onClose={onClose}  open={detailView} getContainer={false} size={"large"}>
-            <CodeMirror value={code} height="300px"
-                        extensions={[StreamLanguage.define(go),classnameExt]}
-                        theme={[whiteLight,themeConf]} editable={false}/>
+        <Drawer title={data && data.resNode.name} onClose={onClose}  open={detailView} getContainer={false} size={"large"}>
+            {
+                data &&
+                <>
+                    <ProDescriptions
+                        column={2}
+                    >
+                        <ProDescriptions.Item
+                            label="函数名"
+                            valueType="text">
+                            {data.resNode.name}
+                        </ProDescriptions.Item>
+                        <ProDescriptions.Item
+                            label="所在文件"
+                            valueType="text">
+                            {data.resNode.file}
+                        </ProDescriptions.Item>
+                        <ProDescriptions.Item
+                            label="执行耗时"
+                            valueType="text">
+                            {data.resNode.cost}
+                        </ProDescriptions.Item>
+                        <ProDescriptions.Item
+                            label="是否发生错误"
+                            valueType="text">
+                            {data.resNode.has_err ?
+                                "是"
+                                :
+                                "否"}
+                        </ProDescriptions.Item>
+                        <ProDescriptions.Item
+                            label="覆盖率"
+                            valueType="text">
+                            {data.resNode.covered_rate}%
+                        </ProDescriptions.Item>
+
+                    </ProDescriptions>
+                    <br/>
+                    <ProDescriptions
+                        column={2}
+                        layout={"vertical"}
+                    >
+                        <ProDescriptions.Item
+                            label="覆盖明细"
+                            span={2}
+                            valueType="text">
+                            <CodeMirror value={code} height="300px"
+                                        extensions={[ StreamLanguage.define(go), classnameExt,lineNumberExt]}
+                                        theme={[whiteLight,themeConf]}
+                                        editable={false}/>
+                        </ProDescriptions.Item>
+                    </ProDescriptions>
+                </>
+
+            }
         </Drawer>
     )
 }

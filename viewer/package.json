@@ -9,7 +9,10 @@
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "resolutions" : {
+  },
   "dependencies": {
+    "@ant-design/pro-components": "^2.7.19",
     "@antv/g6": "^5.0.23",
     "@antv/g6-extension-react": "^0.1.7",
     "@codemirror/legacy-modes": "^6.4.1",
