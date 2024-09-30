@@ -6,6 +6,7 @@ import TrafficList from "./TrafficList.tsx";
 import TrafficGraph from "./Graph.tsx";
 import Meta from "./Meta.tsx";
 import {ClusterOutlined, BarsOutlined,ProjectOutlined} from "@ant-design/icons";
+import GlobalCovered from "./GlobalCovered.tsx";
 const { Header, Content, Footer } = Layout;
 
 const menuItems = [
@@ -32,8 +33,9 @@ const menuItems = [
         element: <Meta/>,
     },
     {
-        label: '全局覆盖率',
+        label: '全量覆盖',
         key: '/global/covered',
+        element: <GlobalCovered/>
     },
 ]
 

@@ -48,6 +48,13 @@ function Meta() {
             dataIndex: 'method.BlockCnt'.split('.'),
         },
         {
+            title: '行数',
+            render : function (text,record,index) {
+                console.log(record)
+                return record.method.End.line - record.method.Begin.line + 1
+            }
+        },
+        {
             title: '参数列表',
             dataIndex: 'method.ArgsList'.split('.'),
         },

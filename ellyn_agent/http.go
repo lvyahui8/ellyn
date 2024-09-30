@@ -192,6 +192,8 @@ type Node struct {
 	CoveredRate   float32        `json:"covered_rate"`
 	HasErr        bool           `json:"has_err"`
 	Cost          int32          `json:"cost"`
+	ArgsList      *VarDefList    `json:"args_list"`
+	ReturnList    *VarDefList    `json:"return_list"`
 }
 
 type Edge struct {
@@ -229,13 +231,15 @@ func transferNode(n *node, withDetail bool) *Node {
 	method := methods[n.methodId]
 	file := files[method.FileId]
 	item := &Node{
-		Id:       strconv.Itoa(int(n.methodId)),
-		Name:     method.FullName,
-		File:     file.RelativePath,
-		BlockCnt: method.BlockCnt,
-		Begin:    *method.Begin,
-		End:      *method.End,
-		Cost:     int32(n.cost),
+		Id:         strconv.Itoa(int(n.methodId)),
+		Name:       method.FullName,
+		File:       file.RelativePath,
+		BlockCnt:   method.BlockCnt,
+		Begin:      *method.Begin,
+		End:        *method.End,
+		Cost:       int32(n.cost),
+		ArgsList:   method.ArgsList,
+		ReturnList: method.ReturnList,
 	}
 	if withDetail {
 		coveredNum := 0

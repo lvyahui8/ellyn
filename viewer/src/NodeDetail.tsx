@@ -18,6 +18,7 @@ const themeConf = EditorView.baseTheme({
     // '&dark .target-line': { backgroundColor: 'yellow' },
     '&light .covered-line': { backgroundColor: 'lightgreen' },
     '&light .uncovered-line': { backgroundColor: '#ff4d4f' },
+    '.cm-content' : {fontFamily : "consolas, Monaco, Lucida Console, monospace"},
 });
 
 
@@ -104,11 +105,25 @@ const NodeDetail = () => {
                                 :
                                 "否"}
                         </ProDescriptions.Item>
+
+                        <ProDescriptions.Item
+                            label="方法入参声明"
+                            valueType="text">
+                            {data.resNode.args_list}
+                        </ProDescriptions.Item>
+
+                        <ProDescriptions.Item
+                            label="方法出参声明"
+                            valueType="text">
+                            {data.resNode.return_list}
+                        </ProDescriptions.Item>
+
                         <ProDescriptions.Item
                             label="覆盖率"
                             valueType="text">
                             {data.resNode.covered_rate}%
                         </ProDescriptions.Item>
+
 
                     </ProDescriptions>
                     <br/>
@@ -123,6 +138,9 @@ const NodeDetail = () => {
                             <CodeMirror value={code} height="300px"
                                         extensions={[ StreamLanguage.define(go), classnameExt,lineNumberExt]}
                                         theme={[whiteLight,themeConf]}
+                                        basicSetup={{
+                                            highlightActiveLine : false
+                                        }}
                                         editable={false}/>
                         </ProDescriptions.Item>
                     </ProDescriptions>
