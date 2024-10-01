@@ -142,7 +142,7 @@ func setupRouter() *gin.Engine {
 		}
 	})
 
-	r.GET("/user/:id", func(c *gin.Context) {
+	r.GET("/profile/:id", func(c *gin.Context) {
 		id := c.Params.ByName("id")
 		homeResource := resource.HomeResource{}
 		uid, err := strconv.ParseUint(id, 10, 64)

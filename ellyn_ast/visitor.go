@@ -39,7 +39,12 @@ func (f *FileVisitor) mergeInserts() []byte {
 	})
 	pre := 0
 	var res []byte
-	for _, item := range f.inserts {
+	inserts := f.inserts
+	if len(inserts) == 1 {
+		// only import
+		inserts = nil
+	}
+	for _, item := range inserts {
 		if item.offset != pre {
 			res = append(res, f.content[pre:item.offset]...)
 			pre = item.offset

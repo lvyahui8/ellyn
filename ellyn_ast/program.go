@@ -204,7 +204,11 @@ func (p *Program) findMethod(fileId uint32, offset int) *ellyn_agent.Method {
 func (p *Program) buildMethods(fileId uint32) {
 	// 计算Block Offset
 	fileMethods, ok := p.fileMethodsMap.Load(fileId)
-	asserts.True(ok)
+	if !ok {
+		// 文件没有函数
+		fmt.Printf("file %d no methods\n", fileId)
+		return
+	}
 	fileMethods.Each(func(index int, value interface{}) {
 		m := value.(*ellyn_agent.Method)
 		sort.Slice(m.Blocks, func(i, j int) bool {
