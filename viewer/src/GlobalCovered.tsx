@@ -35,6 +35,9 @@ const GlobalCovered =  () => {
 
     const onSelect = (keys, info) => {
         console.log('Trigger Select', keys, info);
+        if (! info.node.isLeaf) {
+            return
+        }
         loadCode(keys[0])
     };
     const onExpand = (keys, info) => {
