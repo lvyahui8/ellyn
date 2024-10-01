@@ -5,52 +5,54 @@ import {StreamLanguage} from "@codemirror/language";
 import {go} from "@codemirror/legacy-modes/mode/go";
 import {whiteLight} from "@uiw/codemirror-theme-white";
 import {ProDescriptions} from "@ant-design/pro-components";
+import {useEffect, useState} from "react";
+import axios from "axios";
 
 const { DirectoryTree } = Tree;
 
-const treeData = [
-    {
-        title: 'parent 0',
-        key: '0-0',
-        children: [
-            {
-                title: 'leaf 0-0',
-                key: '0-0-0',
-                isLeaf: true,
-            },
-            {
-                title: 'leaf 0-1',
-                key: '0-0-1',
-                isLeaf: true,
-            },
-        ],
-    },
-    {
-        title: 'parent 1',
-        key: '0-1',
-        children: [
-            {
-                title: 'leaf 1-0',
-                key: '0-1-0',
-                isLeaf: true,
-            },
-            {
-                title: 'leaf 1-1',
-                key: '0-1-1',
-                isLeaf: true,
-            },
-        ],
-    },
-];
-
 
 const GlobalCovered =  () => {
+    const [data, setData] = useState([])
+
+    const [code, setCode] = useState("")
+
+    const loadCode = function (id) {
+        axios.get('http://localhost:19898/source/file?id=' + id)
+            .then(resp => {
+                setCode(resp.data)
+            })
+            .catch(err => {
+                console.log(err)
+            })
+    }
+
     const onSelect = (keys, info) => {
         console.log('Trigger Select', keys, info);
+        loadCode(keys[0])
     };
     const onExpand = (keys, info) => {
         console.log('Trigger Expand', keys, info);
     };
+
+
+
+    useEffect(() => {
+        axios.get('http://localhost:19898/source/tree')
+            .then(resp => {
+                setData(resp.data)
+                for (let i = 0; i < resp.data.length; i++) {
+                    let n = resp.data[i]
+                    if (n.isLeaf) {
+                        loadCode(n.key)
+                        break
+                    }
+                }
+            })
+            .catch(err => {
+                console.log(err)
+            })
+    },[])
+
     return (
         <>
             <Row>
@@ -75,11 +77,11 @@ const GlobalCovered =  () => {
                         defaultExpandAll
                         onSelect={onSelect}
                         onExpand={onExpand}
-                        treeData={treeData}
+                        treeData={data}
                     />
                 </Col>
                 <Col span={20}>
-                    <CodeMirror value={"test"} height="600px" extensions={[StreamLanguage.define(go)]} theme={whiteLight} editable={false}/>;
+                    <CodeMirror value={code} height="600px" extensions={[StreamLanguage.define(go)]} theme={whiteLight} editable={false}/>;
                 </Col>
             </Row>
         </>

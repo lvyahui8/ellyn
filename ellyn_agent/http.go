@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
+	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"net/http"
 	"path/filepath"
 	"reflect"
@@ -100,14 +101,7 @@ func trafficDetail(writer http.ResponseWriter, request *http.Request) {
 }
 
 func sourceFile(writer http.ResponseWriter, request *http.Request) {
-	_, _ = writer.Write(readCode(0))
-}
-
-func readCode(fileId uint32) []byte {
-	bytes, err := targetSources.ReadFile(
-		filepath.ToSlash(filepath.Join(SourcesDir, files[fileId].RelativePath)) + SourcesFileExt)
-	asserts.IsNil(err)
-	return bytes
+	_, _ = writer.Write(readCode(uint32(queryVal[int](request, "id"))))
 }
 
 func nodeDetail(writer http.ResponseWriter, request *http.Request) {
@@ -125,6 +119,26 @@ func nodeDetail(writer http.ResponseWriter, request *http.Request) {
 		"resNode":  resNode,
 		"funcCode": funcCode,
 	})
+}
+
+func sourceTree(writer http.ResponseWriter, request *http.Request) {
+	tree := collections.NewSourceTree()
+
+	for _, f := range files {
+		n := tree.Add(f.RelativePath, strconv.Itoa(int(f.FileId)))
+		n.IsLeaf = true
+	}
+	responseJson(writer, tree.Root())
+}
+
+///  API结束
+
+// readCode 读取指定代码id文件
+func readCode(fileId uint32) []byte {
+	bytes, err := targetSources.ReadFile(
+		filepath.ToSlash(filepath.Join(SourcesDir, files[fileId].RelativePath)) + SourcesFileExt)
+	asserts.IsNil(err)
+	return bytes
 }
 
 // queryVal 工具方法
@@ -167,8 +181,9 @@ func newServer() {
 	register("/meta/methods", metaMethods)
 	register("/traffic/list", trafficList)
 	register("/traffic/detail", trafficDetail)
-	register("/source/0", sourceFile)
+	register("/source/file", sourceFile)
 	register("/node/detail", nodeDetail)
+	register("/source/tree", sourceTree)
 
 	err := http.ListenAndServe(":19898", nil)
 	if err != nil {

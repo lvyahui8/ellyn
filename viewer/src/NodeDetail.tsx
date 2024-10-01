@@ -17,7 +17,7 @@ import { classname } from '@uiw/codemirror-extensions-classname';
 const themeConf = EditorView.baseTheme({
     // '&dark .target-line': { backgroundColor: 'yellow' },
     '&light .covered-line': { backgroundColor: 'lightgreen' },
-    '&light .uncovered-line': { backgroundColor: '#ff4d4f' },
+    '&light .uncovered-line': { backgroundColor: '#ff8b8d' },
     '.cm-content' : {fontFamily : "consolas, Monaco, Lucida Console, monospace"},
 });
 
