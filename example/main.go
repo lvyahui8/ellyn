@@ -1,14 +1,21 @@
 package main
 
 import (
+	"context"
 	"errors"
+	"example/resource"
 	"fmt"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"strconv"
 	"time"
 )
 import "github.com/gin-gonic/gin"
+
+func init() {
+	fmt.Printf("init example main")
+}
 
 func Sum(a, b int) int {
 	time.Sleep(10 * time.Millisecond)
@@ -132,6 +139,18 @@ func setupRouter() *gin.Engine {
 				Sum(1, 2)
 			})
 			c.JSON(http.StatusOK, gin.H{"user": user, "status": "no value"})
+		}
+	})
+
+	r.GET("/user/:id", func(c *gin.Context) {
+		id := c.Params.ByName("id")
+		homeResource := resource.HomeResource{}
+		uid, err := strconv.ParseUint(id, 10, 64)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"errMsg": err.Error()})
+		} else {
+			user, posts := homeResource.MyProfile(context.WithValue(context.Background(), "id", uid))
+			c.JSON(http.StatusOK, gin.H{"user": user, "posts": posts})
 		}
 	})
 
