@@ -328,6 +328,7 @@ func (p *Program) updateFile(pkg *ellyn_agent.Package, fileAbsPath string) {
 	visitor.fset = fset
 	parsedFile, err := parser.ParseFile(fset, fileAbsPath, content, parser.ParseComments)
 	asserts.IsNil(err)
+	f.LineNum = fset.Position(parsedFile.End()).Line
 	ast.Walk(visitor, parsedFile)
 	p.buildMethods(f.FileId)
 	visitor.WriteTo(fileAbsPath)
@@ -412,7 +413,13 @@ func (p *Program) buildMeta() {
 		return pkgList[i].Id < pkgList[j].Id
 	})
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaPackages), ellyn_agent.EncodeCsvRows(pkgList))
-	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaFiles), ellyn_agent.EncodeCsvRows(p.allFiles.Values()))
-	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaMethods), ellyn_agent.EncodeCsvRows(p.allMethods.Values()))
-	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaBlocks), ellyn_agent.EncodeCsvRows(p.allBlocks.Values()))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaFiles), ellyn_agent.EncodeCsvRows(p.allFiles.SortedValues(func(a, b *ellyn_agent.File) bool {
+		return a.FileId < b.FileId
+	})))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaMethods), ellyn_agent.EncodeCsvRows(p.allMethods.SortedValues(func(a, b *ellyn_agent.Method) bool {
+		return a.Id < b.Id
+	})))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaBlocks), ellyn_agent.EncodeCsvRows(p.allBlocks.SortedValues(func(a, b *ellyn_agent.Block) bool {
+		return a.Id < b.Id
+	})))
 }

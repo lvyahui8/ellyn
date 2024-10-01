@@ -9,12 +9,15 @@ var Agent *ellynAgent = &ellynAgent{}
 
 var idGenerator = guid.NewGuidGenerator()
 
+var globalCovered *collections.BitMap
+
 // 实例
 type ellynAgent struct {
 }
 
 func init() {
 	initMetaData()
+	globalCovered = collections.NewBitMap(uint(len(blocks)))
 }
 
 func (agent *ellynAgent) GetCtx() *EllynCtx {

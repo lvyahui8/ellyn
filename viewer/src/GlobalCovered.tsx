@@ -16,6 +16,13 @@ const GlobalCovered =  () => {
 
     const [code, setCode] = useState("")
 
+    const [target,setTarget] = useState({
+        totalLineNum : 0,
+        targetLineNum  : 0,
+        coveredLineNum : 0,
+        coveredRate : 0.0
+    })
+
     const loadCode = function (id) {
         axios.get('http://localhost:19898/source/file?id=' + id)
             .then(resp => {
@@ -51,22 +58,30 @@ const GlobalCovered =  () => {
             .catch(err => {
                 console.log(err)
             })
+
+        axios.get('http://localhost:19898/target/info')
+            .then(resp => {
+                setTarget(resp.data)
+            })
+            .catch(err => {
+                console.log(err)
+            })
     },[])
 
     return (
         <>
             <Row>
                 <Col span={6}>
-                    <Statistic title="总代码行" value={112893} />
+                    <Statistic title="总代码行" value={target.totalLineNum} />
                 </Col>
                 <Col span={6}>
-                    <Statistic title="插桩代码行" value={112893} />
+                    <Statistic title="插桩代码行" value={target.targetLineNum} />
                 </Col>
                 <Col span={6}>
-                    <Statistic title="已覆盖行" value={112893} />
+                    <Statistic title="已覆盖行" value={target.coveredLineNum} />
                 </Col>
                 <Col span={6}>
-                    <Statistic title="覆盖率" value={"23.6%"} />
+                    <Statistic title="覆盖率" value={target.coveredRate + "%"} />
                 </Col>
             </Row>
             <Divider />

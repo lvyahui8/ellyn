@@ -128,16 +128,18 @@ type File struct {
 	FileId       uint32
 	PackageId    uint32
 	RelativePath string
+	LineNum      int
 }
 
 func (f *File) encodeRow() string {
-	return fmt.Sprintf("%d,%d,%s", f.FileId, f.PackageId, f.RelativePath)
+	return fmt.Sprintf("%d,%d,%s,%d", f.FileId, f.PackageId, f.RelativePath, f.LineNum)
 }
 
 func (f *File) parse(cols []string) {
 	f.FileId = parseUint32(cols[0])
 	f.PackageId = parseUint32(cols[1])
 	f.RelativePath = cols[2]
+	f.LineNum = int(parseUint32(cols[3]))
 }
 
 type VarDef struct {

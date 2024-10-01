@@ -3,6 +3,7 @@ package collections
 import (
 	"github.com/lvyahui8/ellyn/ellyn_common/definitions"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
+	"sort"
 	"sync"
 )
 
@@ -80,6 +81,20 @@ func (m *ConcurrentMap[K, V]) Values() (res []V) {
 			res = append(res, utils.GetMapValues(seg.entries)...)
 		}()
 	}
+	return
+}
+
+func (m *ConcurrentMap[K, V]) SortedValues(compare func(a, b V) bool) (res []V) {
+	for _, seg := range m.segments {
+		func() {
+			seg.RLock()
+			defer seg.RUnlock()
+			res = append(res, utils.GetMapValues(seg.entries)...)
+		}()
+	}
+	sort.Slice(res, func(i, j int) bool {
+		return compare(res[i], res[j])
+	})
 	return
 }
 

@@ -121,6 +121,21 @@ func nodeDetail(writer http.ResponseWriter, request *http.Request) {
 	})
 }
 
+func targetInfo(writer http.ResponseWriter, request *http.Request) {
+	info := &TargetInfo{}
+	for _, f := range files {
+		info.TotalLineNum += f.LineNum
+	}
+	for _, b := range blocks {
+		info.TargetLineNum += b.End.Line - b.Begin.Line + 1
+		if globalCovered.Get(uint(b.Id)) {
+			info.CoveredLineNum += b.End.Line - b.Begin.Line + 1
+		}
+	}
+	info.CoveredRate = float32(info.CoveredLineNum) / float32(info.TargetLineNum) * 100
+	responseJson(writer, info)
+}
+
 func sourceTree(writer http.ResponseWriter, request *http.Request) {
 	tree := collections.NewSourceTree()
 
@@ -184,6 +199,7 @@ func newServer() {
 	register("/source/file", sourceFile)
 	register("/node/detail", nodeDetail)
 	register("/source/tree", sourceTree)
+	register("/target/info", targetInfo)
 
 	err := http.ListenAndServe(":19898", nil)
 	if err != nil {
@@ -276,4 +292,11 @@ type MethodInfo struct {
 	Method  *Method `json:"method"`
 	File    string  `json:"file"`
 	Package string  `json:"package"`
+}
+
+type TargetInfo struct {
+	TotalLineNum   int     `json:"totalLineNum"`
+	TargetLineNum  int     `json:"targetLineNum"`
+	CoveredLineNum int     `json:"coveredLineNum"`
+	CoveredRate    float32 `json:"coveredRate"`
 }

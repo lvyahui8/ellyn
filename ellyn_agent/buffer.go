@@ -36,8 +36,20 @@ func (c *collector) start() {
 					time.Sleep(1 * time.Nanosecond)
 					continue
 				}
+				updateGlobalCovered(g)
 				graphCache.Set(g.id, g)
 			}
 		}()
+	}
+}
+
+func updateGlobalCovered(g *graph) {
+	for _, n := range g.nodes {
+		m := methods[n.methodId]
+		for _, block := range m.Blocks {
+			if n.blocks.Get(uint(block.MethodOffset)) {
+				globalCovered.Set(uint(block.Id))
+			}
+		}
 	}
 }

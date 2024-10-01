@@ -5,7 +5,7 @@ import {Route, Routes} from "react-router-dom";
 import TrafficList from "./TrafficList.tsx";
 import TrafficGraph from "./Graph.tsx";
 import Meta from "./Meta.tsx";
-import {ClusterOutlined, BarsOutlined,ProjectOutlined} from "@ant-design/icons";
+import {ClusterOutlined, BarsOutlined,ProjectOutlined,PieChartOutlined,BugOutlined} from "@ant-design/icons";
 import GlobalCovered from "./GlobalCovered.tsx";
 const { Header, Content, Footer } = Layout;
 
@@ -13,6 +13,7 @@ const menuItems = [
     {
         label: '测试请求',
         key: '/test',
+        icon : <BugOutlined />,
     },
     {
         label: '流量列表',
@@ -35,6 +36,7 @@ const menuItems = [
     {
         label: '全量覆盖',
         key: '/global/covered',
+        icon: <PieChartOutlined />,
         element: <GlobalCovered/>
     },
 ]
