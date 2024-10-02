@@ -30,6 +30,7 @@ func Callback(fn func()) {
 func Handle() {
 	_, _, _ = WithUnusualParam(1, 2, "ccc", true, 0)
 	NoName(1, "xx")
+	KeywordNameParam("x", "x", "x")
 }
 
 func Trade() {
@@ -117,6 +118,10 @@ func WithUnusualParam(a, b int,
 		return 0, 0, errors.New("test")
 	}
 	return 0, 0, nil
+}
+
+func KeywordNameParam(bool, int, a string) (_ bool, string, uint float32) {
+	return false, 0.0, 0.0
 }
 
 func NoName(int,
