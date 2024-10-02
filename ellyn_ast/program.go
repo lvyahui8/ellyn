@@ -146,10 +146,6 @@ func (p *Program) addMethod(fileId uint32, methodName string, begin, end token.P
 		ReturnList: p.filedList2VarDefList(funcType.Results),
 	}
 
-	//for i, field := range funcType.Results.List {
-	//	//f.ReturnTypeList[i] = field.Type
-	//}
-
 	p.allMethods.Store(f.Id, f)
 	fileAllFuncs, ok := p.fileMethodsMap.Load(fileId)
 	if !ok {
@@ -399,6 +395,12 @@ func (p *Program) rollbackAll() {
 		fmt.Printf("remove sdk package:%s\n", sdkDir)
 		utils.OS.Remove(sdkDir)
 	}
+}
+
+func (p *Program) cleanBackupFiles() {
+	p.scanSourceFiles(func(pkg *ellyn_agent.Package, fileAbsPath string) {
+		utils.OS.Remove(fileAbsPath + ".bak")
+	})
 }
 
 // buildMeta 构建元数据，将元数据写入项目

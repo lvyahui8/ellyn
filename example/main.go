@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	_ "net/http/pprof"
+	"runtime"
 	"strconv"
 	"time"
 )
@@ -28,6 +29,7 @@ func Callback(fn func()) {
 
 func Handle() {
 	_, _, _ = WithUnusualParam(1, 2, "ccc", true, 0)
+	NoName(1, "xx")
 }
 
 func Trade() {
@@ -113,6 +115,11 @@ func WithUnusualParam(a, b int, c string, _ bool, bool int) (x, y int, _ error) 
 		return 0, 0, errors.New("test")
 	}
 	return 0, 0, nil
+}
+
+func NoName(int, string) (byte, bool) {
+	_ = fmt.Sprintf("x%d", runtime.NumCPU())
+	return 0, false
 }
 
 var db = make(map[string]string)

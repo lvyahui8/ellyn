@@ -20,6 +20,11 @@ func TestProgram(t *testing.T) {
 	prog.rollbackAll()
 }
 
+func TestCleanBackupFiles(t *testing.T) {
+	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	prog.cleanBackupFiles()
+}
+
 func TestFileEach(t *testing.T) {
 	defer func() {
 		err := recover()
