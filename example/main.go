@@ -109,7 +109,9 @@ func N(n int) int {
 	return n * N(n-1)
 }
 
-func WithUnusualParam(a, b int, c string, _ bool, bool int) (x, y int, _ error) {
+func WithUnusualParam(a, b int,
+	c string, _ bool, bool int) (x, y int,
+	_ error) {
 	time.Sleep(10 * time.Millisecond)
 	if bool == 0 {
 		return 0, 0, errors.New("test")
@@ -117,7 +119,8 @@ func WithUnusualParam(a, b int, c string, _ bool, bool int) (x, y int, _ error) 
 	return 0, 0, nil
 }
 
-func NoName(int, string) (byte, bool) {
+func NoName(int,
+	string) (byte, bool) {
 	_ = fmt.Sprintf("x%d", runtime.NumCPU())
 	return 0, false
 }

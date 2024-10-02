@@ -260,9 +260,12 @@ func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
 
 func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position, funcType *ast.FuncType) {
 	fc := f.prog.addMethod(f.fileId, fName, begin, end, funcType)
+
 	f.insert(bodyBegin.Offset+1,
 		fmt.Sprintf(
-			`_ellynCtx := ellyn_agent.Agent.GetCtx();ellyn_agent.Agent.Push(_ellynCtx,%d);defer ellyn_agent.Agent.Pop(_ellynCtx);`, fc.Id),
+			"_ellynCtx := ellyn_agent.Agent.GetCtx();"+
+				"ellyn_agent.Agent.Push(_ellynCtx,%d);"+
+				"defer ellyn_agent.Agent.Pop(_ellynCtx);", fc.Id),
 		1)
 }
 
