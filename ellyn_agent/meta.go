@@ -258,7 +258,7 @@ type Block struct {
 }
 
 func (b *Block) encodeRow() string {
-	return fmt.Sprintf("%d,%d,%d,%s,%s", b.Id, b.MethodId, b.MethodOffset, b.Begin, b.End)
+	return fmt.Sprintf("%d,%d,%d,%s,%s,%d", b.Id, b.MethodId, b.MethodOffset, b.Begin, b.End, b.FileId)
 }
 
 func (b *Block) parse(cols []string) {
@@ -269,4 +269,5 @@ func (b *Block) parse(cols []string) {
 	method.Blocks[b.MethodOffset] = b
 	b.Begin = ParsePos(cols[3])
 	b.End = ParsePos(cols[4])
+	b.FileId = parseUint32(cols[5])
 }

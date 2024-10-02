@@ -7,6 +7,8 @@ import {whiteLight} from "@uiw/codemirror-theme-white";
 import {ProDescriptions} from "@ant-design/pro-components";
 import {useEffect, useState} from "react";
 import axios from "axios";
+import {themeConf} from "./NodeDetail.tsx";
+import {classname} from "@uiw/codemirror-extensions-classname";
 
 const { DirectoryTree } = Tree;
 
@@ -14,7 +16,10 @@ const { DirectoryTree } = Tree;
 const GlobalCovered =  () => {
     const [data, setData] = useState([])
 
-    const [code, setCode] = useState("")
+    const [fileInfo, setFileInfo] = useState({
+        code : "",
+        lineMap : {}
+    })
 
     const [target,setTarget] = useState({
         totalLineNum : 0,
@@ -26,7 +31,7 @@ const GlobalCovered =  () => {
     const loadCode = function (id) {
         axios.get('http://localhost:19898/source/file?id=' + id)
             .then(resp => {
-                setCode(resp.data)
+                setFileInfo(resp.data)
             })
             .catch(err => {
                 console.log(err)
@@ -44,7 +49,19 @@ const GlobalCovered =  () => {
         console.log('Trigger Expand', keys, info);
     };
 
-
+    const classnameExt = classname({
+        add: (lineNumber) => {
+            const flag = fileInfo.lineMap[lineNumber]
+            if (flag) {
+                if (flag == 1) {
+                    return "uncovered-line"
+                } else {
+                    return "covered-line"
+                }
+            }
+            return ""
+        }
+    })
 
     useEffect(() => {
         axios.get('http://localhost:19898/source/tree')
@@ -99,7 +116,13 @@ const GlobalCovered =  () => {
                     />
                 </Col>
                 <Col span={20}>
-                    <CodeMirror value={code} height="600px" extensions={[StreamLanguage.define(go)]} theme={whiteLight} editable={false}/>;
+                    <CodeMirror value={fileInfo.code} height="600px"
+                                extensions={[StreamLanguage.define(go),classnameExt]}
+                                theme={[whiteLight,themeConf]}
+                                basicSetup={{
+                                    highlightActiveLine : false
+                                }}
+                                editable={false}/>;
                 </Col>
             </Row>
         </>

@@ -17,7 +17,10 @@ type ellynAgent struct {
 
 func init() {
 	initMetaData()
-	globalCovered = collections.NewBitMap(uint(len(blocks)))
+	if len(blocks) > 0 {
+		globalCovered = collections.NewBitMap(uint(len(blocks)))
+	}
+
 }
 
 func (agent *ellynAgent) GetCtx() *EllynCtx {

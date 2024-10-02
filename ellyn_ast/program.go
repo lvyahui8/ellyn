@@ -226,6 +226,7 @@ func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agen
 	b := &ellyn_agent.Block{
 		Id:       uint32(atomic.AddInt32(&p.blockCounter, 1)),
 		MethodId: method.Id,
+		FileId:   fileId,
 		Begin:    ellyn_agent.NewPos(begin.Offset, begin.Line, begin.Column),
 		End:      ellyn_agent.NewPos(end.Offset, end.Line, end.Column),
 	}

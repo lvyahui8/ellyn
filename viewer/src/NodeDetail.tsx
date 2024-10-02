@@ -14,7 +14,7 @@ import {whiteLight} from '@uiw/codemirror-theme-white'
 
 import { classname } from '@uiw/codemirror-extensions-classname';
 
-const themeConf = EditorView.baseTheme({
+export const themeConf = EditorView.baseTheme({
     // '&dark .target-line': { backgroundColor: 'yellow' },
     '&light .covered-line': { backgroundColor: 'lightgreen' },
     '&light .uncovered-line': { backgroundColor: '#ff8b8d' },

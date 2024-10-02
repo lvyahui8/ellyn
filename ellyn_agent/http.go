@@ -100,10 +100,6 @@ func trafficDetail(writer http.ResponseWriter, request *http.Request) {
 	responseJson(writer, toTraffic(g.(*graph), true))
 }
 
-func sourceFile(writer http.ResponseWriter, request *http.Request) {
-	_, _ = writer.Write(readCode(uint32(queryVal[int](request, "id"))))
-}
-
 func nodeDetail(writer http.ResponseWriter, request *http.Request) {
 	graphId := uint64(queryVal[uint](request, "graphId"))
 	nodeId := uint32(queryVal[uint](request, "nodeId"))
@@ -144,6 +140,29 @@ func sourceTree(writer http.ResponseWriter, request *http.Request) {
 		n.IsLeaf = true
 	}
 	responseJson(writer, tree.Root())
+}
+
+func sourceFile(writer http.ResponseWriter, request *http.Request) {
+	fileId := uint32(queryVal[int](request, "id"))
+	lineMap := make(map[int]int)
+	for _, b := range blocks {
+		if b.FileId != fileId {
+			continue
+		}
+		bCovered := globalCovered.Get(uint(b.Id))
+		for i := b.Begin.Line; i <= b.End.Line; i++ {
+			if bCovered {
+				lineMap[i] = 2
+			} else {
+				lineMap[i] = 1
+			}
+		}
+	}
+
+	responseJson(writer, map[string]any{
+		"code":    string(readCode(fileId)),
+		"lineMap": lineMap,
+	})
 }
 
 ///  API结束
