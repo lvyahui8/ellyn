@@ -18,7 +18,7 @@ import {IElementEvent, IPointerEvent} from "@antv/g6/src/types/event.ts";
 
 register(ExtensionCategory.NODE, 'g', GNode);
 
-export const graphCtx = createContext({})
+export const graphCtx = createContext<any>(null)
 
 const Node = ({ data, size }) => {
     const [width, height] = size;
@@ -214,7 +214,7 @@ function TrafficGraph() {
                 <Col span={24}>
                     <div id="container" style={{
                         position: 'relative',
-                        with: '100%',
+                        width: '100%',
                         height: '700px',
                         overflow: 'hidden',
                         background: '#cccccc',

@@ -25,7 +25,7 @@ export const themeConf = EditorView.baseTheme({
 const NodeDetail = () => {
     const {detailView,closeDetail,id,nodeId} = useContext(graphCtx)
     const [code,setCode] = useState("")
-    const [data,setData] = useState()
+    const [data,setData] = useState<any>()
     const [lineNumberOffset, setLineNumberOffset] = useState(0)
 
     const onClose = () => {

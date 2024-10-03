@@ -8,7 +8,7 @@ import {useLocation, useNavigate} from 'react-router-dom'
 
 
 function TrafficList() {
-    const [data, setData] = useState(null)
+    const [data, setData] = useState([])
     const [loading,setLoading] = useState(true)
     const [error, setError] = useState(null)
     const navigate = useNavigate()
@@ -32,7 +32,7 @@ function TrafficList() {
         return <div>Error: {error}</div>
     }
 
-    const onClick: MenuProps['onClick'] = (e, target) => {
+    const onClick = (e, target) => {
         console.log("click to " + target)
         navigate('/traffic/query?id=' + target)
     };
@@ -67,7 +67,8 @@ function TrafficList() {
         {
             title : '操作',
             render : function(text, record, index) {
-                return <Button type={"primary"}  data={"/traffic/detail/" + record.id} onClick={(e) => onClick(e,record.id)} >查看</Button>
+                return <Button type={"primary"}
+                                onClick={(e) => onClick(e,record.id)} >查看</Button>
             }
         }
     ];
