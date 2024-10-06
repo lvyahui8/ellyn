@@ -227,14 +227,22 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 		// todo get parent func
 		return nil
 	case *ast.GoStmt:
-		switch expr := n.Call.Fun.(type) {
-		case *ast.Ident:
-			f.insert(f.offset(expr.Pos()), "func(){", 1)
-			f.insert(f.offset(n.Call.End()), "}()", 1)
-		case *ast.FuncLit:
-		}
+		f.wrapGo(n)
 	}
 	return f
+}
+
+func (f *FileVisitor) wrapGo(n *ast.GoStmt) {
+	f.insert(f.offset(n.Pos()), "{_ellynCtxId,_ellynFromMethod := _ellynCtx.Snapshot();", 100)
+	initCtxCode := "ellyn_agent.Agent.InitCtx(_ellynCtxId,_ellynFromMethod);"
+	switch expr := n.Call.Fun.(type) {
+	case *ast.Ident:
+		f.insert(f.offset(expr.Pos()), "func(){"+initCtxCode, 1)
+		f.insert(f.offset(n.Call.End()), "}()", 1)
+	case *ast.FuncLit:
+		f.insert(f.offset(expr.Body.Lbrace)+1, initCtxCode, 0)
+	}
+	f.insert(f.offset(n.End()), "}", 1)
 }
 
 func (f *FileVisitor) parseVarLists() {

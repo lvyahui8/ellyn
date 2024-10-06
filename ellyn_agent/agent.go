@@ -20,7 +20,17 @@ func init() {
 	if len(blocks) > 0 {
 		globalCovered = collections.NewBitMap(uint(len(blocks)))
 	}
+}
 
+func (agent *ellynAgent) InitCtx(ctxId uint64, from uint32) {
+	ctx := &EllynCtx{
+		id:        ctxId,
+		stack:     collections.NewUnsafeCompressedStack[*methodFrame](),
+		g:         newGraph(ctxId),
+		autoClear: true,
+		from:      &from,
+	}
+	CtxLocal.Set(ctx)
 }
 
 func (agent *ellynAgent) GetCtx() *EllynCtx {
