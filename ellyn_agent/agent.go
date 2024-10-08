@@ -22,14 +22,15 @@ func init() {
 	}
 }
 
-func (agent *ellynAgent) InitCtx(ctxId uint64, from uint32) {
+func (agent *ellynAgent) InitCtx(ctxId uint64, from uint32, to uint32) {
 	ctx := &EllynCtx{
 		id:        ctxId,
 		stack:     collections.NewUnsafeCompressedStack[*methodFrame](),
 		g:         newGraph(ctxId),
 		autoClear: true,
-		from:      &from,
 	}
+	origin := toEdge(from, to)
+	ctx.g.origin = &origin
 	CtxLocal.Set(ctx)
 }
 

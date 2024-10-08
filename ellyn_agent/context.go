@@ -11,7 +11,6 @@ type EllynCtx struct {
 	id        uint64
 	stack     collections.Stack[*methodFrame]
 	g         *graph
-	from      *uint32
 	autoClear bool
 }
 

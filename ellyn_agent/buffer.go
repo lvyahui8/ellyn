@@ -37,10 +37,16 @@ func (c *collector) start() {
 					continue
 				}
 				updateGlobalCovered(g)
-				graphCache.Set(g.id, g)
+				// 消费链路数据，这里缓存到本地用于显示
+				saveToDisplayCache(g)
 			}
 		}()
 	}
+}
+
+func saveToDisplayCache(g *graph) {
+	// todo 同一个id可能因为异步产生多个graph，需要merge
+	graphCache.Set(g.id, g)
 }
 
 func updateGlobalCovered(g *graph) {
