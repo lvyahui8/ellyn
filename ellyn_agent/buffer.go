@@ -6,8 +6,6 @@ import (
 	"time"
 )
 
-var graphCache *collections.LRUCache[uint64] = collections.NewLRUCache[uint64](1024)
-
 var coll *collector = newCollector()
 
 func newCollector() *collector {
@@ -45,8 +43,10 @@ func (c *collector) start() {
 }
 
 func saveToDisplayCache(g *graph) {
-	// todo 同一个id可能因为异步产生多个graph，需要merge
-	graphCache.Set(g.id, g)
+	// 同一个id可能因为异步产生多个graph，需要merge. 这里放到展示的时候再merge
+	graphCache.GetWithDefault(g.id, func() any {
+		return collections.NewLinkedList[*graph]()
+	}).(*collections.LinkedList[*graph]).Add(g)
 }
 
 func updateGlobalCovered(g *graph) {

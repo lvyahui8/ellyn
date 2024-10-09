@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
+	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 	"net/http"
 	"path/filepath"
 	"reflect"
@@ -26,6 +27,8 @@ const (
 )
 
 var serviceOnce sync.Once
+
+var graphCache *collections.LRUCache[uint64] = collections.NewLRUCache[uint64](1024)
 
 func init() {
 	serviceOnce.Do(func() {
@@ -83,8 +86,9 @@ func trafficList(writer http.ResponseWriter, request *http.Request) {
 	// 流量列表
 	allGraphs := graphCache.Values()
 	var res []*Traffic
-	for _, g := range allGraphs {
-		res = append(res, toTraffic(g.(*graph), false))
+	for _, gList := range allGraphs {
+		g := mergeGraphs(gList.(*collections.LinkedList[*graph]).Values())
+		res = append(res, toTraffic(g, false))
 	}
 	responseJson(writer, res)
 }
@@ -92,20 +96,19 @@ func trafficList(writer http.ResponseWriter, request *http.Request) {
 func trafficDetail(writer http.ResponseWriter, request *http.Request) {
 	// 单个流量明细
 	id := queryVal[uint](request, "id")
-	g, ok := graphCache.Get(uint64(id))
-	if !ok {
-		responseError(writer, errors.New("traffic not found"))
-		return
-	}
-	responseJson(writer, toTraffic(g.(*graph), true))
+	gList, ok := graphCache.Get(uint64(id))
+	asserts.True(ok)
+	g := mergeGraphs(gList.(*collections.LinkedList[*graph]).Values())
+	responseJson(writer, toTraffic(g, true))
 }
 
 func nodeDetail(writer http.ResponseWriter, request *http.Request) {
 	graphId := uint64(queryVal[uint](request, "graphId"))
 	nodeId := uint32(queryVal[uint](request, "nodeId"))
-	g, ok := graphCache.Get(graphId)
+	gList, ok := graphCache.Get(graphId)
 	asserts.True(ok)
-	n := (g.(*graph)).nodes[nodeId]
+	g := mergeGraphs(gList.(*collections.LinkedList[*graph]).Values())
+	n := g.nodes[nodeId]
 	resNode := transferNode(n, true)
 	mtd := methods[n.methodId]
 	code := readCode(mtd.FileId)
@@ -305,6 +308,48 @@ func transferNode(n *node, withDetail bool) *Node {
 		item.CoveredRate = float32(coveredNum) / float32(method.End.Line-method.Begin.Line+1) * 100
 	}
 	return item
+}
+
+// 合并多个图
+func mergeGraphs(list []*graph) *graph {
+	if len(list) == 0 {
+		return nil
+	}
+	if len(list) == 1 {
+		return list[0]
+	}
+	res := &graph{
+		id: list[0].id,
+	}
+	origins := make(map[uint64]struct{})
+	// 遍历合并多张子图
+	for _, g := range list {
+		for id, n := range g.nodes {
+			old := res.nodes[id]
+			if old == nil {
+				res.nodes[id] = n
+			} else {
+				// 现有节点合并块覆盖信息
+				asserts.IsNil(old.blocks.Merge(n.blocks))
+				old.cost += n.cost
+			}
+		}
+		for k, v := range g.edges {
+			res.edges[k] = v
+		}
+		if g.origin != nil {
+			origins[*g.origin] = struct{}{}
+		}
+		res.time = utils.Min(res.time, g.time)
+	}
+	// 如果来源节点在图中存在，将来源信息加到边集合
+	for origin := range origins {
+		from, _ := splitEdge(origin)
+		if _, exist := res.nodes[from]; exist {
+			res.edges[origin] = struct{}{}
+		}
+	}
+	return res
 }
 
 type MethodInfo struct {

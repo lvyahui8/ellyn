@@ -30,6 +30,10 @@ func (cache *LRUCache[K]) Get(key K) (any, bool) {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
 
+	return cache.get(key)
+}
+
+func (cache *LRUCache[K]) get(key K) (any, bool) {
 	item := cache.table[key]
 	if item == nil {
 		return nil, false
@@ -38,10 +42,24 @@ func (cache *LRUCache[K]) Get(key K) (any, bool) {
 	return item.val, true
 }
 
+func (cache *LRUCache[K]) GetWithDefault(key K, createDefault func() any) any {
+	cache.lock.Lock()
+	defer cache.lock.Unlock()
+	val, exist := cache.get(key)
+	if !exist {
+		val = createDefault()
+		cache.set(key, val)
+	}
+	return val
+}
+
 func (cache *LRUCache[K]) Set(key K, value any) {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
+	cache.set(key, value)
+}
 
+func (cache *LRUCache[K]) set(key K, value any) {
 	item := cache.table[key]
 	if item == nil {
 		if len(cache.table) >= cache.capacity {

@@ -8,10 +8,11 @@ import (
 type graph struct {
 	id uint64
 	// time 发生时间
-	time   int64
+	time int64
+	// origin 调用链触发来源，当异步触发时有此字段值
+	origin *uint64
 	nodes  map[uint32]*node
 	edges  map[uint64]struct{}
-	origin *uint64
 }
 
 func newGraph(id uint64) *graph {
@@ -56,23 +57,12 @@ func (g *graph) addEdges(from *node, to *node) {
 	g.edges[toEdge(from.methodId, to.methodId)] = struct{}{}
 }
 
-func (g *graph) Merge(o *graph) {
-	asserts.Equals(g.id, o.id)
-	for id, n := range o.nodes {
-		old := g.nodes[id]
-		if old == nil {
-			g.nodes[id] = n
-		} else {
-			asserts.IsNil(old.blocks.Merge(n.blocks))
-			old.cost += n.cost
-		}
-	}
-	for k, v := range o.edges {
-		g.edges[k] = v
-	}
-	// todo 处理origin的merge
-}
-
 func toEdge(from, to uint32) uint64 {
 	return uint64(from)<<32 | uint64(to)
+}
+
+func splitEdge(edge uint64) (from, to uint32) {
+	to = uint32(edge)
+	from = uint32(edge >> 32)
+	return
 }
