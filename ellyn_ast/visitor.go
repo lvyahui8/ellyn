@@ -233,7 +233,8 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 }
 
 func (f *FileVisitor) wrapGo(n *ast.GoStmt) {
-	f.insert(f.offset(n.Pos()), "{_ellynCtxId,_ellynFromMethod := _ellynCtx.Snapshot();", 100)
+	f.insert(f.offset(n.Pos()),
+		"{_ellynCtxId,_ellynFromMethod := _ellynCtx.Snapshot();", 100)
 	initCtxCode := "ellyn_agent.Agent.InitCtx(_ellynCtxId,_ellynFromMethod);"
 	switch expr := n.Call.Fun.(type) {
 	case *ast.Ident:

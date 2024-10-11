@@ -157,6 +157,11 @@ func setupRouter() *gin.Engine {
 		}
 	})
 
+	r.GET("/trade", func(c *gin.Context) {
+		Trade()
+		c.JSON(http.StatusOK, gin.H{"code": 1})
+	})
+
 	r.GET("/profile/:id", func(c *gin.Context) {
 		id := c.Params.ByName("id")
 		homeResource := resource.HomeResource{}

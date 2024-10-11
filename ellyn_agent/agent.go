@@ -22,14 +22,14 @@ func init() {
 	}
 }
 
-func (agent *ellynAgent) InitCtx(ctxId uint64, from uint32, to uint32) {
+func (agent *ellynAgent) InitCtx(ctxId uint64, from uint32) {
 	ctx := &EllynCtx{
 		id:        ctxId,
 		stack:     collections.NewUnsafeCompressedStack[*methodFrame](),
 		g:         newGraph(ctxId),
 		autoClear: true,
 	}
-	origin := toEdge(from, to)
+	origin := toEdge(from, 0)
 	ctx.g.origin = &origin
 	CtxLocal.Set(ctx)
 }
@@ -51,6 +51,9 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 
 func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32) {
 	// 压栈
+	if ctx.g.origin != nil && ctx.stack.Size() == 0 {
+		*(ctx.g.origin) |= uint64(methodId)
+	}
 	ctx.stack.Push(&methodFrame{methodId: methodId})
 }
 
