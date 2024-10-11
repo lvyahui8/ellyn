@@ -134,15 +134,16 @@ const NodeDetail = () => {
                         <ProDescriptions.Item
                             label="覆盖明细"
                             span={2}
-                            style={{"display" : "block"}}
                             valueType="text">
-                            <CodeMirror value={code} height="300px"
-                                        extensions={[ StreamLanguage.define(go), classnameExt,lineNumberExt]}
-                                        theme={[whiteLight,themeConf]}
-                                        basicSetup={{
-                                            highlightActiveLine : false
-                                        }}
-                                        editable={false}/>
+                            <div style={{"width" : "100%"}}>
+                                <CodeMirror value={code} height="300px"
+                                            extensions={[ StreamLanguage.define(go), classnameExt,lineNumberExt]}
+                                            theme={[whiteLight,themeConf]}
+                                            basicSetup={{
+                                                highlightActiveLine : false
+                                            }}
+                                            editable={false}/>
+                            </div>
                         </ProDescriptions.Item>
                     </ProDescriptions>
                 </>
