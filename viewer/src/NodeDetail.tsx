@@ -134,6 +134,7 @@ const NodeDetail = () => {
                         <ProDescriptions.Item
                             label="覆盖明细"
                             span={2}
+                            style={{"display" : "block"}}
                             valueType="text">
                             <CodeMirror value={code} height="300px"
                                         extensions={[ StreamLanguage.define(go), classnameExt,lineNumberExt]}
