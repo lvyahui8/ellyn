@@ -24,7 +24,7 @@ const Node = ({ data, size }) => {
     const [width, height] = size;
 
     const { name, type, file, begin, end,covered_rate, covered_blocks,has_error,cost } = data;
-    const color = !has_error ? '#30BF78' : '#F4664A';
+    const color = !has_error && cost < 200 ? '#30BF78' : '#F4664A';
     const radius = 4;
     const methodLine = end.line - begin.line + 1
     const titleMap = {
