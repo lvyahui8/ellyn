@@ -318,9 +318,7 @@ func mergeGraphs(list []*graph) *graph {
 	if len(list) == 1 {
 		return list[0]
 	}
-	res := &graph{
-		id: list[0].id,
-	}
+	res := newGraph(list[0].id)
 	origins := make(map[uint64]struct{})
 	// 遍历合并多张子图
 	for _, g := range list {

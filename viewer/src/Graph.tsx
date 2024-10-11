@@ -112,10 +112,21 @@ function TrafficGraph() {
             }
         },
         layout: {
-            type: 'dendrogram',
+            // type: 'dendrogram',
+            type: 'compact-box',
             direction: 'LR', // H / V / LR / RL / TB / BT
-            nodeSep: 36,
-            rankSep: 250,
+            getHeight: function getHeight() {
+                return 60;
+            },
+            getWidth: function getWidth() {
+                return 180;
+            },
+            getVGap: function getVGap() {
+                return 15;
+            },
+            getHGap: function getHGap() {
+                return 80;
+            },
         },
         behaviors: ['drag-element', 'zoom-canvas', 'drag-canvas'],
         plugins: [
