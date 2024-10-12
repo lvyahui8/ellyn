@@ -302,6 +302,12 @@ func (p *Program) handleFile(pkg *ellyn_agent.Package, file os.DirEntry, handler
 	// 这里使用阻塞队列，队列不限制容量，确保文件不会被丢弃
 	p.executor.Submit(func() {
 		defer p.fileGroup.Done()
+		defer func() {
+			err := recover()
+			if err != nil {
+				fmt.Printf("handle file err: %v\n", err)
+			}
+		}()
 		fileAbsPath := filepath.Join(pkg.Dir, file.Name())
 		fmt.Printf("dir %s,relativePath %s\n", pkg.Dir, file.Name())
 		handler(pkg, fileAbsPath)
