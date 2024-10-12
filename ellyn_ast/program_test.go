@@ -9,12 +9,14 @@ import (
 	"testing"
 )
 
-func TestProgram(t *testing.T) {
+func TestProgramAll(t *testing.T) {
 	defer func() {
 		err := recover()
 		require.Nil(t, err)
 	}()
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	prog.specifySdkDir = ellyn_testing.GetRepoRootPath()
+	prog.sdkImportPkgPath = ellyn.SdkAgentPkg
 	prog.Visit()
 	utils.Go.Build(prog.mainPkg.Dir)
 	prog.rollbackAll()
