@@ -79,3 +79,7 @@ func (g *goUtils) IsAutoGenContent(content []byte) bool {
 func (g *goUtils) Build(mainPkgDir string) {
 	Shell.Exec(mainPkgDir, "go", "build", "./...")
 }
+
+func (g *goUtils) IsUnittestEnv() bool {
+	return len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-test")
+}

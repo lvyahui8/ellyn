@@ -33,6 +33,9 @@ var graphCache *collections.LRUCache[uint64] = collections.NewLRUCache[uint64](1
 func init() {
 	serviceOnce.Do(func() {
 		go func() {
+			if utils.Go.IsUnittestEnv() {
+				return
+			}
 			newServer()
 		}()
 	})

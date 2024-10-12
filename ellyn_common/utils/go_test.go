@@ -33,3 +33,9 @@ func TestGoUtils_IsAutoGenFile(t *testing.T) {
 	require.True(t, Go.IsAutoGenFile(goRootDir+"\\src\\cmd\\go\\internal\\test\\flagdefs.go"))
 	require.False(t, Go.IsAutoGenFile(goRootDir+"\\src\\cmd\\go\\internal\\test\\cover.go"))
 }
+
+// TestGoUtils_IsUnittestEnv
+// go test -v
+func TestGoUtils_IsUnittestEnv(t *testing.T) {
+	require.True(t, Go.IsUnittestEnv())
+}
