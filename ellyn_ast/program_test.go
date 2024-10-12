@@ -17,6 +17,7 @@ func TestProgramAll(t *testing.T) {
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
 	prog.specifySdkDir = ellyn_testing.GetRepoRootPath()
 	prog.sdkImportPkgPath = ellyn.SdkAgentPkg
+	prog.rollbackAll()
 	prog.Visit()
 	utils.Go.Build(prog.mainPkg.Dir)
 	prog.rollbackAll()
