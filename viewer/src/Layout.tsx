@@ -7,6 +7,7 @@ import TrafficGraph from "./Graph.tsx";
 import Meta from "./Meta.tsx";
 import {ClusterOutlined, BarsOutlined,ProjectOutlined,PieChartOutlined,BugOutlined} from "@ant-design/icons";
 import GlobalCovered from "./GlobalCovered.tsx";
+import TestCase from "./TestCase.tsx";
 const { Header, Content, Footer } = Layout;
 
 const menuItems = [
@@ -14,6 +15,7 @@ const menuItems = [
         label: '测试请求',
         key: '/test',
         icon : <BugOutlined />,
+        element: <TestCase/>,
     },
     {
         label: '流量列表',
