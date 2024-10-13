@@ -48,9 +48,18 @@ func (p *RoutinePool) init() {
 }
 
 func (p *RoutinePool) Submit(r Runnable) {
+	if p.closed {
+		panic("routine pool has closed")
+	}
 	_ = p.buf.Enqueue(r)
 }
 
 func (p *RoutinePool) Shutdown() {
 	p.closed = true
+	go func() {
+		// 清空队列
+		for {
+			_, _ = p.buf.Dequeue()
+		}
+	}()
 }
