@@ -130,6 +130,10 @@ func (p *Program) addFile(pkgId uint32, file string) *ellyn_agent.File {
 	return f
 }
 
+func (p *Program) Destroy() {
+	p.executor.Shutdown()
+}
+
 func (p *Program) addMethod(fileId uint32, methodName string, begin, end token.Position, funcType *ast.FuncType) *ellyn_agent.Method {
 	file, ok := p.allFiles.Load(fileId)
 	asserts.True(ok)
@@ -253,7 +257,6 @@ func (p *Program) scanSourceFiles(handler fileHandler) {
 
 	// 等待所有文件处理完成
 	p.fileGroup.Wait()
-	p.executor.Shutdown()
 }
 
 func (p *Program) buildAgent() {

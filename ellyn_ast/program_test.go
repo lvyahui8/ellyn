@@ -21,11 +21,13 @@ func TestProgramAll(t *testing.T) {
 	prog.Visit()
 	utils.Go.Build(prog.mainPkg.Dir)
 	prog.rollbackAll()
+	prog.Destroy()
 }
 
 func TestCleanBackupFiles(t *testing.T) {
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
 	prog.cleanBackupFiles()
+	prog.Destroy()
 }
 
 func TestFileEach(t *testing.T) {
@@ -37,6 +39,7 @@ func TestFileEach(t *testing.T) {
 	prog.scanSourceFiles(func(pkg *ellyn_agent.Package, fileAbsPath string) {
 		t.Log(fileAbsPath)
 	})
+	prog.Destroy()
 }
 
 func TestExample(t *testing.T) {
@@ -49,4 +52,5 @@ func TestExample(t *testing.T) {
 	prog.specifySdkDir = ellyn_testing.GetRepoRootPath()
 	prog.sdkImportPkgPath = ellyn.SdkAgentPkg
 	prog.Visit()
+	prog.Destroy()
 }
