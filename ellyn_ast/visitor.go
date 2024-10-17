@@ -10,7 +10,8 @@ import (
 	"strings"
 )
 
-const customVarNamePrefix = "_ellynVar_"
+const varNamePrefix = "_ellynVar"
+const notCollectedVarName = "ellyn_agent.NotCollected"
 
 type insert struct {
 	offset        int
@@ -270,58 +271,59 @@ func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
 	f.addFunc(fName, f.fset.Position(decl.Pos()), f.fset.Position(decl.End()), f.fset.Position(decl.Body.Pos()), decl.Type)
 }
 
-func (f *FileVisitor) modifyVarList(funcType *ast.FuncType) (params []string, results []string) {
-	customNameIdx := 0
-	if funcType.Params != nil {
-		for _, item := range funcType.Params.List {
-			if len(item.Names) == 0 {
-				// 匿名， 生成变量名并插入
-				varName := fmt.Sprintf("%s%d", customVarNamePrefix, customNameIdx)
-				customNameIdx++
-				f.insert(f.offset(item.Pos()), varName+" ", 1)
-			} else {
-				for _, n := range item.Names {
-					name := n.Name
-					if n.Name == "_" {
-						name = "nil"
-					}
-					params = append(params, name)
-				}
-			}
-		}
-	}
-
-	resultsChanged := false
-	if funcType.Results != nil {
-		for _, item := range funcType.Results.List {
-			if len(item.Names) == 0 {
-				varName := fmt.Sprintf("%s%d", customVarNamePrefix, customNameIdx)
-				customNameIdx++
-				f.insert(f.offset(item.Pos()), varName+" ", 1)
-				resultsChanged = true
-			} else {
-				for _, n := range item.Names {
-					name := n.Name
-					if n.Name == "_" {
-						name = "nil"
-					}
-					results = append(results, name)
-				}
-			}
-		}
-	}
-
-	if resultsChanged && len(funcType.Results.List) == 1 {
-		// 返回值列表命名后要加括号
+func (f *FileVisitor) modifyParamsAndResults(funcType *ast.FuncType) (params []string, results []string) {
+	_, params = f.modifyVarList(funcType.Params, "Param")
+	cnt, results := f.modifyVarList(funcType.Results, "Ret")
+	if cnt > 0 && len(funcType.Results.List) == 1 {
+		// 返回值列表只有1个并且之前是匿名，命名后要加括号
 		f.insert(f.offset(funcType.Results.Pos()), "(", 0)
 		f.insert(f.offset(funcType.Results.End()), ")", 0)
 	}
 	return
 }
 
+func (f *FileVisitor) modifyVarList(list *ast.FieldList, namePrefix string) (modifiedCnt int, nameList []string) {
+	if list == nil {
+		return
+	}
+	for _, item := range list.List {
+		// 判断类型，go属于值传递（指针、引用本身也是一个值），对于可能存在大量拷贝的类型不做收集
+		// 遍历变量列表，对未命名的进行命名
+		notCollectedType := false
+		switch item.Type.(type) {
+		case *ast.ArrayType, *ast.StructType:
+			notCollectedType = true
+		}
+		if notCollectedType {
+			// 不采集该类型
+			for i := 0; i < len(item.Names); i++ {
+				nameList = append(nameList, notCollectedVarName)
+			}
+		} else {
+			if len(item.Names) == 0 {
+				// 匿名， 生成变量名并插入
+				varName := fmt.Sprintf("%s%s%d", varNamePrefix, namePrefix, modifiedCnt)
+				modifiedCnt++
+				f.insert(f.offset(item.Pos()), varName+" ", 1)
+				nameList = append(nameList, varName)
+			} else {
+				for _, n := range item.Names {
+					name := n.Name
+					if n.Name == "_" {
+						name = notCollectedVarName
+					}
+					nameList = append(nameList, name)
+				}
+			}
+		}
+
+	}
+	return
+}
+
 func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position, funcType *ast.FuncType) {
 	fc := f.prog.addMethod(f.fileId, fName, begin, end, funcType)
-	params, results := f.modifyVarList(funcType)
+	params, results := f.modifyParamsAndResults(funcType)
 	f.insert(bodyBegin.Offset+1,
 		fmt.Sprintf(
 			"_ellynCtx := ellyn_agent.Agent.GetCtx();"+

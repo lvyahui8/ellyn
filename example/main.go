@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"example/dao/model"
 	"example/resource"
 	"fmt"
 	"log"
@@ -128,6 +129,10 @@ func NoName(int,
 	string) (byte, bool) {
 	_ = fmt.Sprintf("x%d", runtime.NumCPU())
 	return 0, false
+}
+
+func NotCollectVars(arr [10]int, user model.User) {
+	_ = fmt.Sprintf("arr %v", arr)
 }
 
 var db = make(map[string]string)
