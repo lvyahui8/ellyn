@@ -1,4 +1,4 @@
-import {Drawer} from "antd";
+import {Drawer, Table} from "antd";
 import {useContext, useEffect, useState} from "react";
 import { ProDescriptions } from '@ant-design/pro-components';
 
@@ -72,7 +72,24 @@ const NodeDetail = () => {
             return (n + lineNumberOffset - 1).toString();
         }
     })
-
+    const columns = [
+        {
+            title: '索引',
+            dataIndex: 'idx',
+        },
+        {
+            title: '变量名',
+            dataIndex: 'name',
+        },
+        {
+            title: '变量类型',
+            dataIndex: 'type',
+        },
+        {
+            title: '变量值',
+            dataIndex: 'val',
+        },
+    ]
     // 抽屉显示方法出入参数、代码行，覆盖明细，耗时，异常等信息
     return (
         <Drawer title={data && data.resNode.name} onClose={onClose}  open={detailView} getContainer={false} size={"large"}>
@@ -95,7 +112,7 @@ const NodeDetail = () => {
                         <ProDescriptions.Item
                             label="执行耗时"
                             valueType="text">
-                            {data.resNode.cost}
+                            {data.resNode.cost}ms
                         </ProDescriptions.Item>
                         <ProDescriptions.Item
                             label="是否发生错误"
@@ -107,23 +124,10 @@ const NodeDetail = () => {
                         </ProDescriptions.Item>
 
                         <ProDescriptions.Item
-                            label="方法入参声明"
-                            valueType="text">
-                            {data.resNode.args_list}
-                        </ProDescriptions.Item>
-
-                        <ProDescriptions.Item
-                            label="方法出参声明"
-                            valueType="text">
-                            {data.resNode.return_list}
-                        </ProDescriptions.Item>
-
-                        <ProDescriptions.Item
                             label="覆盖率"
                             valueType="text">
                             {data.resNode.covered_rate}%
                         </ProDescriptions.Item>
-
 
                     </ProDescriptions>
                     <br/>
@@ -131,6 +135,20 @@ const NodeDetail = () => {
                         column={2}
                         layout={"vertical"}
                     >
+                        <ProDescriptions.Item
+                            label="参数列表"
+                            span={2}
+                            valueType="text">
+                            <Table dataSource={data.resNode.args} size={"small"} pagination={false}
+                                   columns={columns} rowKey={"idx"} locale={{emptyText:"无参数"}} />
+                        </ProDescriptions.Item>
+                        <ProDescriptions.Item
+                            label="返回值列表"
+                            span={2}
+                            valueType="text">
+                            <Table dataSource={data.resNode.returns} size={"small"} pagination={false}
+                                   columns={columns} rowKey={"idx"} locale={{emptyText:"无参数"}} />
+                        </ProDescriptions.Item>
                         <ProDescriptions.Item
                             label="覆盖明细"
                             span={2}

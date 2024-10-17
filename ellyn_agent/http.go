@@ -237,6 +237,13 @@ type CoveredBlock struct {
 	End   Pos `json:"end"`
 }
 
+type VarItem struct {
+	Idx  int    `json:"idx"`
+	Type string `json:"type"`
+	Name string `json:"name"`
+	Val  any    `json:"val"`
+}
+
 type Node struct {
 	Id            string         `json:"id"`
 	Name          string         `json:"name"`
@@ -250,6 +257,8 @@ type Node struct {
 	Cost          int32          `json:"cost"`
 	ArgsList      *VarDefList    `json:"args_list"`
 	ReturnList    *VarDefList    `json:"return_list"`
+	Args          []*VarItem     `json:"args"`
+	Returns       []*VarItem     `json:"returns"`
 }
 
 type Edge struct {
@@ -309,8 +318,22 @@ func transferNode(n *node, withDetail bool) *Node {
 			}
 		}
 		item.CoveredRate = float32(coveredNum) / float32(method.End.Line-method.Begin.Line+1) * 100
+		item.Args = toVarItemList(n.args, method)
+		item.Returns = toVarItemList(n.results, method)
 	}
 	return item
+}
+
+func toVarItemList(vars []any, method *Method) (res []*VarItem) {
+	for i, val := range vars {
+		res = append(res, &VarItem{
+			Idx:  i,
+			Type: method.ArgsList.Type(i),
+			Name: method.ArgsList.Name(i),
+			Val:  val,
+		})
+	}
+	return
 }
 
 // 合并多个图

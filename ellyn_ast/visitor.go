@@ -291,32 +291,29 @@ func (f *FileVisitor) modifyVarList(list *ast.FieldList, namePrefix string) (mod
 		// 遍历变量列表，对未命名的进行命名
 		notCollectedType := false
 		switch item.Type.(type) {
-		case *ast.ArrayType, *ast.StructType, *ast.SelectorExpr /*类型为pkg.XXX，有可能是struct，也可能是其他类型*/ :
+		case *ast.ArrayType, *ast.StructType, *ast.SelectorExpr /*类型为pkg.XXX，有可能是struct，也可能是其他类型*/, *ast.FuncType:
 			notCollectedType = true
 		}
-		if notCollectedType {
-			// 不采集该类型
-			for i := 0; i < len(item.Names); i++ {
+		if len(item.Names) == 0 {
+			// 匿名， 生成变量名并插入
+			varName := fmt.Sprintf("%s%s%d", varNamePrefix, namePrefix, modifiedCnt)
+			modifiedCnt++
+			f.insert(f.offset(item.Pos()), varName+" ", 1)
+
+			if notCollectedType {
 				nameList = append(nameList, notCollectedVarName)
+			} else {
+				nameList = append(nameList, varName)
 			}
 		} else {
-			if len(item.Names) == 0 {
-				// 匿名， 生成变量名并插入
-				varName := fmt.Sprintf("%s%s%d", varNamePrefix, namePrefix, modifiedCnt)
-				modifiedCnt++
-				f.insert(f.offset(item.Pos()), varName+" ", 1)
-				nameList = append(nameList, varName)
-			} else {
-				for _, n := range item.Names {
-					name := n.Name
-					if n.Name == "_" {
-						name = notCollectedVarName
-					}
-					nameList = append(nameList, name)
+			for _, n := range item.Names {
+				name := n.Name
+				if n.Name == "_" || notCollectedType {
+					name = notCollectedVarName
 				}
+				nameList = append(nameList, name)
 			}
 		}
-
 	}
 	return
 }
