@@ -49,7 +49,7 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 	return res
 }
 
-func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32) {
+func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
 	// 压栈
 	if ctx.g.origin != nil && ctx.stack.Size() == 0 {
 		*(ctx.g.origin) |= uint64(methodId)
@@ -57,7 +57,7 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32) {
 	ctx.stack.Push(&methodFrame{methodId: methodId})
 }
 
-func (agent *ellynAgent) Pop(ctx *EllynCtx) {
+func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 	// 弹栈，加到调用链
 	pop := ctx.stack.Pop()
 	top := ctx.stack.Top()
