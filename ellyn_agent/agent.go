@@ -54,7 +54,7 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
 	if ctx.g.origin != nil && ctx.stack.Size() == 0 {
 		*(ctx.g.origin) |= uint64(methodId)
 	}
-	ctx.stack.Push(&methodFrame{methodId: methodId})
+	ctx.stack.Push(&methodFrame{methodId: methodId, args: EncodeVars(params)}) // 只记录首次入栈的参数
 }
 
 func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
@@ -65,6 +65,8 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 		// 方法递归中，未完全弹出
 		return
 	}
+	// 只记录首次入栈的参数
+	pop.results = EncodeVars(results)
 	// 记录调用链
 	ctx.g.add(top, pop)
 	if top == nil {

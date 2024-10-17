@@ -38,15 +38,20 @@ func (g *graph) add(from *methodFrame, to *methodFrame) {
 func (g *graph) draw(f *methodFrame) *node {
 	cost := time.Now().UnixMilli() - f.begin
 	if n, ok := g.nodes[f.methodId]; ok {
+		// 之前已经调用过
 		n.cost += cost // 累计耗时、取最大值
 		err := n.blocks.Merge(f.blocks)
 		asserts.IsNil(err)
 		return n
 	} else {
+		// 首次加入链路
 		n = &node{
 			methodId: f.methodId,
 			blocks:   f.blocks,
 			cost:     cost,
+			// 只记录首次记录的参数
+			args:    f.args,
+			results: f.results,
 		}
 		g.nodes[f.methodId] = n
 		return n

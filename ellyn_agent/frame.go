@@ -10,6 +10,8 @@ type methodFrame struct {
 	blocks    *collections.BitMap
 	recursion bool
 	begin     int64
+	args      []any
+	results   []any
 }
 
 func (mf *methodFrame) Equals(value collections.Frame) bool {

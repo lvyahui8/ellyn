@@ -291,7 +291,7 @@ func (f *FileVisitor) modifyVarList(list *ast.FieldList, namePrefix string) (mod
 		// 遍历变量列表，对未命名的进行命名
 		notCollectedType := false
 		switch item.Type.(type) {
-		case *ast.ArrayType, *ast.StructType:
+		case *ast.ArrayType, *ast.StructType, *ast.SelectorExpr /*类型为pkg.XXX，有可能是struct，也可能是其他类型*/ :
 			notCollectedType = true
 		}
 		if notCollectedType {

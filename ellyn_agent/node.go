@@ -6,4 +6,6 @@ type node struct {
 	methodId uint32
 	blocks   *collections.BitMap
 	cost     int64
+	args     []any
+	results  []any
 }
