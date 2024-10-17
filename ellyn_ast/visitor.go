@@ -7,7 +7,10 @@ import (
 	"go/ast"
 	"go/token"
 	"sort"
+	"strings"
 )
+
+const customVarNamePrefix = "_ellynVar_"
 
 type insert struct {
 	offset        int
@@ -267,14 +270,57 @@ func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
 	f.addFunc(fName, f.fset.Position(decl.Pos()), f.fset.Position(decl.End()), f.fset.Position(decl.Body.Pos()), decl.Type)
 }
 
+func (f *FileVisitor) modifyVarList(funcType *ast.FuncType) (params []string, results []string) {
+	customNameIdx := 0
+	if funcType.Params != nil {
+		for _, item := range funcType.Params.List {
+			if len(item.Names) == 0 {
+				// 匿名， 生成变量名并插入
+				varName := fmt.Sprintf("%s%d", customVarNamePrefix, customNameIdx)
+				customNameIdx++
+				f.insert(f.offset(item.Pos()), varName+" ", 1)
+			} else {
+				for _, n := range item.Names {
+					params = append(params, n.Name)
+				}
+			}
+		}
+	}
+
+	resultsChanged := false
+	if funcType.Results != nil {
+		for _, item := range funcType.Results.List {
+			if len(item.Names) == 0 {
+				varName := fmt.Sprintf("%s%d", customVarNamePrefix, customNameIdx)
+				customNameIdx++
+				f.insert(f.offset(item.Pos()), varName+" ", 1)
+				resultsChanged = true
+			} else {
+				for _, n := range item.Names {
+					results = append(results, n.Name)
+				}
+			}
+		}
+	}
+
+	if resultsChanged && len(funcType.Results.List) == 1 {
+		// 返回值列表命名后要加括号
+		f.insert(f.offset(funcType.Results.Pos()), "(", 0)
+		f.insert(f.offset(funcType.Results.End()), ")", 0)
+	}
+	return
+}
+
 func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position, funcType *ast.FuncType) {
 	fc := f.prog.addMethod(f.fileId, fName, begin, end, funcType)
-
+	params, results := f.modifyVarList(funcType)
 	f.insert(bodyBegin.Offset+1,
 		fmt.Sprintf(
 			"_ellynCtx := ellyn_agent.Agent.GetCtx();"+
-				"ellyn_agent.Agent.Push(_ellynCtx,%d);"+
-				"defer ellyn_agent.Agent.Pop(_ellynCtx);", fc.Id),
+				"ellyn_agent.Agent.Push(_ellynCtx,%d,[]any{%s});"+
+				"defer ellyn_agent.Agent.Pop(_ellynCtx,[]any{%s});", fc.Id,
+			strings.Join(params, ","),
+			strings.Join(results, ",")),
 		1)
 }
 
