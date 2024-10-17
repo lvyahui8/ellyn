@@ -246,7 +246,7 @@ func (f *FileVisitor) wrapGo(n *ast.GoStmt) {
 	case *ast.FuncLit:
 		f.insert(f.offset(expr.Body.Lbrace)+1, initCtxCode, 0)
 	}
-	f.insert(f.offset(n.End()), "}", 1)
+	f.insert(f.offset(n.End()), "}", 2)
 }
 
 func (f *FileVisitor) parseVarLists() {
@@ -281,7 +281,11 @@ func (f *FileVisitor) modifyVarList(funcType *ast.FuncType) (params []string, re
 				f.insert(f.offset(item.Pos()), varName+" ", 1)
 			} else {
 				for _, n := range item.Names {
-					params = append(params, n.Name)
+					name := n.Name
+					if n.Name == "_" {
+						name = "nil"
+					}
+					params = append(params, name)
 				}
 			}
 		}
@@ -297,7 +301,11 @@ func (f *FileVisitor) modifyVarList(funcType *ast.FuncType) (params []string, re
 				resultsChanged = true
 			} else {
 				for _, n := range item.Names {
-					results = append(results, n.Name)
+					name := n.Name
+					if n.Name == "_" {
+						name = "nil"
+					}
+					results = append(results, name)
 				}
 			}
 		}
