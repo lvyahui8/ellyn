@@ -290,9 +290,13 @@ func (f *FileVisitor) modifyVarList(list *ast.FieldList, namePrefix string) (mod
 		// 判断类型，go属于值传递（指针、引用本身也是一个值），对于可能存在大量拷贝的类型不做收集
 		// 遍历变量列表，对未命名的进行命名
 		notCollectedType := false
+		// 统一传指针
+		addressOf := "&"
 		switch item.Type.(type) {
-		case *ast.ArrayType, *ast.StructType, *ast.SelectorExpr /*类型为pkg.XXX，有可能是struct，也可能是其他类型*/, *ast.FuncType:
+		case *ast.FuncType:
 			notCollectedType = true
+		case *ast.StarExpr:
+			addressOf = ""
 		}
 		if len(item.Names) == 0 {
 			// 匿名， 生成变量名并插入
@@ -303,15 +307,15 @@ func (f *FileVisitor) modifyVarList(list *ast.FieldList, namePrefix string) (mod
 			if notCollectedType {
 				nameList = append(nameList, notCollectedVarName)
 			} else {
-				nameList = append(nameList, varName)
+				nameList = append(nameList, addressOf+varName)
 			}
 		} else {
 			for _, n := range item.Names {
-				name := n.Name
 				if n.Name == "_" || notCollectedType {
-					name = notCollectedVarName
+					nameList = append(nameList, notCollectedVarName)
+				} else {
+					nameList = append(nameList, addressOf+n.Name)
 				}
-				nameList = append(nameList, name)
 			}
 		}
 	}
