@@ -14,6 +14,9 @@ import {whiteLight} from '@uiw/codemirror-theme-white'
 
 import { classname } from '@uiw/codemirror-extensions-classname';
 
+import ReactJson from '@microlink/react-json-view'
+
+
 export const themeConf = EditorView.baseTheme({
     // '&dark .target-line': { backgroundColor: 'yellow' },
     '&light .covered-line': { backgroundColor: 'lightgreen' },
@@ -87,7 +90,17 @@ const NodeDetail = () => {
         },
         {
             title: '变量值',
-            dataIndex: 'val',
+            // dataIndex: 'val',
+            render : function(text,record,index) {
+                let res = JSON.parse(record.val)
+                if (typeof res === "object") {
+                    return (
+                        <ReactJson src={res}/>
+                    )
+                } else {
+                    return res
+                }
+            }
         },
     ]
     // 抽屉显示方法出入参数、代码行，覆盖明细，耗时，异常等信息
