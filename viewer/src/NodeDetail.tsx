@@ -93,6 +93,9 @@ const NodeDetail = () => {
             // dataIndex: 'val',
             render : function(text,record,index) {
                 let res = JSON.parse(record.val)
+                if (res == null) {
+                    return "null"
+                }
                 if (typeof res === "object") {
                     return (
                         <ReactJson src={res}/>
