@@ -135,6 +135,10 @@ func NotCollectVars(arr [10]int, user model.User) {
 	_ = fmt.Sprintf("arr %v", arr)
 }
 
+func ReDefinePtr() model.UserPtr {
+	return nil
+}
+
 var db = make(map[string]string)
 
 func setupRouter() *gin.Engine {
