@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"reflect"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -56,7 +57,7 @@ func wrapper(handler func(http.ResponseWriter, *http.Request)) func(http.Respons
 		defer func() {
 			err := recover()
 			if err != nil {
-				responseError(response, errors.New(fmt.Sprintf("panic: %v", err)))
+				responseError(response, errors.New(fmt.Sprintf("panic: %v, stack: %v", err, string(debug.Stack()))))
 			}
 		}()
 		header := response.Header()
@@ -318,18 +319,18 @@ func transferNode(n *node, withDetail bool) *Node {
 			}
 		}
 		item.CoveredRate = float32(coveredNum) / float32(method.End.Line-method.Begin.Line+1) * 100
-		item.Args = toVarItemList(n.args, method)
-		item.Returns = toVarItemList(n.results, method)
+		item.Args = toVarItemList(n.args, method.ArgsList)
+		item.Returns = toVarItemList(n.results, method.ReturnList)
 	}
 	return item
 }
 
-func toVarItemList(vars []any, method *Method) (res []*VarItem) {
+func toVarItemList(vars []any, defList *VarDefList) (res []*VarItem) {
 	for i, val := range vars {
 		res = append(res, &VarItem{
 			Idx:  i,
-			Type: method.ArgsList.Type(i),
-			Name: method.ArgsList.Name(i),
+			Type: defList.Type(i),
+			Name: defList.Name(i),
 			Val:  val,
 		})
 	}

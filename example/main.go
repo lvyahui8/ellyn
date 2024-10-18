@@ -174,7 +174,7 @@ func setupRouter() *gin.Engine {
 		if err != nil {
 			c.JSON(http.StatusOK, gin.H{"errMsg": err.Error()})
 		} else {
-			user, posts := homeResource.MyProfile(context.WithValue(context.Background(), "id", uid))
+			user, posts := homeResource.MyProfile(context.WithValue(context.Background(), "uid", uid))
 			c.JSON(http.StatusOK, gin.H{"user": user, "posts": posts})
 		}
 	})
