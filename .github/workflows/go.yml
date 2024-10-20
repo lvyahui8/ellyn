@@ -62,7 +62,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Release Example
-      run: cd example && go build -v -o example_app${{ matrix.ext }} .
+      run: cd viewer && npm run build && cd ../example && go build -v -o example_app${{ matrix.ext }} .
       env:
         GOOS: ${{ matrix.goos }}
         GOARCH: ${{ matrix.goarch }}
