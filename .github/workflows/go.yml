@@ -12,6 +12,11 @@ on:
 jobs:
 
   build:
+    strategy:
+      matrix:
+        goos: [ linux, darwin ]
+        goarch: [ amd64 ]
+
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -49,3 +54,10 @@ jobs:
       uses: codecov/test-results-action@v1
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Release Example
+      run: go build -v -o example_app .
+      env:
+        GOOS: ${{ matrix.goos }}
+        GOARCH: ${{ matrix.goarch }}
+        CGO_ENABLED: 0
