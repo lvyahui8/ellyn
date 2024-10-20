@@ -1,6 +1,7 @@
 package ellyn_agent
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"errors"
@@ -8,7 +9,10 @@ import (
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"github.com/lvyahui8/ellyn/ellyn_common/collections"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
+	"io/fs"
 	"net/http"
+	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"runtime/debug"
@@ -20,6 +24,9 @@ import (
 
 //go:embed sources
 var targetSources embed.FS
+
+//go:embed page
+var page embed.FS
 
 const (
 	SourcesDir          = "sources"
@@ -40,6 +47,41 @@ func init() {
 			newServer()
 		}()
 	})
+}
+
+func handle404(fs http.FileSystem) http.Handler {
+	fileServer := http.FileServer(fs)
+	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		_, err := fs.Open(path.Clean(request.URL.Path))
+		if os.IsNotExist(err) {
+			// 返回index.html的内容
+			indexHtml, _ := page.ReadFile("page/index.html")
+			http.ServeContent(writer, request, "", time.Now(), bytes.NewReader(indexHtml))
+			return
+		}
+		fileServer.ServeHTTP(writer, request)
+	})
+}
+
+func newServer() {
+	// api
+	registerApi("/meta/methods", metaMethods)
+	registerApi("/traffic/list", trafficList)
+	registerApi("/traffic/detail", trafficDetail)
+	registerApi("/source/file", sourceFile)
+	registerApi("/node/detail", nodeDetail)
+	registerApi("/source/tree", sourceTree)
+	registerApi("/target/info", targetInfo)
+
+	// page
+	staticResources, _ := fs.Sub(page, "page")
+	http.Handle("/", handle404(http.FS(staticResources)))
+
+	// start
+	err := http.ListenAndServe(":19898", nil)
+	if err != nil {
+		log.Error("elly server start failed.err: %v", err)
+	}
 }
 
 func setupCORS(w *http.ResponseWriter, req *http.Request) {
@@ -67,8 +109,8 @@ func wrapper(handler func(http.ResponseWriter, *http.Request)) func(http.Respons
 	}
 }
 
-func register(path string, handler func(writer http.ResponseWriter, request *http.Request)) {
-	http.HandleFunc(path, wrapper(handler))
+func registerApi(path string, handler func(writer http.ResponseWriter, request *http.Request)) {
+	http.HandleFunc("/api"+path, wrapper(handler))
 }
 
 func metaMethods(writer http.ResponseWriter, request *http.Request) {
@@ -216,21 +258,6 @@ func responseJson(writer http.ResponseWriter, res any) {
 		_, _ = writer.Write([]byte(err.Error()))
 	}
 	_, _ = writer.Write(bytes)
-}
-
-func newServer() {
-	register("/meta/methods", metaMethods)
-	register("/traffic/list", trafficList)
-	register("/traffic/detail", trafficDetail)
-	register("/source/file", sourceFile)
-	register("/node/detail", nodeDetail)
-	register("/source/tree", sourceTree)
-	register("/target/info", targetInfo)
-
-	err := http.ListenAndServe(":19898", nil)
-	if err != nil {
-		log.Error("elly server start failed.err: %v", err)
-	}
 }
 
 type CoveredBlock struct {

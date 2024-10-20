@@ -181,7 +181,7 @@ function TrafficGraph() {
         console.log("query id :" + id)
         // 调用后端获取到图数据
         setLoading(true)
-        axios.get('http://localhost:19898/traffic/detail?id=' +id)
+        axios.get('http://localhost:19898/api/traffic/detail?id=' +id)
             .then(resp => {
                 // 设置到graph中
                 console.log("loaded")

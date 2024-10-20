@@ -8,7 +8,7 @@ function Meta() {
     const [error, setError] = useState(null)
 
     useEffect(() => {
-        axios.get('http://localhost:19898/meta/methods')
+        axios.get('http://localhost:19898/api/meta/methods')
             .then(resp => {
                 setData(resp.data)
                 setLoading(false)

@@ -42,7 +42,7 @@ const NodeDetail = () => {
         if (nodeId == "-1") {
             return
         }
-        axios.get('http://localhost:19898/node/detail?graphId=' + id + "&nodeId=" + nodeId)
+        axios.get('http://localhost:19898/api/node/detail?graphId=' + id + "&nodeId=" + nodeId)
             .then(resp => {
                 console.log(resp.data)
                 setLineNumberOffset(resp.data.resNode.begin.line)

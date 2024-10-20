@@ -11,7 +11,7 @@ function SourceView() {
     const [error, setError] = useState(null)
 
     useEffect(() => {
-        axios.get('http://localhost:19898/source/0')
+        axios.get('http://localhost:19898/api/source/0')
             .then(resp => {
                 setValue(resp.data)
             })

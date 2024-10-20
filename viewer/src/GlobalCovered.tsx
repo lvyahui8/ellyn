@@ -29,7 +29,7 @@ const GlobalCovered =  () => {
     })
 
     const loadCode = function (id) {
-        axios.get('http://localhost:19898/source/file?id=' + id)
+        axios.get('http://localhost:19898/api/source/file?id=' + id)
             .then(resp => {
                 setFileInfo(resp.data)
             })
@@ -64,7 +64,7 @@ const GlobalCovered =  () => {
     })
 
     useEffect(() => {
-        axios.get('http://localhost:19898/source/tree')
+        axios.get('http://localhost:19898/api/source/tree')
             .then(resp => {
                 setData(resp.data)
                 for (let i = 0; i < resp.data.length; i++) {
@@ -79,7 +79,7 @@ const GlobalCovered =  () => {
                 console.log(err)
             })
 
-        axios.get('http://localhost:19898/target/info')
+        axios.get('http://localhost:19898/api/target/info')
             .then(resp => {
                 setTarget(resp.data)
             })

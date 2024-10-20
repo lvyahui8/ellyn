@@ -14,7 +14,7 @@ function TrafficList() {
     const navigate = useNavigate()
 
     useEffect(() => {
-        axios.get('http://localhost:19898/traffic/list')
+        axios.get('http://localhost:19898/api/traffic/list')
             .then(resp => {
                 setData(resp.data)
                 setLoading(false)
