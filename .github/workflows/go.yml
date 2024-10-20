@@ -70,7 +70,7 @@ jobs:
 
     # 把二进制文件打包成压缩文件
     - name: Prepare Packaging
-      run: cd example &&  tar zcvf ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.tgz example_app
+      run: cd example &&  tar zcvf ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.tgz example_app${{ matrix.ext }}
 
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
