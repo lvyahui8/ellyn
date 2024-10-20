@@ -65,8 +65,12 @@ jobs:
         GOARCH: ${{ matrix.goarch }}
         CGO_ENABLED: 0
 
+    # 把二进制文件打包成压缩文件
+    - name: Prepare Packaging
+      run: cd example &&  tar zcvf ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.tgz example_app
+
     - name: Upload Artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: example/example_app
+        #name: ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: example/ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
