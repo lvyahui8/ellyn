@@ -56,8 +56,17 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Release Example
-      run: go build -v -o example_app .
+      run: cd example && go build -v -o example_app .
       env:
         GOOS: ${{ matrix.goos }}
         GOARCH: ${{ matrix.goarch }}
         CGO_ENABLED: 0
+
+    - name: Prepare Packaging
+      run: cd example && tar zcvf ellyn-example.tar.gz example_app
+
+    - name: Upload Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ellyn-example.tar.gz
+        path: example/ellyn-example.tar.gz
