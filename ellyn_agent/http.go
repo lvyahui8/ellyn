@@ -15,6 +15,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"runtime/debug"
 	"strconv"
 	"strings"
@@ -27,6 +28,8 @@ var targetSources embed.FS
 
 //go:embed page
 var page embed.FS
+
+const feAddr = ":19898"
 
 const (
 	SourcesDir          = "sources"
@@ -77,10 +80,27 @@ func newServer() {
 	staticResources, _ := fs.Sub(page, "page")
 	http.Handle("/", handle404(http.FS(staticResources)))
 
+	// open browser
+	autoOpenBrowser()
+
 	// start
-	err := http.ListenAndServe(":19898", nil)
+	err := http.ListenAndServe(feAddr, nil)
 	if err != nil {
 		log.Error("elly server start failed.err: %v", err)
+	}
+}
+
+func autoOpenBrowser() {
+	defer func() {
+		_ = recover()
+	}()
+	cmd := map[string]string{
+		"windows": "start",
+		"darwin":  "open",
+		"linux":   "xdg-open",
+	}[runtime.GOOS]
+	if cmd != "" {
+		utils.Shell.Exec("", cmd, "http://localhost"+feAddr+"/test")
 	}
 }
 
