@@ -59,5 +59,9 @@ jobs:
         #if: github.event_name == 'release'
         with:
           allowUpdates: true
+          prerelease: false
+          artifactErrorsFailBuild: true
+          removeArtifacts: false
+          replacesArtifacts: false
           artifacts: ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}
           token: ${{ secrets.GITHUB_TOKEN }}
