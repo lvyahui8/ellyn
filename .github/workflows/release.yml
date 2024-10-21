@@ -39,3 +39,11 @@ jobs:
         with:
           name: ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}
           path: example/ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.tgz
+      # 发布release版本
+      - name: Release version
+        uses: ncipollo/release-action@v1
+        if: github.event_name == 'release'
+        with:
+          allowUpdates: true
+          artifacts: ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
