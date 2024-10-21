@@ -1,5 +1,5 @@
 
-name: Unittest
+name: Release
 
 on:
   push:
