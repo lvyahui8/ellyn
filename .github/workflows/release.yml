@@ -21,6 +21,16 @@ jobs:
             goarch: arm64
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.18'
+
+      - name: goid_init
+        run: chmod +x goid_init.sh && ./goid_init.sh
+
       - name: Update example
         run: go test -v -run TestExample ./ellyn_ast
 
