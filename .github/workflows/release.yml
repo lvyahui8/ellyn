@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Update example
-        run: go test -v -run TestExample ./ellyn_ast/
+        run: go test -v -run TestExample ./ellyn_ast
 
       - name: Release Example
         run: npm install vite -g --save && cd viewer && npm install --dependencies && npm run build && cd ../example && go build -v -o example_app${{ matrix.ext }} .
@@ -43,7 +43,7 @@ jobs:
       # 发布release版本
       - name: Release version
         uses: ncipollo/release-action@v1
-        if: github.event_name == 'release'
+        #if: github.event_name == 'release'
         with:
           allowUpdates: true
           artifacts: ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}
