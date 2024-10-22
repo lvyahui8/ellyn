@@ -1,14 +1,12 @@
 package utils
 
 import (
-	"context"
 	"github.com/lvyahui8/ellyn/ellyn_common/asserts"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
-	"unsafe"
 )
 
 var Go *goUtils = &goUtils{}
@@ -84,35 +82,4 @@ func (g *goUtils) Build(mainPkgDir string) {
 
 func (g *goUtils) IsUnittestEnv() bool {
 	return len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-test")
-}
-
-type iface struct {
-	itab, data uintptr
-}
-
-type valueCtx struct {
-	context.Context
-	key, val interface{}
-}
-
-func (g *goUtils) GetKeyValues(ctx context.Context) map[any]any {
-	res := make(map[any]any)
-	g.getKeyValue(ctx, res)
-	return res
-}
-
-func (g *goUtils) getKeyValue(ctx context.Context, res map[any]any) {
-	iCtx := *(*iface)(unsafe.Pointer(&ctx))
-	if iCtx.data == 0 {
-		return
-	}
-
-	valCtx := (*valueCtx)(unsafe.Pointer(iCtx.data))
-	if valCtx.Context == nil {
-		return
-	}
-	if valCtx != nil && valCtx.key != nil && valCtx.val != nil {
-		res[valCtx.key] = valCtx.val
-	}
-	g.getKeyValue(valCtx.Context, res)
 }

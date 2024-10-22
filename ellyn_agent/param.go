@@ -1,7 +1,9 @@
 package ellyn_agent
 
 import (
+	"context"
 	"encoding/json"
+	"github.com/lvyahui8/ellyn/ellyn_common/gocontext"
 	"github.com/lvyahui8/ellyn/ellyn_common/utils"
 )
 
@@ -19,15 +21,24 @@ func EncodeVars(vars []any) (res []any) {
 			res = append(res, NotCollectedDisplay)
 			continue
 		}
-
+		val := item
 		switch v := item.(type) {
-		default:
-			bytes, err := json.Marshal(v)
-			if err != nil {
-				res = append(res, MarshalFailed)
-			} else {
-				res = append(res, utils.String.Bytes2string(bytes))
+		case context.Context:
+			entries := make(map[string]interface{})
+			rawEntries := gocontext.GetContextKeyValues(v)
+			for k, v := range rawEntries {
+				if sKey, ok := k.(string); ok {
+					entries[sKey] = v
+				}
 			}
+			val = entries
+		default:
+		}
+		bytes, err := json.Marshal(val)
+		if err != nil {
+			res = append(res, MarshalFailed)
+		} else {
+			res = append(res, utils.String.Bytes2string(bytes))
 		}
 	}
 	return
