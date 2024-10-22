@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"context"
 	"github.com/lvyahui8/ellyn/ellyn_testing"
 	"github.com/stretchr/testify/require"
 	"path/filepath"
@@ -38,4 +39,11 @@ func TestGoUtils_IsAutoGenFile(t *testing.T) {
 // go test -v
 func TestGoUtils_IsUnittestEnv(t *testing.T) {
 	require.True(t, Go.IsUnittestEnv())
+}
+
+func TestGoUtils_GetKeyValues(t *testing.T) {
+	ctx := context.WithValue(context.Background(), 1, 2)
+	ctx = context.WithValue(ctx, "name", "fg")
+	res := Go.GetKeyValues(ctx)
+	require.Equal(t, 2, len(res))
 }
