@@ -14,7 +14,8 @@ func init() {
 	}()
 	<-ctx.Done()
 	cancelCtxTypeHash = contextTypeHash(ctx)
-	tCtx, _ := context.WithTimeout(context.Background(), 0)
+	tCtx, cancelFunc := context.WithTimeout(context.Background(), 0)
+	cancelFunc()
 	timerCtxTypeHash = contextTypeHash(tCtx)
 }
 

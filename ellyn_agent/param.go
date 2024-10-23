@@ -24,14 +24,10 @@ func EncodeVars(vars []any) (res []any) {
 		val := item
 		switch v := item.(type) {
 		case context.Context:
-			entries := make(map[string]interface{})
-			rawEntries := gocontext.GetContextKeyValues(v)
-			for k, v := range rawEntries {
-				if sKey, ok := k.(string); ok {
-					entries[sKey] = v
-				}
-			}
-			val = entries
+			entries := gocontext.GetContextKeyValues(v)
+			val = utils.GetCodableMap(entries)
+		case map[any]any:
+			val = utils.GetCodableMap(v)
 		default:
 		}
 		bytes, err := json.Marshal(val)

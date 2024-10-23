@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestContextTypHash(t *testing.T) {
@@ -16,6 +17,10 @@ func TestContextTypHash(t *testing.T) {
 func TestGetContextKeyValues(t *testing.T) {
 	ctx := context.WithValue(context.Background(), 1, 2)
 	ctx = context.WithValue(ctx, "name", "fg")
+	ctx, cancelFunc := context.WithTimeout(ctx, time.Duration(3)*time.Second)
+	cancelFunc()
+	<-ctx.Done()
+	ctx = context.WithValue(ctx, "age", 1)
 	res := GetContextKeyValues(ctx)
-	require.Equal(t, 2, len(res))
+	require.Equal(t, 3, len(res))
 }
