@@ -9,13 +9,23 @@ type EllynApi interface {
 	// GetGraph 获取当前的链路数据
 	// 手动获取链路，必须先设置AutoClear=false
 	GetGraph() *Graph
+	GetGraphId() uint64
 }
 
 var Agent *agentProxy = &agentProxy{}
 
+var _ EllynApi = (*agentProxy)(nil)
+
 type agentProxy struct {
 	sync.Once
 	target EllynApi
+}
+
+func (a *agentProxy) GetGraphId() uint64 {
+	if a.target != nil {
+		return a.target.GetGraphId()
+	}
+	return 0
 }
 
 func (a *agentProxy) Init(target EllynApi) {

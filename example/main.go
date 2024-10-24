@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"example/resource"
+	"github.com/lvyahui8/ellyn/ellyn_api"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -31,12 +32,20 @@ func Cors() gin.HandlerFunc {
 	}
 }
 
+func Wrapper() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Header("X-Ellyn-Gid", strconv.FormatUint(ellyn_api.Agent.GetGraphId(), 10))
+		c.Next()
+	}
+}
+
 func setupRouter() *gin.Engine {
 	// Disable Console Color
 	// gin.DisableConsoleColor()
 	r := gin.Default()
 
 	r.Use(Cors())
+	r.Use(Wrapper())
 
 	// Ping test
 	r.GET("/ping", func(c *gin.Context) {

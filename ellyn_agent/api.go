@@ -14,6 +14,12 @@ var _ ellyn_api.EllynApi = (*ellynApiImpl)(nil)
 type ellynApiImpl struct {
 }
 
+func (e *ellynApiImpl) GetGraphId() uint64 {
+	ctx := Agent.GetCtx()
+	g := ctx.g
+	return g.id
+}
+
 func (e *ellynApiImpl) SetAutoClear(auto bool) {
 	ctx := Agent.GetCtx()
 	ctx.autoClear = auto
