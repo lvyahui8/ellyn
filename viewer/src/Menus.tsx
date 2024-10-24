@@ -8,18 +8,23 @@ import {c} from "@codemirror/legacy-modes/mode/clike";
 
 const Menus =  ({menuItems}) => {
     const location = useLocation()
-    let targetPath = location.pathname
-    if (! targetPath) {
-        targetPath = String(menuItems[0].key)
-    }
     const navigate = useNavigate()
+    const [current, setCurrent] = useState('')
 
-    let current = targetPath
+
+    useEffect(() => {
+        let targetPath = location.pathname
+        if (! targetPath || targetPath == "/") {
+            targetPath = String(menuItems[0].key)
+            navigate(targetPath)
+        }
+
+    }, []);
 
     const onClick: MenuProps['onClick'] = (e) => {
         console.log("menu to " + e.key)
         navigate(e.key)
-        current = e.key
+        setCurrent(e.key)
     };
 
     return (

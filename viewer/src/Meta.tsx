@@ -3,7 +3,7 @@ import {useEffect, useState} from "react";
 import axios from "axios";
 
 function Meta() {
-    const [data, setData] = useState(null)
+    const [data, setData] = useState([])
     const [loading,setLoading] = useState(true)
     const [error, setError] = useState(null)
 
@@ -50,7 +50,6 @@ function Meta() {
         {
             title: '行数',
             render : function (text,record,index) {
-                console.log(record)
                 return record.method.End.line - record.method.Begin.line + 1
             }
         },
@@ -69,7 +68,7 @@ function Meta() {
             }
         }
     ];
-    return <Table dataSource={data} columns={columns} rowKey={"Id"} />
+    return <Table dataSource={data} columns={columns} rowKey={(record) => record.method.Id} />
 }
 
 export default Meta
