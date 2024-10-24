@@ -60,8 +60,10 @@ const TestCase = () => {
     const runTestCase = function (item,idx) {
         console.log("run testcase :" + idx)
         axios.get(item.url).then(resp => {
+            console.log(resp.headers)
             item.res = {
-                resp: JSON.stringify(resp.data)
+                resp: JSON.stringify(resp.data),
+                gid: resp.headers['X-Ellyn-Gid'],
             }
             setCases(cases.map(item=>item))
         })
@@ -82,7 +84,7 @@ const TestCase = () => {
                                 {
                                     item.res && (
                                         <>
-                                            Graph:<Link href="https://ant.design" target="_blank"> </Link>
+                                            Graph:<Link href="https://ant.design" target="_blank">{item.res.gid}</Link>
                                             Response:
                                             <Text code>
                                                 {item.res.resp}
