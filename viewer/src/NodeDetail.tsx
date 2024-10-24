@@ -98,7 +98,7 @@ const NodeDetail = () => {
                 }
                 if (typeof res === "object") {
                     return (
-                        <ReactJson src={res} collapsed={true}/>
+                        <ReactJson src={res} collapsed={true} name={false} displayDataTypes={false}/>
                     )
                 } else {
                     return res

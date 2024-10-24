@@ -26,6 +26,9 @@ func EncodeVars(vars []any) (res []any) {
 		case context.Context:
 			entries := gocontext.GetContextKeyValues(v)
 			val = utils.GetCodableMap(entries)
+		case *context.Context:
+			entries := gocontext.GetContextKeyValues(*v)
+			val = utils.GetCodableMap(entries)
 		case map[any]any:
 			val = utils.GetCodableMap(v)
 		default:

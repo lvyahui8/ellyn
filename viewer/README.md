@@ -7,6 +7,7 @@
 - https://ant.design/components/card-cn
 - https://ant.design/docs/react/recommendation-cn
 - https://github.com/uiwjs/react-codemirror
+- https://github.com/microlinkhq/react-json-view
 
 ```shell
 # 构建
