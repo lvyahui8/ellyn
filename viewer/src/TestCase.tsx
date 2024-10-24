@@ -43,18 +43,6 @@ const TestCase = () => {
             "method" : "GET",
             "body" : "",
         },
-        {
-            "title" : "测试参数采集",
-            "url" : "http://localhost:8080/profile/1",
-            "method" : "GET",
-            "body" : "",
-        },
-        {
-            "title" : "测试参数采集",
-            "url" : "http://localhost:8080/profile/1",
-            "method" : "GET",
-            "body" : "",
-        },
     ])
 
     const runTestCase = function (item,idx) {
@@ -63,11 +51,17 @@ const TestCase = () => {
             console.log(resp.headers)
             item.res = {
                 resp: JSON.stringify(resp.data),
-                gid: resp.headers['X-Ellyn-Gid'],
+                gid: resp.headers['x-ellyn-gid'],
             }
             setCases(cases.map(item=>item))
         })
     }
+
+    const onClick = (e, target) => {
+        console.log("click to " + target)
+        navigate('/traffic/query?id=' + target)
+    };
+
 
     return (
         <>
@@ -84,7 +78,7 @@ const TestCase = () => {
                                 {
                                     item.res && (
                                         <>
-                                            Graph:<Link href="https://ant.design" target="_blank">{item.res.gid}</Link>
+                                            Graph:<Link onClick={(e) => onClick(e,item.res.gid)}  target="_blank">{item.res.gid}</Link>
                                             Response:
                                             <Text code>
                                                 {item.res.resp}
