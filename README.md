@@ -9,7 +9,13 @@
 
 - Go Version >= 1.18
 
+### Artifacts
+
+- [ellyn](https://github.com/lvyahui8/ellyn/releases) : 命令行工具
+- [example_app](https://github.com/lvyahui8/ellyn/releases) : 演示程序，下载执行，然后访问``http://localhost:19898``即可
+
 ### Abilities
+
 
 ### key
 
