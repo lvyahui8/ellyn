@@ -17,10 +17,10 @@ func TestProgramAll(t *testing.T) {
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
 	prog.specifySdkDir = ellyn_testing.GetRepoRootPath()
 	prog.sdkImportPkgPath = ellyn.SdkAgentPkg
-	prog.rollbackAll()
+	prog.RollbackAll()
 	prog.Visit()
 	utils.Go.Build(prog.mainPkg.Dir)
-	prog.rollbackAll()
+	prog.RollbackAll()
 	prog.Destroy()
 }
 
@@ -48,7 +48,7 @@ func TestExample(t *testing.T) {
 		require.Nil(t, err)
 	}()
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
-	prog.rollbackAll()
+	prog.RollbackAll()
 	prog.specifySdkDir = ellyn_testing.GetRepoRootPath()
 	prog.sdkImportPkgPath = ellyn.SdkAgentPkg
 	prog.Visit()

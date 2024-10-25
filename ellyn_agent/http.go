@@ -41,10 +41,12 @@ var serviceOnce sync.Once
 
 var graphCache *collections.LRUCache[uint64] = collections.NewLRUCache[uint64](1024)
 
+var StartBackend = true
+
 func init() {
 	serviceOnce.Do(func() {
 		go func() {
-			if utils.Go.IsUnittestEnv() {
+			if utils.Go.IsUnittestEnv() || !StartBackend {
 				return
 			}
 			newServer()

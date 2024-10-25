@@ -65,6 +65,7 @@ type Program struct {
 }
 
 func NewProgram(mainPkgDir string) *Program {
+	mainPkgDir = filepath.ToSlash(mainPkgDir)
 	prog := &Program{
 		mainPkg: &ellyn_agent.Package{
 			Dir: mainPkgDir,
@@ -111,7 +112,7 @@ func (p *Program) Visit() {
 	defer func() {
 		err := recover()
 		if err != nil {
-			p.rollbackAll()
+			p.RollbackAll()
 		}
 	}()
 	p.scanSourceFiles(p.updateFile)
@@ -272,7 +273,8 @@ func (p *Program) copySdk(sdkPath string) {
 	files, err := ellyn.SdkFs.ReadDir(sdkPath)
 	asserts.IsNil(err)
 	for _, file := range files {
-		if !file.IsDir() && !utils.Go.IsSourceFile(file.Name()) {
+		if !file.IsDir() && !utils.Go.IsSourceFile(file.Name()) &&
+			!strings.Contains(filepath.ToSlash(sdkPath), "/page") {
 			continue
 		}
 		fmt.Printf("sdk relativePath :%s\n", file.Name())
@@ -382,7 +384,7 @@ func (p *Program) rollback(fileAbsPath string) {
 	utils.OS.Remove(bakFile)
 }
 
-func (p *Program) rollbackAll() {
+func (p *Program) RollbackAll() {
 	if p.updatedFiles != nil {
 		for _, f := range p.updatedFiles {
 			p.rollback(f)
@@ -419,13 +421,16 @@ func (p *Program) buildMeta() {
 		return pkgList[i].Id < pkgList[j].Id
 	})
 	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaPackages), ellyn_agent.EncodeCsvRows(pkgList))
-	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaFiles), ellyn_agent.EncodeCsvRows(p.allFiles.SortedValues(func(a, b *ellyn_agent.File) bool {
-		return a.FileId < b.FileId
-	})))
-	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaMethods), ellyn_agent.EncodeCsvRows(p.allMethods.SortedValues(func(a, b *ellyn_agent.Method) bool {
-		return a.Id < b.Id
-	})))
-	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaBlocks), ellyn_agent.EncodeCsvRows(p.allBlocks.SortedValues(func(a, b *ellyn_agent.Block) bool {
-		return a.Id < b.Id
-	})))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaFiles),
+		ellyn_agent.EncodeCsvRows(p.allFiles.SortedValues(func(a, b *ellyn_agent.File) bool {
+			return a.FileId < b.FileId
+		})))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaMethods),
+		ellyn_agent.EncodeCsvRows(p.allMethods.SortedValues(func(a, b *ellyn_agent.Method) bool {
+			return a.Id < b.Id
+		})))
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.MetaBlocks),
+		ellyn_agent.EncodeCsvRows(p.allBlocks.SortedValues(func(a, b *ellyn_agent.Block) bool {
+			return a.Id < b.Id
+		})))
 }

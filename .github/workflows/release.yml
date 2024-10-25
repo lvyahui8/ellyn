@@ -34,11 +34,14 @@ jobs:
       - name: goid_init
         run: chmod +x goid_init.sh && ./goid_init.sh
 
+      - name: Build FE
+        run: npm install vite -g --save && cd viewer && npm install --dependencies && npm run build
+
       - name: Update example
         run: go test -v -run TestExample ./ellyn_ast
 
-      - name: Release Example
-        run: npm install vite -g --save && cd viewer && npm install --dependencies && npm run build && cd ../example && go build -v -o example_app${{ matrix.ext }} .
+      - name: Release Example And Ellyn
+        run: cd example && go build -v -o example_app${{ matrix.ext }} . && cd ../ellyn_cmd && go build -v -o ellyn${{ matrix.ext }}
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -46,13 +49,20 @@ jobs:
 
       # 把二进制文件打包成压缩文件
       - name: Prepare Packaging
-        run: cd example &&  zip -v ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.zip example_app${{ matrix.ext }}
+        run: cd example &&  zip -v ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.zip example_app${{ matrix.ext }} && cd ../ellyn_cmd && zip -v ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip ellyn{{ matrix.ext }}
 
-      - name: Upload Artifacts
+      - name: Upload Example Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.zip
           path: example/ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+
+      - name: Upload Ellyn Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          path: ellyn_cmd/ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+
       # 发布release版本
       - name: Release version
         uses: ncipollo/release-action@v1
@@ -63,5 +73,7 @@ jobs:
           artifactErrorsFailBuild: true
           removeArtifacts: false
           replacesArtifacts: false
-          artifacts: example/ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          artifacts:
+            - example/ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+            - ellyn_cmd/ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
