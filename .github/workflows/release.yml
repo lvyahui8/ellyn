@@ -73,7 +73,5 @@ jobs:
           artifactErrorsFailBuild: true
           removeArtifacts: false
           replacesArtifacts: false
-          artifacts:
-            - example/ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.zip
-            - ellyn_cmd/ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          artifacts: example/ellyn-example-${{ matrix.goos }}-${{ matrix.goarch }}.zip,ellyn_cmd/ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
