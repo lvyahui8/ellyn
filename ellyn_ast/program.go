@@ -18,6 +18,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"runtime/debug"
 	"sort"
 	"strings"
 	"sync"
@@ -53,8 +54,7 @@ type Program struct {
 	methodCounter  int32
 	blockCounter   int32
 
-	executor  *goroutine.RoutinePool
-	fileGroup *sync.WaitGroup
+	executor *goroutine.RoutinePool
 
 	sdkImportPkgPath string
 	modFilePath      string
@@ -73,7 +73,6 @@ func NewProgram(mainPkgDir string) *Program {
 		path2pkgMap:    make(map[string]*ellyn_agent.Package),
 		dir2pkgMap:     make(map[string]*ellyn_agent.Package),
 		executor:       goroutine.NewRoutinePool(runtime.NumCPU()<<1, false),
-		fileGroup:      &sync.WaitGroup{},
 		allFiles:       collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.File](4),
 		fileMethodsMap: collections.NewNumberKeyConcurrentMap[uint32, *treeset.Set](8),
 		allMethods:     collections.NewNumberKeyConcurrentMap[uint32, *ellyn_agent.Method](32),
@@ -112,6 +111,7 @@ func (p *Program) Visit() {
 	defer func() {
 		err := recover()
 		if err != nil {
+			fmt.Printf("rollbackAll,panic err %v,stack:%s", err, string(debug.Stack()))
 			p.RollbackAll()
 		}
 	}()
@@ -237,6 +237,7 @@ func (p *Program) addBlock(fileId uint32, begin, end token.Position) *ellyn_agen
 }
 
 func (p *Program) scanSourceFiles(handler fileHandler) {
+	fileGroup := &sync.WaitGroup{}
 	for pkgDir, pkg := range p.dir2pkgMap {
 		if !strings.HasPrefix(pkg.Path, p.rootPkg.Path) {
 			continue
@@ -252,12 +253,12 @@ func (p *Program) scanSourceFiles(handler fileHandler) {
 				continue
 			}
 			// 将文件加入遍历队列并发处理，加快文件处理速度
-			p.handleFile(pkg, file, handler)
+			p.handleFile(pkg, file, handler, fileGroup)
 		}
 	}
 
 	// 等待所有文件处理完成
-	p.fileGroup.Wait()
+	fileGroup.Wait()
 }
 
 func (p *Program) buildAgent() {
@@ -302,11 +303,11 @@ func (p *Program) copySdk(sdkPath string) {
 	}
 }
 
-func (p *Program) handleFile(pkg *ellyn_agent.Package, file os.DirEntry, handler fileHandler) {
-	p.fileGroup.Add(1)
+func (p *Program) handleFile(pkg *ellyn_agent.Package, file os.DirEntry, handler fileHandler, fileGroup *sync.WaitGroup) {
+	fileGroup.Add(1)
 	// 这里使用阻塞队列，队列不限制容量，确保文件不会被丢弃
 	p.executor.Submit(func() {
-		defer p.fileGroup.Done()
+		defer fileGroup.Done()
 		fileAbsPath := filepath.Join(pkg.Dir, file.Name())
 		fmt.Printf("dir %s,relativePath %s\n", pkg.Dir, file.Name())
 		handler(pkg, fileAbsPath)
