@@ -54,3 +54,22 @@ func TestExample(t *testing.T) {
 	prog.Visit()
 	prog.Destroy()
 }
+
+func TestRollbackExample(t *testing.T) {
+	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	prog.RollbackAll()
+	prog.Destroy()
+}
+
+func TestUpdateBenchmark(t *testing.T) {
+	prog := NewProgram(ellyn_testing.GetBenchmarkPath())
+	prog.RollbackAll()
+	prog.Visit()
+	prog.Destroy()
+}
+
+func TestRollbackBenchmark(t *testing.T) {
+	prog := NewProgram(ellyn_testing.GetBenchmarkPath())
+	prog.RollbackAll()
+	prog.Destroy()
+}
