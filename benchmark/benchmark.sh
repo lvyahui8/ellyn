@@ -18,4 +18,5 @@ cd "$SCRIPT_DIR/.." && go test -v -run TestUpdateBenchmark ./ellyn_ast/
 
 cd "$SCRIPT_DIR/" && go test -v -run ^$ -bench=. -benchmem -benchtime=5x . > new.out
 
+cat old.out new.out
 benchstat old.out new.out
