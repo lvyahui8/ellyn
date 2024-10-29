@@ -1,6 +1,7 @@
 package ellyn_ast
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/lvyahui8/ellyn"
@@ -27,17 +28,9 @@ import (
 
 type fileHandler func(pkg *ellyn_agent.Package, fileAbsPath string)
 
-type ProgramContext struct {
-	rootPkgPath string
-	extra       sync.Map
-}
-
-func (p *ProgramContext) RootPkgPath() string {
-	return p.rootPkgPath
-}
-
 // Program 封装程序信息，解析遍历程序的所有包、函数、代码块
 type Program struct {
+	conf    ellyn_agent.Configuration
 	mainPkg *ellyn_agent.Package
 	rootPkg *ellyn_agent.Package
 
@@ -65,8 +58,12 @@ type Program struct {
 }
 
 func NewProgram(mainPkgDir string) *Program {
+	return NewProgram2(mainPkgDir, ellyn_agent.Configuration{})
+}
+func NewProgram2(mainPkgDir string, configuration ellyn_agent.Configuration) *Program {
 	mainPkgDir = filepath.ToSlash(mainPkgDir)
 	prog := &Program{
+		conf: configuration,
 		mainPkg: &ellyn_agent.Package{
 			Dir: mainPkgDir,
 		},
@@ -417,6 +414,11 @@ func (p *Program) buildMeta() {
 	}
 	metaPath := filepath.Join(target, ellyn.MetaRelativePath)
 	utils.OS.MkDirs(metaPath)
+	// 写入运行时配置
+	confBytes, err := json.Marshal(p.conf)
+	asserts.IsNil(err)
+	utils.OS.WriteTo(filepath.Join(metaPath, ellyn.RuntimeConfFile), confBytes)
+	// 写入包、文件、函数、块数据
 	pkgList := utils.GetMapValues(p.dir2pkgMap)
 	sort.Slice(pkgList, func(i, j int) bool {
 		return pkgList[i].Id < pkgList[j].Id

@@ -16,6 +16,7 @@ type ellynAgent struct {
 }
 
 func init() {
+	configInit()
 	initMetaData()
 	if len(blocks) > 0 {
 		globalCovered = collections.NewBitMap(uint(len(blocks)))

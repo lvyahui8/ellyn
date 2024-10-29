@@ -10,6 +10,7 @@ import (
 
 func main() {
 	ellyn_agent.StartBackend = false
+	conf := &ellyn_agent.Configuration{}
 	app := &cli.App{
 		Name:  "Ellyn",
 		Usage: "",
@@ -17,12 +18,22 @@ func main() {
 			{
 				Name:  "update",
 				Usage: "update code",
+				Flags: []cli.Flag{
+					&cli.BoolFlag{
+						Name:        "no-args",
+						Destination: &conf.NoArgs,
+					},
+					&cli.BoolFlag{
+						Name:        "no-demo",
+						Destination: &conf.NoDemo,
+					},
+				},
 				Action: func(ctx *cli.Context) error {
 					dir, err := os.Getwd()
 					if err != nil {
 						return err
 					}
-					prog := ellyn_ast.NewProgram(dir)
+					prog := ellyn_ast.NewProgram2(dir, *conf)
 					defer prog.Destroy()
 					prog.RollbackAll()
 					prog.Visit()

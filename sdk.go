@@ -23,6 +23,8 @@ const (
 	MetaPackages     = "packages.dat"
 )
 
+const RuntimeConfFile = "config.json"
+
 const (
 	ApiFile = "ellyn_agent/api.go"
 	ApiPkg  = "github.com/lvyahui8/ellyn/ellyn_api"

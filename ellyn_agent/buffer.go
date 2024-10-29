@@ -35,8 +35,10 @@ func (c *collector) start() {
 					continue
 				}
 				updateGlobalCovered(g)
-				// 消费链路数据，这里缓存到本地用于显示
-				saveToDisplayCache(g)
+				if !conf.NoDemo {
+					// 消费链路数据，这里缓存到本地用于demo显示
+					saveToDisplayCache(g)
+				}
 			}
 		}()
 	}

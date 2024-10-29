@@ -15,19 +15,19 @@ func TestProgramAll(t *testing.T) {
 		require.Nil(t, err)
 	}()
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	defer prog.Destroy()
 	prog.specifySdkDir = ellyn_testing.GetRepoRootPath()
 	prog.sdkImportPkgPath = ellyn.SdkAgentPkg
 	prog.RollbackAll()
 	prog.Visit()
 	utils.Go.Build(prog.mainPkg.Dir)
 	prog.RollbackAll()
-	prog.Destroy()
 }
 
 func TestCleanBackupFiles(t *testing.T) {
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	defer prog.Destroy()
 	prog.cleanBackupFiles()
-	prog.Destroy()
 }
 
 func TestFileEach(t *testing.T) {
@@ -36,10 +36,10 @@ func TestFileEach(t *testing.T) {
 		require.Nil(t, err)
 	}()
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	defer prog.Destroy()
 	prog.scanSourceFiles(func(pkg *ellyn_agent.Package, fileAbsPath string) {
 		t.Log(fileAbsPath)
 	})
-	prog.Destroy()
 }
 
 func TestExample(t *testing.T) {
@@ -48,28 +48,32 @@ func TestExample(t *testing.T) {
 		require.Nil(t, err)
 	}()
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	defer prog.Destroy()
 	prog.RollbackAll()
 	prog.specifySdkDir = ellyn_testing.GetRepoRootPath()
 	prog.sdkImportPkgPath = ellyn.SdkAgentPkg
 	prog.Visit()
-	prog.Destroy()
+
 }
 
 func TestRollbackExample(t *testing.T) {
 	prog := NewProgram(ellyn_testing.GetTestProjPath())
+	defer prog.Destroy()
 	prog.RollbackAll()
-	prog.Destroy()
 }
 
 func TestUpdateBenchmark(t *testing.T) {
-	prog := NewProgram(ellyn_testing.GetBenchmarkPath())
+	prog := NewProgram2(ellyn_testing.GetBenchmarkPath(), ellyn_agent.Configuration{
+		NoArgs: true,
+		NoDemo: true,
+	})
+	defer prog.Destroy()
 	prog.RollbackAll()
 	prog.Visit()
-	prog.Destroy()
 }
 
 func TestRollbackBenchmark(t *testing.T) {
 	prog := NewProgram(ellyn_testing.GetBenchmarkPath())
+	defer prog.Destroy()
 	prog.RollbackAll()
-	prog.Destroy()
 }

@@ -324,15 +324,22 @@ func (f *FileVisitor) modifyVarList(list *ast.FieldList, namePrefix string) (mod
 
 func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position, funcType *ast.FuncType) {
 	fc := f.prog.addMethod(f.fileId, fName, begin, end, funcType)
-	params, results := f.modifyParamsAndResults(funcType)
+
+	format := "_ellynCtx := ellyn_agent.Agent.GetCtx();" +
+		"ellyn_agent.Agent.Push(_ellynCtx,%d,%s);" +
+		"defer ellyn_agent.Agent.Pop(_ellynCtx,%s);"
+	var args []any
+	args = append(args, fc.Id)
+
+	if f.prog.conf.NoArgs {
+		args = append(args, "nil", "nil")
+	} else {
+		params, results := f.modifyParamsAndResults(funcType)
+		args = append(args, fmt.Sprintf("[]any{%s}", strings.Join(params, ",")))
+		args = append(args, fmt.Sprintf("[]any{%s}", strings.Join(results, ",")))
+	}
 	f.insert(bodyBegin.Offset+1,
-		fmt.Sprintf(
-			"_ellynCtx := ellyn_agent.Agent.GetCtx();"+
-				"ellyn_agent.Agent.Push(_ellynCtx,%d,[]any{%s});"+
-				"defer ellyn_agent.Agent.Pop(_ellynCtx,[]any{%s});", fc.Id,
-			strings.Join(params, ","),
-			strings.Join(results, ",")),
-		1)
+		fmt.Sprintf(format, args...), 1)
 }
 
 func (f *FileVisitor) addBlock(begin, end token.Pos) {
