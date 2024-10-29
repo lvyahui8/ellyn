@@ -1,16 +1,13 @@
 package ellyn_agent
 
 import (
-	_ "embed"
 	"encoding/json"
 )
-
-//go:embed meta/config.json
-var configContent []byte
 
 var conf Configuration
 
 func configInit() {
+	configContent, _ := meta.ReadFile("meta/config.json")
 	if len(configContent) > 0 {
 		err := json.Unmarshal(configContent, &conf)
 		if err != nil {
