@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/lvyahui8/ellyn/ellyn_api"
+	"github.com/lvyahui8/ellyn/api"
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
 )
 
-func getNode(g *ellyn_api.Graph, name string) *ellyn_api.Node {
+func getNode(g *api.Graph, name string) *api.Node {
 	for _, n := range g.Nodes {
 		if strings.Contains(n.MethodName, name) {
 			return n
@@ -18,15 +18,15 @@ func getNode(g *ellyn_api.Graph, name string) *ellyn_api.Node {
 
 func TestAutoClean(t *testing.T) {
 	Sum(1, 2)
-	graph := ellyn_api.Agent.GetGraph()
+	graph := api.Agent.GetGraph()
 	require.NotNil(t, graph.Nodes)
 	require.True(t, len(graph.Nodes) == 0)
 }
 
 func TestSum(t *testing.T) {
-	ellyn_api.Agent.SetAutoClear(false)
+	api.Agent.SetAutoClear(false)
 	Sum(1, 2)
-	graph := ellyn_api.Agent.GetGraph()
+	graph := api.Agent.GetGraph()
 	require.NotNil(t, graph)
 	node := getNode(graph, "Sum")
 	require.NotNil(t, node)
@@ -34,18 +34,18 @@ func TestSum(t *testing.T) {
 }
 
 func TestTrade(t *testing.T) {
-	ellyn_api.Agent.SetAutoClear(false)
+	api.Agent.SetAutoClear(false)
 	Trade()
-	graph := ellyn_api.Agent.GetGraph()
+	graph := api.Agent.GetGraph()
 	require.NotNil(t, graph)
 	node := getNode(graph, "Trade")
 	require.NotNil(t, node)
 }
 
 func TestN(t *testing.T) {
-	ellyn_api.Agent.SetAutoClear(false)
+	api.Agent.SetAutoClear(false)
 	N(4)
-	graph := ellyn_api.Agent.GetGraph()
+	graph := api.Agent.GetGraph()
 	require.NotNil(t, graph)
 	require.True(t, len(graph.Nodes) == 1)
 	node := getNode(graph, "N")

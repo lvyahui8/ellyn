@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"example/resource"
-	"github.com/lvyahui8/ellyn/ellyn_api"
+	"github.com/lvyahui8/ellyn/api"
 	"log"
 	"net/http"
 	_ "net/http/pprof"
@@ -35,7 +35,7 @@ func Cors() gin.HandlerFunc {
 
 func Wrapper() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.Header("X-Ellyn-Gid", strconv.FormatUint(ellyn_api.Agent.GetGraphId(), 10))
+		c.Header("X-Ellyn-Gid", strconv.FormatUint(api.Agent.GetGraphId(), 10))
 		c.Next()
 	}
 }

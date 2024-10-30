@@ -47,10 +47,10 @@ jobs:
         run: go test -v -coverprofile="coverage.txt" -coverpkg="$(go list -mod=mod ./... | tr '\n' ',')" ./... 2>&1 | tee output.txt && cat output.txt |  go-junit-report -set-exit-code > junit.xml
 
       - name: Update example
-        run: go test -v -run TestExample ./ellyn_ast
+        run: go test -v -run TestExample ./instr
 
       - name: Test Example
-        run: cd example && go test -v -coverprofile="coverage_example.txt" -coverpkg="example,github.com/lvyahui8/ellyn/ellyn_agent,github.com/lvyahui8/ellyn/ellyn_api" ./... 2>&1 | tee output.txt && cat output.txt |  go-junit-report -set-exit-code > ../junit_example.xml
+        run: cd example && go test -v -coverprofile="coverage_example.txt" -coverpkg="example,github.com/lvyahui8/ellyn/sdk/agent,github.com/lvyahui8/ellyn/api" ./... 2>&1 | tee output.txt && cat output.txt |  go-junit-report -set-exit-code > ../junit_example.xml
 
       - name : Run Benchmark
         run: sh ./benchmark/benchmark.sh

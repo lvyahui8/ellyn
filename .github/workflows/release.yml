@@ -38,10 +38,10 @@ jobs:
         run: npm install vite -g --save && cd viewer && npm install --dependencies && npm run build
 
       - name: Update example
-        run: go test -v -run TestExample ./ellyn_ast
+        run: go test -v -run TestExample ./instr
 
       - name: Release Example And Ellyn
-        run: cd example && go build -v -o example_app${{ matrix.ext }} . && cd ../ellyn_cmd && go build -v -o ellyn${{ matrix.ext }}
+        run: cd example && go build -v -o example_app${{ matrix.ext }} . && cd ../cmd && go build -v -o ellyn${{ matrix.ext }}
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
@@ -49,7 +49,7 @@ jobs:
 
       # 把二进制文件打包成压缩文件
       - name: Prepare Packaging
-        run: cd example &&  zip -v example-${{ matrix.goos }}-${{ matrix.goarch }}.zip example_app${{ matrix.ext }} && cd ../ellyn_cmd && zip -v ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip ellyn${{ matrix.ext }}
+        run: cd example &&  zip -v example-${{ matrix.goos }}-${{ matrix.goarch }}.zip example_app${{ matrix.ext }} && cd ../cmd && zip -v ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip ellyn${{ matrix.ext }}
 
       - name: Upload Example Artifacts
         uses: actions/upload-artifact@v3
@@ -61,7 +61,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
-          path: ellyn_cmd/ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          path: cmd/ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
 
       # 发布release版本
       - name: Release version
@@ -73,5 +73,5 @@ jobs:
           artifactErrorsFailBuild: true
           removeArtifacts: false
           replacesArtifacts: false
-          artifacts: example/example-${{ matrix.goos }}-${{ matrix.goarch }}.zip,ellyn_cmd/ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
+          artifacts: example/example-${{ matrix.goos }}-${{ matrix.goarch }}.zip,cmd/ellyn-${{ matrix.goos }}-${{ matrix.goarch }}.zip
           token: ${{ secrets.GITHUB_TOKEN }}
