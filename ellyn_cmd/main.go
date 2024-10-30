@@ -12,8 +12,8 @@ func main() {
 	ellyn_agent.StartBackend = false
 	conf := &ellyn_agent.Configuration{}
 	app := &cli.App{
-		Name:  "Ellyn",
-		Usage: "",
+		Name:  "ellyn",
+		Usage: "Go coverage and callgraph collection tool",
 		Commands: []*cli.Command{
 			{
 				Name:  "update",
