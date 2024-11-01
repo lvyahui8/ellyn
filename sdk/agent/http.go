@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/lvyahui8/ellyn/sdk"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
@@ -23,17 +24,13 @@ import (
 	"time"
 )
 
-//go:embed sources
 var targetSources embed.FS
-
-//go:embed page
-var page embed.FS
 
 const feAddr = ":19898"
 
 const (
 	SourcesDir          = "sources"
-	SourcesRelativePath = "ellyn_agent/sources"
+	SourcesRelativePath = sdk.MetaRelativePath + "/" + SourcesDir
 	SourcesFileExt      = ".src"
 )
 
@@ -60,7 +57,7 @@ func handle404(fs http.FileSystem) http.Handler {
 		_, err := fs.Open(path.Clean(request.URL.Path))
 		if os.IsNotExist(err) {
 			// 返回index.html的内容
-			indexHtml, _ := page.ReadFile("page/index.html")
+			indexHtml, _ := meta.ReadFile(filepath.Join(sdk.MetaRelativePath, "page/index.html"))
 			http.ServeContent(writer, request, "", time.Now(), bytes.NewReader(indexHtml))
 			return
 		}
@@ -79,7 +76,7 @@ func newServer() {
 	registerApi("/target/info", targetInfo)
 
 	// page
-	staticResources, _ := fs.Sub(page, "page")
+	staticResources, _ := fs.Sub(meta, filepath.Join(sdk.MetaRelativePath, "page"))
 	http.Handle("/", handle404(http.FS(staticResources)))
 
 	// open browser

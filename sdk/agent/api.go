@@ -6,27 +6,28 @@ import (
 )
 
 func init() {
-	api.Agent.Init(&ellynApiImpl{})
+	api.Init(&ellynApiImpl{})
 }
 
 var _ api.EllynApi = (*ellynApiImpl)(nil)
 
 type ellynApiImpl struct {
+	Agent *ellynAgent
 }
 
 func (e *ellynApiImpl) GetGraphId() uint64 {
-	ctx := Agent.GetCtx()
+	ctx := e.Agent.GetCtx()
 	g := ctx.g
 	return g.id
 }
 
 func (e *ellynApiImpl) SetAutoClear(auto bool) {
-	ctx := Agent.GetCtx()
+	ctx := e.Agent.GetCtx()
 	ctx.autoClear = auto
 }
 
 func (e *ellynApiImpl) GetGraph() *api.Graph {
-	ctx := Agent.GetCtx()
+	ctx := e.Agent.GetCtx()
 	g := ctx.g
 	res := &api.Graph{
 		Nodes: make(map[uint32]*api.Node),

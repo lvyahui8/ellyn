@@ -1,26 +1,32 @@
 package agent
 
 import (
+	"embed"
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
 	"github.com/lvyahui8/ellyn/sdk/common/guid"
 )
-
-var Agent *ellynAgent = &ellynAgent{}
 
 var idGenerator = guid.NewGuidGenerator()
 
 var globalCovered *collections.BitMap
 
-// 实例
+type Api interface {
+	InitCtx(ctxId uint64, from uint32)
+	GetCtx() *EllynCtx
+	Push(ctx *EllynCtx, methodId uint32, params []any)
+	Pop(ctx *EllynCtx, results []any)
+	VisitBlock(ctx *EllynCtx, blockOffset int)
+}
+
+var _ Api = (*ellynAgent)(nil)
+
+// ellynAgent 实例
 type ellynAgent struct {
 }
 
-func init() {
-	configInit()
-	initMetaData()
-	if len(blocks) > 0 {
-		globalCovered = collections.NewBitMap(uint(len(blocks)))
-	}
+func InitAgent(meta embed.FS) Api {
+	initAgent(meta)
+	return &ellynAgent{}
 }
 
 func (agent *ellynAgent) InitCtx(ctxId uint64, from uint32) {

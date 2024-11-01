@@ -6,7 +6,7 @@ import (
 
 var conf Configuration
 
-func configInit() {
+func initConfig() {
 	configContent, _ := meta.ReadFile("meta/config.json")
 	if len(configContent) > 0 {
 		err := json.Unmarshal(configContent, &conf)

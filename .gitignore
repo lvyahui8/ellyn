@@ -31,3 +31,4 @@ example/ellyn_common
 *.bak
 *.dat
 *.src
+config.json

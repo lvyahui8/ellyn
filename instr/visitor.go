@@ -239,7 +239,7 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 func (f *FileVisitor) wrapGo(n *ast.GoStmt) {
 	f.insert(f.offset(n.Pos()),
 		"{_ellynCtxId,_ellynFromMethod := _ellynCtx.Snapshot();", 100)
-	initCtxCode := "agent.Agent.InitCtx(_ellynCtxId,_ellynFromMethod);"
+	initCtxCode := "ellyn_agent.Agent.InitCtx(_ellynCtxId,_ellynFromMethod);"
 	switch expr := n.Call.Fun.(type) {
 	case *ast.Ident:
 		f.insert(f.offset(expr.Pos()), "func(){"+initCtxCode, 1)
@@ -325,9 +325,9 @@ func (f *FileVisitor) modifyVarList(list *ast.FieldList, namePrefix string) (mod
 func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position, funcType *ast.FuncType) {
 	fc := f.prog.addMethod(f.fileId, fName, begin, end, funcType)
 
-	format := "_ellynCtx := agent.Agent.GetCtx();" +
-		"agent.Agent.Push(_ellynCtx,%d,%s);" +
-		"defer agent.Agent.Pop(_ellynCtx,%s);"
+	format := "_ellynCtx := ellyn_agent.Agent.GetCtx();" +
+		"ellyn_agent.Agent.Push(_ellynCtx,%d,%s);" +
+		"defer ellyn_agent.Agent.Pop(_ellynCtx,%s);"
 	var args []any
 	args = append(args, fc.Id)
 
@@ -345,7 +345,7 @@ func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position
 func (f *FileVisitor) addBlock(begin, end token.Pos) {
 	block := f.prog.addBlock(f.fileId, f.fset.Position(begin), f.fset.Position(end))
 	f.insertAtPost(block.Begin.Offset, func() string {
-		return fmt.Sprintf("agent.Agent.VisitBlock(_ellynCtx,%d);", block.MethodOffset)
+		return fmt.Sprintf("ellyn_agent.Agent.VisitBlock(_ellynCtx,%d);", block.MethodOffset)
 	}, 2)
 }
 

@@ -2,7 +2,6 @@ package agent
 
 import (
 	"embed"
-	_ "embed"
 	"encoding/json"
 	"fmt"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
@@ -13,7 +12,6 @@ import (
 	"strings"
 )
 
-//go:embed meta
 var meta embed.FS
 
 func getDat(file string) []byte {

@@ -21,20 +21,20 @@ type agentProxy struct {
 	target EllynApi
 }
 
+func Init(target EllynApi) {
+	if target == nil {
+		return
+	}
+	Agent.Once.Do(func() {
+		Agent.target = target
+	})
+}
+
 func (a *agentProxy) GetGraphId() uint64 {
 	if a.target != nil {
 		return a.target.GetGraphId()
 	}
 	return 0
-}
-
-func (a *agentProxy) Init(target EllynApi) {
-	if target == nil {
-		return
-	}
-	a.Once.Do(func() {
-		a.target = target
-	})
 }
 
 func (a *agentProxy) SetAutoClear(auto bool) {

@@ -1,7 +1,6 @@
 package instr
 
 import (
-	"github.com/lvyahui8/ellyn/sdk"
 	"github.com/lvyahui8/ellyn/sdk/agent"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"github.com/lvyahui8/ellyn/test"
@@ -17,7 +16,6 @@ func TestProgramAll(t *testing.T) {
 	prog := NewProgram(test.GetTestProjPath())
 	defer prog.Destroy()
 	prog.specifySdkDir = test.GetRepoRootPath()
-	prog.sdkImportPkgPath = sdk.SdkAgentPkg
 	prog.RollbackAll()
 	prog.Visit()
 	utils.Go.Build(prog.mainPkg.Dir)
@@ -51,7 +49,6 @@ func TestExample(t *testing.T) {
 	defer prog.Destroy()
 	prog.RollbackAll()
 	prog.specifySdkDir = test.GetRepoRootPath()
-	prog.sdkImportPkgPath = sdk.SdkAgentPkg
 	prog.Visit()
 
 }

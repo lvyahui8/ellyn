@@ -244,7 +244,6 @@ func (p *Program) scanSourceFiles(handler fileHandler) {
 		for _, file := range files {
 			if !strings.HasSuffix(file.Name(), ".go") ||
 				file.IsDir() ||
-				sdk.IsSdkPkg(pkg.Path) ||
 				utils.Go.IsTestFile(file.Name()) ||
 				utils.Go.IsAutoGenFile(pkg.Dir+string(os.PathSeparator)+file.Name()) {
 				continue
@@ -259,40 +258,19 @@ func (p *Program) scanSourceFiles(handler fileHandler) {
 }
 
 func (p *Program) buildAgent() {
+	utils.OS.WriteTo(filepath.Join(p.targetPath, sdk.AgentPkg, "init.go"), []byte(fmt.Sprintf(`
+package %s
 
-}
+import (
+	"embed"
+	"github.com/lvyahui8/ellyn/sdk/agent"
+)
 
-func (p *Program) copySdk(sdkPath string) {
-	files, err := sdk.SdkFs.ReadDir(sdkPath)
-	asserts.IsNil(err)
-	for _, file := range files {
-		if !file.IsDir() && !utils.Go.IsSourceFile(file.Name()) &&
-			!strings.Contains(filepath.ToSlash(sdkPath), "/page") {
-			continue
-		}
-		fmt.Printf("sdk relativePath :%s\n", file.Name())
-		rPath := path.Join(sdkPath, file.Name())
-		if file.IsDir() {
-			p.copySdk(rPath)
-		} else {
-			isApiFile := false
-			if strings.HasSuffix(filepath.ToSlash(rPath), sdk.ApiFile) {
-				if !p.require(sdk.ApiPkg) {
-					continue
-				}
-				isApiFile = true
-			}
-			bytes, err := sdk.SdkFs.ReadFile(rPath)
-			asserts.IsNil(err)
-			if !isApiFile {
-				updated := strings.ReplaceAll(
-					utils.String.Bytes2string(bytes), sdk.SdkRawRootPkg, p.rootPkg.Path)
-				bytes = utils.String.String2bytes(updated)
-			}
+//go:embed %s
+var meta embed.FS
 
-			utils.OS.WriteTo(path.Join(p.targetPath, rPath), bytes)
-		}
-	}
+var Agent = agent.InitAgent(meta)
+`, sdk.AgentPkg, sdk.MetaRelativePath)))
 }
 
 func (p *Program) handleFile(pkg *agent.Package, file os.DirEntry, handler fileHandler, fileGroup *sync.WaitGroup) {
@@ -331,11 +309,7 @@ func (p *Program) updateFile(pkg *agent.Package, fileAbsPath string) {
 }
 
 func (p *Program) copySource(relativePath string, content []byte) {
-	target := p.targetPath
-	if len(p.specifySdkDir) > 0 {
-		target = p.specifySdkDir
-	}
-	sourcesPath := filepath.Join(target, agent.SourcesRelativePath)
+	sourcesPath := filepath.Join(p.targetPath, sdk.AgentPkg, agent.SourcesRelativePath)
 	utils.OS.WriteTo(filepath.Join(sourcesPath, relativePath)+agent.SourcesFileExt, content)
 }
 
@@ -387,12 +361,7 @@ func (p *Program) RollbackAll() {
 			p.rollback(fileAbsPath)
 		})
 	}
-
-	for _, sdkPath := range sdk.SdkPaths {
-		sdkDir := path.Join(p.targetPath, sdkPath)
-		fmt.Printf("remove sdk package:%s\n", sdkDir)
-		utils.OS.Remove(sdkDir)
-	}
+	utils.OS.Remove(filepath.Join(p.targetPath, sdk.AgentPkg))
 }
 
 func (p *Program) cleanBackupFiles() {
@@ -404,10 +373,7 @@ func (p *Program) cleanBackupFiles() {
 // buildMeta 构建元数据，将元数据写入项目
 func (p *Program) buildMeta() {
 	target := p.targetPath
-	if len(p.specifySdkDir) > 0 {
-		target = p.specifySdkDir
-	}
-	metaPath := filepath.Join(target, sdk.MetaRelativePath)
+	metaPath := filepath.Join(target, sdk.AgentPkg, sdk.MetaRelativePath)
 	utils.OS.MkDirs(metaPath)
 	// 写入运行时配置
 	confBytes, err := json.Marshal(p.conf)
