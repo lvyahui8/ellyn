@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "github.com/lvyahui8/ellyn"
 	"github.com/lvyahui8/ellyn/api"
 	"github.com/stretchr/testify/require"
 	"strings"

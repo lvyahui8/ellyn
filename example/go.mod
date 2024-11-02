@@ -37,10 +37,12 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-
 require (
 	github.com/gin-gonic/gin v1.10.0
+	github.com/lvyahui8/ellyn v0.0.0
 	github.com/lvyahui8/ellyn/api v0.0.0
 )
+
+replace github.com/lvyahui8/ellyn => ../
 
 replace github.com/lvyahui8/ellyn/api => ../api
