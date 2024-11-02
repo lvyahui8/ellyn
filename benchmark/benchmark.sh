@@ -10,11 +10,11 @@ if ! [ -x "$(command -v benchstat)" ]; then
 fi
 
 
-cd "$SCRIPT_DIR/.." && go test -v -run TestRollbackBenchmark ./ellyn_ast/
+cd "$SCRIPT_DIR/.." && go test -v -run TestRollbackBenchmark ./instr/
 
 cd "$SCRIPT_DIR/" && go test -v -run ^$ -bench=. -benchmem -benchtime=5x . > old.out
 
-cd "$SCRIPT_DIR/.." && go test -v -run TestUpdateBenchmark ./ellyn_ast/
+cd "$SCRIPT_DIR/.." && go test -v -run TestUpdateBenchmark ./instr/
 
 cd "$SCRIPT_DIR/" && go test -v -run ^$ -bench=. -benchmem -benchtime=5x . > new.out
 
