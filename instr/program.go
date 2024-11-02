@@ -204,7 +204,7 @@ func (p *Program) buildMethods(fileId uint32) {
 	fileMethods, ok := p.fileMethodsMap.Load(fileId)
 	if !ok {
 		// 文件没有函数
-		fmt.Printf("file %d no methods\n", fileId)
+		// fmt.Printf("file %d no methods\n", fileId)
 		return
 	}
 	fileMethods.Each(func(index int, value interface{}) {
@@ -236,7 +236,7 @@ func (p *Program) addBlock(fileId uint32, begin, end token.Position) *agent.Bloc
 func (p *Program) scanSourceFiles(handler fileHandler) {
 	fileGroup := &sync.WaitGroup{}
 	for pkgDir, pkg := range p.dir2pkgMap {
-		if !strings.HasPrefix(pkg.Path, p.rootPkg.Path) {
+		if !strings.HasPrefix(pkg.Path, p.rootPkg.Path) || strings.HasSuffix(pkg.Path, sdk.AgentPkg) {
 			continue
 		}
 		files, err := os.ReadDir(pkgDir)
@@ -361,7 +361,15 @@ func (p *Program) RollbackAll() {
 			p.rollback(fileAbsPath)
 		})
 	}
-	utils.OS.Remove(filepath.Join(p.targetPath, sdk.AgentPkg))
+	p.hardDeletePackage(filepath.Join(p.targetPath, sdk.AgentPkg))
+}
+
+func (p *Program) hardDeletePackage(pkgDir string) {
+	if pkg, ok := p.dir2pkgMap[pkgDir]; ok {
+		delete(p.dir2pkgMap, pkgDir)
+		delete(p.path2pkgMap, pkg.Path)
+		utils.OS.Remove(pkgDir)
+	}
 }
 
 func (p *Program) cleanBackupFiles() {

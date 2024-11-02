@@ -79,7 +79,7 @@ func (f *FileVisitor) insertAtPost(offset int, contentGetter func() string, prio
 }
 
 func (f *FileVisitor) insertBlockVisit(beginPos, endPos token.Pos) {
-	fmt.Printf("block begin:%d,end:%d\n", f.offset(beginPos), f.offset(endPos))
+	//fmt.Printf("block begin:%d,end:%d\n", f.offset(beginPos), f.offset(endPos))
 	f.addBlock(beginPos, endPos)
 }
 
@@ -213,7 +213,7 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 				fname = star + p.Name + "." + fname
 			}
 		}
-		fmt.Printf("func %s\n", fname)
+		//fmt.Printf("func %s\n", fname)
 		f.addFuncByDecl(fname, n)
 		ast.Walk(f, n.Body)
 		return nil
@@ -225,7 +225,7 @@ func (f *FileVisitor) Visit(node ast.Node) ast.Visitor {
 		pos := n.Pos()
 		p := f.fset.File(pos).Position(pos)
 		fname := fmt.Sprintf("func.L%d.C%d", p.Line, p.Column)
-		fmt.Printf("func %s\n", fname)
+		//fmt.Printf("func %s\n", fname)
 		f.addFuncByLint(fname, n)
 		ast.Walk(f, n.Body)
 		// todo get parent func
