@@ -41,20 +41,30 @@ type Program struct {
 	fileMethodsMap *collections.ConcurrentMap[uint32, *treeset.Set]
 	allBlocks      *collections.ConcurrentMap[uint32, *agent.Block]
 
-	initOnce       sync.Once
+	// 控制初始化方法仅执行一次
+	initOnce sync.Once
+
+	// 目标资源计数器
 	packageCounter uint32
 	fileCounter    int32
 	methodCounter  int32
 	blockCounter   int32
 
+	// 用于并发处理文件
 	executor *goroutine.RoutinePool
 
+	// 目标仓库import关键字导入agent的package path
 	sdkImportPkgPath string
-	modFilePath      string
-	modFile          *modfile.File
-	targetPath       string
-	updatedFiles     []string
-	specifySdkDir    string
+	// modFilePath 目标项目go.mod所在路径
+	modFilePath string
+	// modFile 目标项目go.mod文件实例
+	modFile *modfile.File
+	// targetPath agent输出路径默认为目标项目main pkg
+	targetPath string
+	// updatedFiles 已经更新的文件
+	updatedFiles []string
+	// specifySdkDir 强制指定sdk路径，不进行sdk拷贝动作
+	specifySdkDir string
 }
 
 func NewProgram(mainPkgDir string) *Program {
@@ -261,7 +271,10 @@ func (p *Program) scanSourceFiles(handler fileHandler) {
 }
 
 func (p *Program) buildAgent() {
-	p.copySdk(ellyn.SdkDir)
+	if len(p.specifySdkDir) > 0 {
+		return
+	}
+	p.copySdk(ellyn.SdkPkgDir)
 }
 
 func (p *Program) copySdk(sdkPath string) {
@@ -287,12 +300,12 @@ func (p *Program) copySdk(sdkPath string) {
 
 			if utils.Go.IsSourceFile(file.Name()) {
 				updated := strings.ReplaceAll(
-					utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path+"/"+ellyn.AgentPkg)
+					utils.String.Bytes2string(bytes), ellyn.SdkPkgPathPrefix, p.rootPkg.Path+"/"+ellyn.AgentPkg)
 				bytes = utils.String.String2bytes(updated)
 			}
 
 			utils.OS.WriteTo(path.Join(p.targetPath,
-				strings.Replace(rPath, ellyn.SdkDir, ellyn.AgentPkg, 1)), bytes)
+				strings.Replace(rPath, ellyn.SdkPkgDir, ellyn.AgentPkg, 1)), bytes)
 		}
 	}
 }
@@ -333,12 +346,12 @@ func (p *Program) updateFile(pkg *agent.Package, fileAbsPath string) {
 }
 
 func (p *Program) copySource(relativePath string, content []byte) {
-	sourcesPath := filepath.Join(p.targetPath, ellyn.AgentPkg, agent.SourcesRelativePath)
+	sourcesPath := filepath.Join(p.getTargetPath(), ellyn.AgentPkg, agent.SourcesRelativePath)
 	utils.OS.WriteTo(filepath.Join(sourcesPath, relativePath)+agent.SourcesFileExt, content)
 }
 
 func (p *Program) buildApp() {
-	utils.OS.CopyFile(p.modFilePath, filepath.Join(p.targetPath, "go.mod"))
+	//utils.OS.CopyFile(p.modFilePath, filepath.Join(p.targetPath, "go.mod"))
 }
 
 // parseModFile 获取项目go.mod文件所在的package name
@@ -385,6 +398,9 @@ func (p *Program) RollbackAll() {
 			p.rollback(fileAbsPath)
 		})
 	}
+	if len(p.specifySdkDir) > 0 {
+		return
+	}
 	utils.OS.Remove(filepath.ToSlash(filepath.Join(p.targetPath, ellyn.AgentPkg)))
 }
 
@@ -396,8 +412,7 @@ func (p *Program) cleanBackupFiles() {
 
 // buildMeta 构建元数据，将元数据写入项目
 func (p *Program) buildMeta() {
-	target := p.targetPath
-	metaPath := filepath.Join(target, ellyn.AgentPkg, agent.MetaRelativePath)
+	metaPath := filepath.Join(p.getTargetPath(), ellyn.AgentPkg, agent.MetaRelativePath)
 	utils.OS.MkDirs(metaPath)
 	// 写入运行时配置
 	confBytes, err := json.Marshal(p.conf)
@@ -421,4 +436,12 @@ func (p *Program) buildMeta() {
 		agent.EncodeCsvRows(p.allBlocks.SortedValues(func(a, b *agent.Block) bool {
 			return a.Id < b.Id
 		})))
+}
+
+func (p *Program) getTargetPath() string {
+	if len(p.specifySdkDir) != 0 {
+		return p.specifySdkDir
+	} else {
+		return p.targetPath
+	}
 }

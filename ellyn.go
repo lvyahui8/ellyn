@@ -3,8 +3,8 @@ package ellyn
 import "embed"
 
 const (
-	SdkDir        = "sdk"
-	SdkRawRootPkg = "github.com/lvyahui8/ellyn/sdk"
+	SdkPkgDir        = "sdk"
+	SdkPkgPathPrefix = "github.com/lvyahui8/ellyn/sdk"
 )
 
 const AgentPkg = "ellyn_agent"
