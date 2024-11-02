@@ -2,7 +2,6 @@ module example
 
 go 1.18
 
-require github.com/lvyahui8/ellyn v0.0.0
 
 require (
 	github.com/bytedance/sonic v1.11.6 // indirect
@@ -40,4 +39,6 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/lvyahui8/ellyn => ../
+require github.com/lvyahui8/ellyn/api v0.0.0
+
+replace github.com/lvyahui8/ellyn/api => ../api

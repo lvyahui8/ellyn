@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
+	"github.com/lvyahui8/ellyn"
 	"github.com/lvyahui8/ellyn/sdk"
 	"github.com/lvyahui8/ellyn/sdk/agent"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
@@ -258,19 +259,40 @@ func (p *Program) scanSourceFiles(handler fileHandler) {
 }
 
 func (p *Program) buildAgent() {
-	utils.OS.WriteTo(filepath.Join(p.targetPath, sdk.AgentPkg, "init.go"), []byte(fmt.Sprintf(`
-package %s
+	p.copySdk(ellyn.SdkDir)
+}
 
-import (
-	"embed"
-	"github.com/lvyahui8/ellyn/sdk/agent"
-)
+func (p *Program) copySdk(sdkPath string) {
+	files, err := ellyn.SdkFs.ReadDir(sdkPath)
+	asserts.IsNil(err)
+	for _, file := range files {
+		if !file.IsDir() && !utils.Go.IsSourceFile(file.Name()) &&
+			!strings.Contains(filepath.ToSlash(sdkPath), "/page") {
+			continue
+		}
+		fmt.Printf("sdk relativePath :%s\n", file.Name())
+		rPath := path.Join(sdkPath, file.Name())
+		if file.IsDir() {
+			p.copySdk(rPath)
+		} else {
+			isApiFile := false
+			if strings.HasSuffix(filepath.ToSlash(rPath), sdk.AgentApiFile) {
+				if !p.require(ellyn.ApiPackage) {
+					continue
+				}
+				isApiFile = true
+			}
+			bytes, err := ellyn.SdkFs.ReadFile(rPath)
+			asserts.IsNil(err)
+			if !isApiFile {
+				updated := strings.ReplaceAll(
+					utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path)
+				bytes = utils.String.String2bytes(updated)
+			}
 
-//go:embed %s
-var meta embed.FS
-
-var Agent = agent.InitAgent(meta)
-`, sdk.AgentPkg, sdk.MetaRelativePath)))
+			utils.OS.WriteTo(path.Join(p.targetPath, rPath), bytes)
+		}
+	}
 }
 
 func (p *Program) handleFile(pkg *agent.Package, file os.DirEntry, handler fileHandler, fileGroup *sync.WaitGroup) {
