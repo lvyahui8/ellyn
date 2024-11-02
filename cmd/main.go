@@ -33,7 +33,7 @@ func main() {
 					if err != nil {
 						return err
 					}
-					prog := instr.NewProgram2(dir, *conf)
+					prog := instr.NewProgram(dir, false, conf)
 					defer prog.Destroy()
 					prog.RollbackAll()
 					prog.Visit()
@@ -48,7 +48,7 @@ func main() {
 					if err != nil {
 						return err
 					}
-					prog := instr.NewProgram(dir)
+					prog := instr.NewProgram(dir, false, conf)
 					defer prog.Destroy()
 					prog.RollbackAll()
 					return nil

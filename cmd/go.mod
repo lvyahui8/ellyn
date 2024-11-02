@@ -3,7 +3,7 @@ module github.com/lvyahui8/ellyn/ellyn
 go 1.18
 
 require (
-	github.com/lvyahui8/ellyn v0.0.6
+	github.com/lvyahui8/ellyn v0.0.0
 	github.com/urfave/cli/v2 v2.27.5
 )
 
@@ -16,3 +16,7 @@ require (
 )
 
 replace github.com/lvyahui8/ellyn => ../
+
+require github.com/lvyahui8/ellyn/api v0.0.0 // indirect
+
+replace github.com/lvyahui8/ellyn/api => ../api

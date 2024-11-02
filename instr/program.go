@@ -63,17 +63,17 @@ type Program struct {
 	targetPath string
 	// updatedFiles 已经更新的文件
 	updatedFiles []string
-	// specifySdkDir 强制指定sdk路径，不进行sdk拷贝动作
-	specifySdkDir string
+	// useRawSdk 是否直接使用原始sdk，而不执行拷贝，用于本地快速调试
+	useRawSdk bool
 }
 
-func NewProgram(mainPkgDir string) *Program {
-	return NewProgram2(mainPkgDir, agent.Configuration{})
-}
-func NewProgram2(mainPkgDir string, configuration agent.Configuration) *Program {
+func NewProgram(mainPkgDir string, useRawSdk bool, conf *agent.Configuration) *Program {
 	mainPkgDir = filepath.ToSlash(mainPkgDir)
+	if conf == nil {
+		conf = &agent.Configuration{}
+	}
 	prog := &Program{
-		conf: configuration,
+		conf: *conf,
 		mainPkg: &agent.Package{
 			Dir: mainPkgDir,
 		},
@@ -88,8 +88,13 @@ func NewProgram2(mainPkgDir string, configuration agent.Configuration) *Program 
 		fileCounter:    -1,
 		methodCounter:  -1,
 		blockCounter:   -1,
+		useRawSdk:      useRawSdk,
 	}
 	prog._init()
+	if useRawSdk {
+		prog.targetPath = ellyn.RepoRootPath
+		prog.sdkImportPkgPath = ellyn.SdkPkgPath
+	}
 	return prog
 }
 
@@ -271,7 +276,7 @@ func (p *Program) scanSourceFiles(handler fileHandler) {
 }
 
 func (p *Program) buildAgent() {
-	if len(p.specifySdkDir) > 0 {
+	if p.useRawSdk {
 		return
 	}
 	p.copySdk(ellyn.SdkPkgDir)
@@ -300,7 +305,7 @@ func (p *Program) copySdk(sdkPath string) {
 
 			if utils.Go.IsSourceFile(file.Name()) {
 				updated := strings.ReplaceAll(
-					utils.String.Bytes2string(bytes), ellyn.SdkPkgPathPrefix, p.rootPkg.Path+"/"+ellyn.AgentPkg)
+					utils.String.Bytes2string(bytes), ellyn.SdkPkgPath, p.rootPkg.Path+"/"+ellyn.AgentPkg)
 				bytes = utils.String.String2bytes(updated)
 			}
 
@@ -346,7 +351,7 @@ func (p *Program) updateFile(pkg *agent.Package, fileAbsPath string) {
 }
 
 func (p *Program) copySource(relativePath string, content []byte) {
-	sourcesPath := filepath.Join(p.getTargetPath(), ellyn.AgentPkg, agent.SourcesRelativePath)
+	sourcesPath := filepath.Join(p.getAgentPath(), agent.SourcesRelativePath)
 	utils.OS.WriteTo(filepath.Join(sourcesPath, relativePath)+agent.SourcesFileExt, content)
 }
 
@@ -398,7 +403,7 @@ func (p *Program) RollbackAll() {
 			p.rollback(fileAbsPath)
 		})
 	}
-	if len(p.specifySdkDir) > 0 {
+	if p.useRawSdk {
 		return
 	}
 	utils.OS.Remove(filepath.ToSlash(filepath.Join(p.targetPath, ellyn.AgentPkg)))
@@ -412,7 +417,7 @@ func (p *Program) cleanBackupFiles() {
 
 // buildMeta 构建元数据，将元数据写入项目
 func (p *Program) buildMeta() {
-	metaPath := filepath.Join(p.getTargetPath(), ellyn.AgentPkg, agent.MetaRelativePath)
+	metaPath := filepath.Join(p.getAgentPath(), agent.MetaRelativePath)
 	utils.OS.MkDirs(metaPath)
 	// 写入运行时配置
 	confBytes, err := json.Marshal(p.conf)
@@ -438,10 +443,10 @@ func (p *Program) buildMeta() {
 		})))
 }
 
-func (p *Program) getTargetPath() string {
-	if len(p.specifySdkDir) != 0 {
-		return p.specifySdkDir
+func (p *Program) getAgentPath() string {
+	if p.useRawSdk {
+		return filepath.Join(p.targetPath, ellyn.SdkPkgDir)
 	} else {
-		return p.targetPath
+		return filepath.Join(p.targetPath, ellyn.AgentPkg)
 	}
 }

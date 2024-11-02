@@ -13,9 +13,9 @@ func TestProgramAll(t *testing.T) {
 		err := recover()
 		require.Nil(t, err)
 	}()
-	prog := NewProgram(test.GetTestProjPath())
+	prog := NewProgram(test.GetTestProjPath(), true, nil)
 	defer prog.Destroy()
-	prog.specifySdkDir = test.GetRepoRootPath()
+	prog.useRawSdk = true
 	prog.RollbackAll()
 	prog.Visit()
 	utils.Go.Build(prog.mainPkg.Dir)
@@ -23,7 +23,7 @@ func TestProgramAll(t *testing.T) {
 }
 
 func TestCleanBackupFiles(t *testing.T) {
-	prog := NewProgram(test.GetTestProjPath())
+	prog := NewProgram(test.GetTestProjPath(), true, nil)
 	defer prog.Destroy()
 	prog.cleanBackupFiles()
 }
@@ -33,7 +33,7 @@ func TestFileEach(t *testing.T) {
 		err := recover()
 		require.Nil(t, err)
 	}()
-	prog := NewProgram(test.GetTestProjPath())
+	prog := NewProgram(test.GetTestProjPath(), true, nil)
 	defer prog.Destroy()
 	prog.scanSourceFiles(func(pkg *agent.Package, fileAbsPath string) {
 		t.Log(fileAbsPath)
@@ -45,22 +45,22 @@ func TestExample(t *testing.T) {
 		err := recover()
 		require.Nil(t, err)
 	}()
-	prog := NewProgram(test.GetTestProjPath())
+	prog := NewProgram(test.GetTestProjPath(), true, nil)
 	defer prog.Destroy()
 	prog.RollbackAll()
-	prog.specifySdkDir = test.GetRepoRootPath()
+	prog.useRawSdk = true
 	prog.Visit()
 
 }
 
 func TestRollbackExample(t *testing.T) {
-	prog := NewProgram(test.GetTestProjPath())
+	prog := NewProgram(test.GetTestProjPath(), true, nil)
 	defer prog.Destroy()
 	prog.RollbackAll()
 }
 
 func TestUpdateBenchmark(t *testing.T) {
-	prog := NewProgram2(test.GetBenchmarkPath(), agent.Configuration{
+	prog := NewProgram(test.GetBenchmarkPath(), false, &agent.Configuration{
 		NoArgs: true,
 		NoDemo: true,
 	})
@@ -70,7 +70,7 @@ func TestUpdateBenchmark(t *testing.T) {
 }
 
 func TestRollbackBenchmark(t *testing.T) {
-	prog := NewProgram(test.GetBenchmarkPath())
+	prog := NewProgram(test.GetBenchmarkPath(), false, nil)
 	defer prog.Destroy()
 	prog.RollbackAll()
 }
