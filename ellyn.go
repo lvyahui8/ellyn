@@ -7,6 +7,8 @@ const (
 	SdkRawRootPkg = "github.com/lvyahui8/ellyn/sdk"
 )
 
+const AgentPkg = "ellyn_agent"
+
 const ApiPackage = "github.com/lvyahui8/ellyn/api"
 
 //go:embed sdk

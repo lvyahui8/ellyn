@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/lvyahui8/ellyn/sdk"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
@@ -30,7 +29,7 @@ const feAddr = ":19898"
 
 const (
 	SourcesDir          = "sources"
-	SourcesRelativePath = sdk.MetaRelativePath + "/" + SourcesDir
+	SourcesRelativePath = MetaRelativePath + "/" + SourcesDir
 	SourcesFileExt      = ".src"
 )
 
@@ -57,7 +56,7 @@ func handle404(fs http.FileSystem) http.Handler {
 		_, err := fs.Open(path.Clean(request.URL.Path))
 		if os.IsNotExist(err) {
 			// 返回index.html的内容
-			indexHtml, _ := meta.ReadFile(filepath.Join(sdk.MetaRelativePath, "page/index.html"))
+			indexHtml, _ := meta.ReadFile(filepath.Join(MetaRelativePath, "page/index.html"))
 			http.ServeContent(writer, request, "", time.Now(), bytes.NewReader(indexHtml))
 			return
 		}
@@ -76,7 +75,7 @@ func newServer() {
 	registerApi("/target/info", targetInfo)
 
 	// page
-	staticResources, _ := fs.Sub(meta, filepath.Join(sdk.MetaRelativePath, "page"))
+	staticResources, _ := fs.Sub(meta, filepath.Join(MetaRelativePath, "page"))
 	http.Handle("/", handle404(http.FS(staticResources)))
 
 	// open browser

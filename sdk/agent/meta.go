@@ -20,10 +20,10 @@ func getDat(file string) []byte {
 }
 
 func initMetaData() {
-	packages = initCsvData[*Package](getDat("packages.dat"))
-	files = initCsvData[*File](getDat("files.dat"))
-	methods = initCsvData[*Method](getDat("methods.dat"))
-	blocks = initCsvData[*Block](getDat("blocks.dat"))
+	packages = initCsvData[*Package](getDat(MetaPackages))
+	files = initCsvData[*File](getDat(MetaFiles))
+	methods = initCsvData[*Method](getDat(MetaMethods))
+	blocks = initCsvData[*Block](getDat(MetaBlocks))
 }
 
 type CsvRow interface {

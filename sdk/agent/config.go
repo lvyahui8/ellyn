@@ -2,12 +2,13 @@ package agent
 
 import (
 	"encoding/json"
+	"path/filepath"
 )
 
 var conf Configuration
 
 func initConfig() {
-	configContent, _ := meta.ReadFile("meta/config.json")
+	configContent, _ := meta.ReadFile(filepath.Join(MetaRelativePath, RuntimeConfFile))
 	if len(configContent) > 0 {
 		err := json.Unmarshal(configContent, &conf)
 		if err != nil {

@@ -14,10 +14,7 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require github.com/lvyahui8/ellyn/sdk v0.0.0
 
-replace github.com/lvyahui8/ellyn/sdk => ./sdk
-
-require github.com/lvyahui8/ellyn/api v0.0.0 // indirect
+require github.com/lvyahui8/ellyn/api v0.0.0
 
 replace github.com/lvyahui8/ellyn/api => ./api

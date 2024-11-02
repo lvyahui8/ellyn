@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/emirpasic/gods/sets/treeset"
 	"github.com/lvyahui8/ellyn"
-	"github.com/lvyahui8/ellyn/sdk"
 	"github.com/lvyahui8/ellyn/sdk/agent"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
@@ -237,7 +236,7 @@ func (p *Program) addBlock(fileId uint32, begin, end token.Position) *agent.Bloc
 func (p *Program) scanSourceFiles(handler fileHandler) {
 	fileGroup := &sync.WaitGroup{}
 	for pkgDir, pkg := range p.dir2pkgMap {
-		if !strings.HasPrefix(pkg.Path, p.rootPkg.Path) || strings.HasSuffix(pkg.Path, sdk.AgentPkg) {
+		if !strings.HasPrefix(pkg.Path, p.rootPkg.Path) || strings.HasSuffix(pkg.Path, ellyn.AgentPkg) {
 			continue
 		}
 		files, err := os.ReadDir(pkgDir)
@@ -275,22 +274,20 @@ func (p *Program) copySdk(sdkPath string) {
 		if file.IsDir() {
 			p.copySdk(rPath)
 		} else {
-			isApiFile := false
-			if strings.HasSuffix(filepath.ToSlash(rPath), sdk.AgentApiFile) {
+			if strings.HasSuffix(filepath.ToSlash(rPath), agent.AgentApiFile) {
 				if !p.require(ellyn.ApiPackage) {
 					continue
 				}
-				isApiFile = true
 			}
 			bytes, err := ellyn.SdkFs.ReadFile(rPath)
 			asserts.IsNil(err)
-			if !isApiFile {
-				updated := strings.ReplaceAll(
-					utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path)
-				bytes = utils.String.String2bytes(updated)
-			}
 
-			utils.OS.WriteTo(path.Join(p.targetPath, rPath), bytes)
+			updated := strings.ReplaceAll(
+				utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path+"/"+ellyn.AgentPkg)
+			bytes = utils.String.String2bytes(updated)
+
+			utils.OS.WriteTo(path.Join(p.targetPath,
+				strings.Replace(rPath, ellyn.SdkDir, ellyn.AgentPkg, 1)), bytes)
 		}
 	}
 }
@@ -331,7 +328,7 @@ func (p *Program) updateFile(pkg *agent.Package, fileAbsPath string) {
 }
 
 func (p *Program) copySource(relativePath string, content []byte) {
-	sourcesPath := filepath.Join(p.targetPath, sdk.AgentPkg, agent.SourcesRelativePath)
+	sourcesPath := filepath.Join(p.targetPath, ellyn.AgentPkg, agent.SourcesRelativePath)
 	utils.OS.WriteTo(filepath.Join(sourcesPath, relativePath)+agent.SourcesFileExt, content)
 }
 
@@ -383,15 +380,15 @@ func (p *Program) RollbackAll() {
 			p.rollback(fileAbsPath)
 		})
 	}
-	p.hardDeletePackage(filepath.Join(p.targetPath, sdk.AgentPkg))
+	p.hardDeletePackage(filepath.ToSlash(filepath.Join(p.targetPath, ellyn.AgentPkg)))
 }
 
 func (p *Program) hardDeletePackage(pkgDir string) {
 	if pkg, ok := p.dir2pkgMap[pkgDir]; ok {
 		delete(p.dir2pkgMap, pkgDir)
 		delete(p.path2pkgMap, pkg.Path)
-		utils.OS.Remove(pkgDir)
 	}
+	utils.OS.Remove(pkgDir)
 }
 
 func (p *Program) cleanBackupFiles() {
@@ -403,27 +400,27 @@ func (p *Program) cleanBackupFiles() {
 // buildMeta 构建元数据，将元数据写入项目
 func (p *Program) buildMeta() {
 	target := p.targetPath
-	metaPath := filepath.Join(target, sdk.AgentPkg, sdk.MetaRelativePath)
+	metaPath := filepath.Join(target, ellyn.AgentPkg, agent.MetaRelativePath)
 	utils.OS.MkDirs(metaPath)
 	// 写入运行时配置
 	confBytes, err := json.Marshal(p.conf)
 	asserts.IsNil(err)
-	utils.OS.WriteTo(filepath.Join(metaPath, sdk.RuntimeConfFile), confBytes)
+	utils.OS.WriteTo(filepath.Join(metaPath, agent.RuntimeConfFile), confBytes)
 	// 写入包、文件、函数、块数据
 	pkgList := utils.GetMapValues(p.dir2pkgMap)
 	sort.Slice(pkgList, func(i, j int) bool {
 		return pkgList[i].Id < pkgList[j].Id
 	})
-	utils.OS.WriteTo(filepath.Join(metaPath, sdk.MetaPackages), agent.EncodeCsvRows(pkgList))
-	utils.OS.WriteTo(filepath.Join(metaPath, sdk.MetaFiles),
+	utils.OS.WriteTo(filepath.Join(metaPath, agent.MetaPackages), agent.EncodeCsvRows(pkgList))
+	utils.OS.WriteTo(filepath.Join(metaPath, agent.MetaFiles),
 		agent.EncodeCsvRows(p.allFiles.SortedValues(func(a, b *agent.File) bool {
 			return a.FileId < b.FileId
 		})))
-	utils.OS.WriteTo(filepath.Join(metaPath, sdk.MetaMethods),
+	utils.OS.WriteTo(filepath.Join(metaPath, agent.MetaMethods),
 		agent.EncodeCsvRows(p.allMethods.SortedValues(func(a, b *agent.Method) bool {
 			return a.Id < b.Id
 		})))
-	utils.OS.WriteTo(filepath.Join(metaPath, sdk.MetaBlocks),
+	utils.OS.WriteTo(filepath.Join(metaPath, agent.MetaBlocks),
 		agent.EncodeCsvRows(p.allBlocks.SortedValues(func(a, b *agent.Block) bool {
 			return a.Id < b.Id
 		})))
