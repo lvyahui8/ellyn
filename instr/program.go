@@ -285,9 +285,11 @@ func (p *Program) copySdk(sdkPath string) {
 			bytes, err := ellyn.SdkFs.ReadFile(rPath)
 			asserts.IsNil(err)
 
-			updated := strings.ReplaceAll(
-				utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path+"/"+ellyn.AgentPkg)
-			bytes = utils.String.String2bytes(updated)
+			if utils.Go.IsSourceFile(file.Name()) {
+				updated := strings.ReplaceAll(
+					utils.String.Bytes2string(bytes), ellyn.SdkRawRootPkg, p.rootPkg.Path+"/"+ellyn.AgentPkg)
+				bytes = utils.String.String2bytes(updated)
+			}
 
 			utils.OS.WriteTo(path.Join(p.targetPath,
 				strings.Replace(rPath, ellyn.SdkDir, ellyn.AgentPkg, 1)), bytes)

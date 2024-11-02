@@ -1,7 +1,7 @@
 package agent
 
 const (
-	MetaRelativePath = ".meta"
+	MetaRelativePath = "meta"
 	MetaBlocks       = "blocks.dat"
 	MetaFiles        = "files.dat"
 	MetaMethods      = "methods.dat"

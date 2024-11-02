@@ -5,7 +5,7 @@ import (
 	"github.com/lvyahui8/ellyn/sdk/agent"
 )
 
-//go:embed .meta
+//go:embed meta
 var meta embed.FS
 
 var NotCollected = agent.NotCollected

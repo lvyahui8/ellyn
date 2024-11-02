@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   build: {
-    outDir : "../ellyn_agent/page/",
+    outDir : "../sdk/meta/page/",
     commonjsOptions: {
      // transformMixedEsModules: true,
       ignoreTryCatch: false,
