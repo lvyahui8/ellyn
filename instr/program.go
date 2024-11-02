@@ -88,6 +88,9 @@ func (p *Program) _init() {
 	p.initOnce.Do(func() {
 		packages := utils.Go.AllPackages(p.mainPkg.Dir)
 		for pkgPath, pkgDir := range packages {
+			if strings.Contains(pkgPath, ellyn.AgentPkg) {
+				continue
+			}
 			pkg := agent.NewPackage(pkgDir, pkgPath)
 			pkg.Id = p.packageCounter
 			p.packageCounter++
@@ -380,15 +383,7 @@ func (p *Program) RollbackAll() {
 			p.rollback(fileAbsPath)
 		})
 	}
-	p.hardDeletePackage(filepath.ToSlash(filepath.Join(p.targetPath, ellyn.AgentPkg)))
-}
-
-func (p *Program) hardDeletePackage(pkgDir string) {
-	if pkg, ok := p.dir2pkgMap[pkgDir]; ok {
-		delete(p.dir2pkgMap, pkgDir)
-		delete(p.path2pkgMap, pkg.Path)
-	}
-	utils.OS.Remove(pkgDir)
+	utils.OS.Remove(filepath.ToSlash(filepath.Join(p.targetPath, ellyn.AgentPkg)))
 }
 
 func (p *Program) cleanBackupFiles() {
