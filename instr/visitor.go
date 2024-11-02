@@ -11,7 +11,7 @@ import (
 )
 
 const varNamePrefix = "_ellynVar"
-const notCollectedVarName = "agent.NotCollected"
+const notCollectedVarName = "ellyn_agent.NotCollected"
 
 type insert struct {
 	offset        int

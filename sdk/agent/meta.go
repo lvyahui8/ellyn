@@ -15,7 +15,7 @@ import (
 var meta embed.FS
 
 func getDat(file string) []byte {
-	data, _ := meta.ReadFile("meta/" + file)
+	data, _ := meta.ReadFile(MetaRelativePath + "/" + file)
 	return data
 }
 
