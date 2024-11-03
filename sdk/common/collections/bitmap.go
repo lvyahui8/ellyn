@@ -5,10 +5,12 @@ import "errors"
 const slotShift = 6
 
 type BitMap struct {
-	slots    []uint64
-	cap      uint
-	size     int
-	_padding [24]byte
+	slots     []uint64
+	_padding0 [48]byte
+	cap       uint
+	_padding1 [56]byte
+	size      int
+	_padding2 [56]byte
 }
 
 func NewBitMap(cap uint) *BitMap {
@@ -25,6 +27,10 @@ func (m *BitMap) Set(pos uint) {
 	if m.slots[pos>>slotShift] != old {
 		m.size++
 	}
+}
+
+func (m *BitMap) GetWithoutCheck(pos uint) bool {
+	return m.slots[pos>>slotShift]&(uint64(1)<<pos) != 0
 }
 
 func (m *BitMap) Get(pos uint) bool {

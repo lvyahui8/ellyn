@@ -8,7 +8,7 @@ import (
 
 var idGenerator = guid.NewGuidGenerator()
 
-var globalCovered *collections.BitMap
+var globalCovered []bool
 
 type Api interface {
 	InitCtx(ctxId uint64, from uint32)

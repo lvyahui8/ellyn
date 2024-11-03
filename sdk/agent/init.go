@@ -2,7 +2,6 @@ package agent
 
 import (
 	"embed"
-	"github.com/lvyahui8/ellyn/sdk/common/collections"
 )
 
 func initAgent(m embed.FS) {
@@ -10,6 +9,6 @@ func initAgent(m embed.FS) {
 	initConfig()
 	initMetaData()
 	if len(blocks) > 0 {
-		globalCovered = collections.NewBitMap(uint(len(blocks)))
+		globalCovered = make([]bool, int(len(blocks)))
 	}
 }

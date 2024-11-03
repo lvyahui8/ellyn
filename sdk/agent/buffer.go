@@ -56,7 +56,7 @@ func updateGlobalCovered(g *graph) {
 		m := methods[n.methodId]
 		for _, block := range m.Blocks {
 			if n.blocks.Get(uint(block.MethodOffset)) {
-				globalCovered.Set(uint(block.Id))
+				globalCovered[int(block.Id)] = true
 			}
 		}
 	}

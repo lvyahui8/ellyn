@@ -188,7 +188,7 @@ func targetInfo(writer http.ResponseWriter, request *http.Request) {
 	}
 	for _, b := range blocks {
 		info.TargetLineNum += b.End.Line - b.Begin.Line + 1
-		if globalCovered.Get(uint(b.Id)) {
+		if globalCovered[int(b.Id)] {
 			info.CoveredLineNum += b.End.Line - b.Begin.Line + 1
 		}
 	}
@@ -213,7 +213,7 @@ func sourceFile(writer http.ResponseWriter, request *http.Request) {
 		if b.FileId != fileId {
 			continue
 		}
-		bCovered := globalCovered.Get(uint(b.Id))
+		bCovered := globalCovered[int(b.Id)]
 		for i := b.Begin.Line; i <= b.End.Line; i++ {
 			if bCovered {
 				lineMap[i] = 2
