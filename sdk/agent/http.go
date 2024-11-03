@@ -2,7 +2,6 @@ package agent
 
 import (
 	"bytes"
-	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,8 +21,6 @@ import (
 	"sync"
 	"time"
 )
-
-var targetSources embed.FS
 
 const feAddr = ":19898"
 
@@ -56,7 +53,7 @@ func handle404(fs http.FileSystem) http.Handler {
 		_, err := fs.Open(path.Clean(request.URL.Path))
 		if os.IsNotExist(err) {
 			// 返回index.html的内容
-			indexHtml, _ := meta.ReadFile(filepath.Join(MetaRelativePath, "page/index.html"))
+			indexHtml, _ := meta.ReadFile(filepath.ToSlash(filepath.Join(MetaRelativePath, "page/index.html")))
 			http.ServeContent(writer, request, "", time.Now(), bytes.NewReader(indexHtml))
 			return
 		}
@@ -75,7 +72,7 @@ func newServer() {
 	registerApi("/target/info", targetInfo)
 
 	// page
-	staticResources, _ := fs.Sub(meta, filepath.Join(MetaRelativePath, "page"))
+	staticResources, _ := fs.Sub(meta, filepath.ToSlash(filepath.Join(MetaRelativePath, "page")))
 	http.Handle("/", handle404(http.FS(staticResources)))
 
 	// open browser
@@ -236,10 +233,10 @@ func sourceFile(writer http.ResponseWriter, request *http.Request) {
 
 // readCode 读取指定代码id文件
 func readCode(fileId uint32) []byte {
-	bytes, err := targetSources.ReadFile(
-		filepath.ToSlash(filepath.Join(SourcesDir, files[fileId].RelativePath)) + SourcesFileExt)
+	content, err := meta.ReadFile(
+		filepath.ToSlash(filepath.Join(MetaRelativePath, SourcesDir, files[fileId].RelativePath)) + SourcesFileExt)
 	asserts.IsNil(err)
-	return bytes
+	return content
 }
 
 // queryVal 工具方法
@@ -271,11 +268,11 @@ func responseError(writer http.ResponseWriter, err error) {
 }
 
 func responseJson(writer http.ResponseWriter, res any) {
-	bytes, err := json.Marshal(res)
+	content, err := json.Marshal(res)
 	if err != nil {
 		_, _ = writer.Write([]byte(err.Error()))
 	}
-	_, _ = writer.Write(bytes)
+	_, _ = writer.Write(content)
 }
 
 type CoveredBlock struct {

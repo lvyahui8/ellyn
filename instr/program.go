@@ -321,7 +321,7 @@ func (p *Program) handleFile(pkg *agent.Package, file os.DirEntry, handler fileH
 	p.executor.Submit(func() {
 		defer fileGroup.Done()
 		fileAbsPath := filepath.Join(pkg.Dir, file.Name())
-		fmt.Printf("dir %s,relativePath %s\n", pkg.Dir, file.Name())
+		// fmt.Printf("dir %s,relativePath %s\n", pkg.Dir, file.Name())
 		handler(pkg, fileAbsPath)
 	})
 }
