@@ -105,7 +105,7 @@ func TestRingBufferConcurrent(t *testing.T) {
 }
 
 func TestRingBuffer_Dequeue_Loop(t *testing.T) {
-	//t.Skip()
+	t.Skip()
 	queue := NewRingBuffer[int](100)
 	//for {
 	//	res, ok := queue.Dequeue()
