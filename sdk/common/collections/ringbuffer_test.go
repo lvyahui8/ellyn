@@ -3,7 +3,10 @@ package collections
 import (
 	"github.com/stretchr/testify/require"
 	"math"
+	"runtime"
+	"sync"
 	"testing"
+	"time"
 )
 
 //var buffer =
@@ -99,6 +102,37 @@ func TestRingBufferConcurrent(t *testing.T) {
 		t.Logf("Round #%d, target %d,p %d,c %d\n", i, target, produceCnt, consumeCnt)
 		require.Equal(t, produceCnt, consumeCnt)
 	}
+}
+
+func TestRingBuffer_Dequeue_Loop(t *testing.T) {
+	//t.Skip()
+	queue := NewRingBuffer[int](100)
+	//for {
+	//	res, ok := queue.Dequeue()
+	//	if ok {
+	//		t.Log(res)
+	//	} else {
+	//		runtime.Gosched()
+	//	}
+	//}
+	// 空转会导致CPU 100%， 这里需要考虑元素为空时的等待策略，参考 http://www.enmalvi.com/2023/03/22/disruptor/
+	w := &sync.WaitGroup{}
+	for i := 0; i < runtime.NumCPU(); i++ {
+		w.Add(1)
+		go func() {
+			defer w.Done()
+			for {
+				res, ok := queue.Dequeue()
+				if ok {
+					t.Log(res)
+				} else {
+					// runtime.Gosched() // 让出cpu还是会跑满全部CPU
+					time.Sleep(time.Nanosecond * 100)
+				}
+			}
+		}()
+	}
+	w.Wait()
 }
 
 // BenchmarkRingBuffer10000
