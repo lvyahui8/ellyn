@@ -352,7 +352,7 @@ func transferNode(n *node, withDetail bool) *Node {
 	if withDetail {
 		coveredNum := 0
 		for _, block := range method.Blocks {
-			if n.blocks.Get(uint(block.MethodOffset)) {
+			if n.blocks[block.MethodOffset] {
 				coveredNum += block.End.Line - block.Begin.Line + 1
 				item.CoveredBlocks = append(item.CoveredBlocks, CoveredBlock{
 					Begin: *block.Begin,
@@ -397,7 +397,9 @@ func mergeGraphs(list []*graph) *graph {
 				res.nodes[id] = n
 			} else {
 				// 现有节点合并块覆盖信息
-				asserts.IsNil(old.blocks.Merge(n.blocks))
+				for i, flag := range n.blocks {
+					old.blocks[i] = old.blocks[i] || flag
+				}
 				old.cost += n.cost
 			}
 		}

@@ -7,7 +7,7 @@ import (
 
 type methodFrame struct {
 	methodId  uint32
-	blocks    *collections.BitMap
+	blocks    []bool
 	recursion bool
 	begin     int64
 	args      []any
@@ -20,7 +20,7 @@ func (mf *methodFrame) Equals(value collections.Frame) bool {
 }
 
 func (mf *methodFrame) Init() {
-	mf.blocks = newMethodBlockBits(mf.methodId)
+	mf.blocks = newMethodBlockFlags(mf.methodId)
 	mf.begin = time.Now().UnixMilli()
 }
 

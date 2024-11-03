@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
-	"github.com/lvyahui8/ellyn/sdk/common/collections"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"reflect"
 	"strconv"
@@ -240,8 +239,8 @@ func (m *Method) parse(cols []string) {
 	m.ReturnList = decodeVarDef(cols[8])
 }
 
-func newMethodBlockBits(methodId uint32) *collections.BitMap {
-	return collections.NewBitMap(uint(methods[methodId].BlockCnt))
+func newMethodBlockFlags(methodId uint32) []bool {
+	return make([]bool, methods[methodId].BlockCnt)
 }
 
 var blocks []*Block

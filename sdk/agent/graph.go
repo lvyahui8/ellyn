@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"github.com/lvyahui8/ellyn/sdk/common/asserts"
 	"time"
 )
 
@@ -40,8 +39,9 @@ func (g *graph) draw(f *methodFrame) *node {
 	if n, ok := g.nodes[f.methodId]; ok {
 		// 之前已经调用过
 		n.cost += cost // 累计耗时、取最大值
-		err := n.blocks.Merge(f.blocks)
-		asserts.IsNil(err)
+		for i, flag := range f.blocks {
+			n.blocks[i] = n.blocks[i] || flag
+		}
 		return n
 	} else {
 		// 首次加入链路

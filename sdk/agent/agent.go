@@ -88,5 +88,5 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 func (agent *ellynAgent) VisitBlock(ctx *EllynCtx, blockOffset int) {
 	// 取栈顶元素，标记block覆盖请求
 	top := ctx.stack.Top()
-	top.blocks.Set(uint(blockOffset))
+	top.blocks[blockOffset] = true
 }

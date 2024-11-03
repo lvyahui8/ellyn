@@ -92,3 +92,42 @@ func BenchmarkBitMapAndArrayAndMap(b *testing.B) {
 		}
 	})
 }
+
+// BenchmarkBitMapAndArray bitMap读写性能不如array，但更节省空间
+func BenchmarkBitMapAndArray(b *testing.B) {
+	size := 63
+	bitMap := NewBitMap(uint(size))
+	arr := make([]bool, size)
+	target := 41
+	b.Run("bitMap_read", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = bitMap.GetWithoutCheck(uint(target))
+		}
+	})
+	b.Run("array_read", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = arr[target]
+		}
+	})
+}
+
+// BenchmarkBitMapAndArray_Merge bitMap合并元素性能远好于array
+func BenchmarkBitMapAndArray_Merge(b *testing.B) {
+	size := 63
+	bitMap := NewBitMap(uint(size))
+	bitMapOther := NewBitMap(uint(size))
+	arr := make([]bool, size)
+	arrOther := make([]bool, size)
+	b.Run("bitMap_merge", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			_ = bitMap.Merge(bitMapOther)
+		}
+	})
+	b.Run("array_merge", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for idx, flag := range arrOther {
+				arr[idx] = arr[idx] || flag
+			}
+		}
+	})
+}
