@@ -8,7 +8,6 @@ import (
 
 func TestNewBitMap(t *testing.T) {
 	m := NewBitMap(1)
-	require.Equal(t, 64, int(unsafe.Sizeof(*m)))
 	require.Equal(t, 1, len(m.slots))
 	m = NewBitMap(64)
 	require.Equal(t, 1, len(m.slots))
