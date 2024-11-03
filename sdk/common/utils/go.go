@@ -2,6 +2,7 @@ package utils
 
 import (
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
+	"go/build"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -82,4 +83,9 @@ func (g *goUtils) Build(mainPkgDir string) {
 
 func (g *goUtils) IsUnittestEnv() bool {
 	return len(os.Args) > 1 && strings.HasPrefix(os.Args[1], "-test")
+}
+
+func (g *goUtils) IsStdPkg(path string) bool {
+	pkg, _ := build.Import(path, "", 0)
+	return pkg.Goroot
 }
