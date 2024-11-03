@@ -15,7 +15,7 @@ type Api interface {
 	GetCtx() *EllynCtx
 	Push(ctx *EllynCtx, methodId uint32, params []any)
 	Pop(ctx *EllynCtx, results []any)
-	VisitBlock(ctx *EllynCtx, blockOffset int)
+	SetBlock(ctx *EllynCtx, blockOffset, blockId int)
 }
 
 var _ Api = (*ellynAgent)(nil)
@@ -85,8 +85,9 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 	}
 }
 
-func (agent *ellynAgent) VisitBlock(ctx *EllynCtx, blockOffset int) {
+func (agent *ellynAgent) SetBlock(ctx *EllynCtx, blockOffset, blockId int) {
 	// 取栈顶元素，标记block覆盖请求
 	top := ctx.stack.Top()
 	top.blocks[blockOffset] = true
+	globalCovered[blockId] = true
 }

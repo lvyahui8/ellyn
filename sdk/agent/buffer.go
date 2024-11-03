@@ -34,7 +34,7 @@ func (c *collector) start() {
 					time.Sleep(100 * time.Nanosecond)
 					continue
 				}
-				updateGlobalCovered(g)
+				// updateGlobalCovered(g)
 				if !conf.NoDemo {
 					// 消费链路数据，这里缓存到本地用于demo显示
 					saveToDisplayCache(g)
