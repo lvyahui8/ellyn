@@ -1,9 +1,5 @@
 package agent
 
-import (
-	"time"
-)
-
 type graph struct {
 	id uint64
 	// time 发生时间
@@ -17,7 +13,7 @@ type graph struct {
 func newGraph(id uint64) *graph {
 	return &graph{
 		id:    id,
-		time:  time.Now().UnixMilli(),
+		time:  currentTime().UnixMilli(),
 		nodes: make(map[uint32]*node),
 		edges: make(map[uint64]struct{}),
 	}
@@ -35,7 +31,7 @@ func (g *graph) add(from *methodFrame, to *methodFrame) {
 }
 
 func (g *graph) draw(f *methodFrame) *node {
-	cost := time.Now().UnixMilli() - f.begin
+	cost := currentTime().UnixMilli() - f.begin
 	if n, ok := g.nodes[f.methodId]; ok {
 		// 之前已经调用过
 		n.cost += cost // 累计耗时、取最大值

@@ -2,7 +2,6 @@ package agent
 
 import (
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
-	"time"
 )
 
 type methodFrame struct {
@@ -21,7 +20,7 @@ func (mf *methodFrame) Equals(value collections.Frame) bool {
 
 func (mf *methodFrame) Init() {
 	mf.blocks = newMethodBlockFlags(mf.methodId)
-	mf.begin = time.Now().UnixMilli()
+	mf.begin = currentTime().UnixMilli()
 }
 
 func (mf *methodFrame) ReEnter() {
