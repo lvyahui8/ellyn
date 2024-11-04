@@ -25,17 +25,17 @@ func (g *graph) add(from *methodFrame, to *methodFrame) {
 		fromNode := g.draw(from)
 		g.addEdges(fromNode, toNode)
 	}
-	if to.recursion {
+	if to.data.recursion {
 		g.addEdges(toNode, toNode)
 	}
 }
 
 func (g *graph) draw(f *methodFrame) *node {
-	cost := currentTime().UnixMilli() - f.begin
+	cost := currentTime().UnixMilli() - f.data.begin
 	if n, ok := g.nodes[f.methodId]; ok {
 		// 之前已经调用过
 		n.cost += cost // 累计耗时、取最大值
-		for i, flag := range f.blocks {
+		for i, flag := range *f.data.blocks {
 			n.blocks[i] = n.blocks[i] || flag
 		}
 		return n
@@ -43,11 +43,15 @@ func (g *graph) draw(f *methodFrame) *node {
 		// 首次加入链路
 		n = &node{
 			methodId: f.methodId,
-			blocks:   f.blocks,
+			blocks:   *f.data.blocks,
 			cost:     cost,
-			// 只记录首次记录的参数
-			args:    f.args,
-			results: f.results,
+		}
+		// 只记录首次记录的参数
+		if f.data.args != nil {
+			n.args = *f.data.args
+		}
+		if f.data.results != nil {
+			n.results = *f.data.results
 		}
 		g.nodes[f.methodId] = n
 		return n

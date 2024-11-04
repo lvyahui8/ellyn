@@ -30,19 +30,16 @@ func InitAgent(meta embed.FS) Api {
 }
 
 func (agent *ellynAgent) InitCtx(ctxId uint64, from uint32) {
-	ctx := &EllynCtx{
-		id:        ctxId,
-		stack:     collections.NewUnsafeCompressedStack[*methodFrame](),
-		g:         newGraph(ctxId),
-		autoClear: true,
-	}
+	ctx := ctxPool.Get().(*EllynCtx)
+	ctx.id = ctxId
+	ctx.g.id = ctxId
 	origin := toEdge(from, 0)
 	ctx.g.origin = &origin
-	CtxLocal.Set(ctx)
+	ctxLocal.Set(ctx)
 }
 
 func (agent *ellynAgent) GetCtx() *EllynCtx {
-	res, exist := CtxLocal.Get()
+	res, exist := ctxLocal.Get()
 	if !exist {
 		trafficId := idGenerator.GenGUID()
 		res = &EllynCtx{
@@ -51,7 +48,7 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 			g:         newGraph(trafficId),
 			autoClear: true,
 		}
-		CtxLocal.Set(res)
+		ctxLocal.Set(res)
 	}
 	return res
 }
@@ -61,7 +58,13 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
 	if ctx.g.origin != nil && ctx.stack.Size() == 0 {
 		*(ctx.g.origin) |= uint64(methodId)
 	}
-	ctx.stack.Push(&methodFrame{methodId: methodId, args: EncodeVars(params)}) // 只记录首次入栈的参数
+	f := &methodFrame{methodId: methodId}
+
+	ctx.stack.Push(f)
+	if params != nil && f.data != nil {
+		// 只记录首次入栈的参数
+		f.data.args = EncodeVars(params)
+	}
 }
 
 func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
@@ -73,14 +76,14 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 		return
 	}
 	// 只记录首次入栈的参数
-	pop.results = EncodeVars(results)
+	pop.data.results = EncodeVars(results)
 	// 记录调用链
 	ctx.g.add(top, pop)
 	if top == nil {
 		// 已经完全弹空， 调用链路追加到队列
 		coll.add(ctx.g)
 		if ctx.autoClear {
-			CtxLocal.Clear()
+			ctx.recycle()
 		}
 	}
 }
@@ -88,6 +91,6 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 func (agent *ellynAgent) SetBlock(ctx *EllynCtx, blockOffset, blockId int) {
 	// 取栈顶元素，标记block覆盖请求
 	top := ctx.stack.Top()
-	top.blocks[blockOffset] = true
+	(*top.data.blocks)[blockOffset] = true
 	globalCovered[blockId] = true
 }

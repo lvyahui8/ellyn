@@ -15,7 +15,8 @@ var NotCollectedDisplay = utils.Marshal("[NotCollected]")
 
 var MarshalFailed = utils.Marshal("[Marshal failed]")
 
-func EncodeVars(vars []any) (res []any) {
+func EncodeVars(vars []any) *[]any {
+	var res []any
 	for _, item := range vars {
 		if item == NotCollected {
 			res = append(res, NotCollectedDisplay)
@@ -40,5 +41,5 @@ func EncodeVars(vars []any) (res []any) {
 			res = append(res, utils.String.Bytes2string(bytes))
 		}
 	}
-	return
+	return &res
 }

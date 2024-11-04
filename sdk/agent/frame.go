@@ -4,13 +4,17 @@ import (
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
 )
 
-type methodFrame struct {
-	methodId  uint32
-	blocks    []bool
+type frameData struct {
+	blocks    *[]bool
 	recursion bool
 	begin     int64
-	args      []any
-	results   []any
+	args      *[]any
+	results   *[]any
+}
+
+type methodFrame struct {
+	methodId uint32
+	data     *frameData
 }
 
 func (mf *methodFrame) Equals(value collections.Frame) bool {
@@ -19,12 +23,14 @@ func (mf *methodFrame) Equals(value collections.Frame) bool {
 }
 
 func (mf *methodFrame) Init() {
-	mf.blocks = newMethodBlockFlags(mf.methodId)
-	mf.begin = currentTime().UnixMilli()
+	mf.data = &frameData{
+		blocks: newMethodBlockFlags(mf.methodId),
+		begin:  currentTime().UnixMilli(),
+	}
 }
 
 func (mf *methodFrame) ReEnter() {
-	if !mf.recursion {
-		mf.recursion = true
+	if !mf.data.recursion {
+		mf.data.recursion = true
 	}
 }

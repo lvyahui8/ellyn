@@ -7,7 +7,11 @@ type Stack[T any] interface {
 	Pop() T
 	Top() T
 	Size() int
+	Clear()
 }
+
+var _ Stack[any] = (*UnsafeStack[any])(nil)
+var _ Stack[Frame] = (*UnsafeCompressedStack[Frame])(nil)
 
 type UnsafeStack[T any] struct {
 	elements  *list.List
@@ -20,11 +24,11 @@ func NewUnsafeStack[T any]() *UnsafeStack[T] {
 	}
 }
 
-func (u UnsafeStack[T]) Push(val T) {
+func (u *UnsafeStack[T]) Push(val T) {
 	u.elements.PushBack(val)
 }
 
-func (u UnsafeStack[T]) Pop() (t T) {
+func (u *UnsafeStack[T]) Pop() (t T) {
 	v := u.elements.Back()
 	if v != nil {
 		u.elements.Remove(v)
@@ -33,7 +37,7 @@ func (u UnsafeStack[T]) Pop() (t T) {
 	return
 }
 
-func (u UnsafeStack[T]) Top() (t T) {
+func (u *UnsafeStack[T]) Top() (t T) {
 	v := u.elements.Back()
 	if v != nil {
 		t = v.Value.(T)
@@ -41,8 +45,12 @@ func (u UnsafeStack[T]) Top() (t T) {
 	return
 }
 
-func (u UnsafeStack[T]) Size() int {
+func (u *UnsafeStack[T]) Size() int {
 	return u.elements.Len()
+}
+
+func (u *UnsafeStack[T]) Clear() {
+	u.elements.Init()
 }
 
 // UnsafeCompressedStack 非并发安全的Stack
@@ -60,8 +68,11 @@ type Frame interface {
 }
 
 type stackElement[T Frame] struct {
-	val   T
-	max   int
+	// 栈元素值
+	val T
+	// 累计重入次数
+	max int
+	// 当前在栈中元素个数
 	count int
 }
 
@@ -111,4 +122,8 @@ func (s *UnsafeCompressedStack[T]) Top() (t T) {
 
 func (s *UnsafeCompressedStack[T]) Size() int {
 	return s.count
+}
+
+func (s *UnsafeCompressedStack[T]) Clear() {
+	s.elements.Init()
 }

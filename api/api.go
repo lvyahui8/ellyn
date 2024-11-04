@@ -10,6 +10,7 @@ type EllynApi interface {
 	// 手动获取链路，必须先设置AutoClear=false
 	GetGraph() *Graph
 	GetGraphId() uint64
+	ClearCtx()
 }
 
 var Agent *agentProxy = &agentProxy{}
@@ -28,6 +29,13 @@ func Init(target EllynApi) {
 	Agent.Once.Do(func() {
 		Agent.target = target
 	})
+}
+
+func (a *agentProxy) ClearCtx() {
+	if a.target == nil {
+		return
+	}
+	a.target.ClearCtx()
 }
 
 func (a *agentProxy) GetGraphId() uint64 {
