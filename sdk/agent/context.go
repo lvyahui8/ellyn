@@ -2,7 +2,6 @@ package agent
 
 import (
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
-	"github.com/lvyahui8/ellyn/sdk/common/goroutine"
 	"sync"
 )
 
@@ -15,9 +14,13 @@ var ctxPool = &sync.Pool{
 		}
 	},
 }
-var ctxLocal = &goroutine.RoutineLocal[*EllynCtx]{}
+
+//var ctxLocal = &goroutine.RoutineLocal[*EllynCtx]{}
+
+var ctxLocal = collections.NewNumberKeyConcurrentMap[uint64, *EllynCtx](4096)
 
 type EllynCtx struct {
+	goid      uint64 // 当前协程id
 	id        uint64
 	stack     *collections.UnsafeUint32Stack
 	g         *graph
@@ -34,5 +37,5 @@ func (c *EllynCtx) recycle() {
 	c.g = graphPool.Get().(*graph)
 	c.autoClear = true
 	ctxPool.Put(c)
-	ctxLocal.Clear()
+	// todo 删除
 }
