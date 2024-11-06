@@ -9,7 +9,7 @@ import (
 var ctxPool = &sync.Pool{
 	New: func() any {
 		return &EllynCtx{
-			stack:     collections.NewUnsafeCompressedStack[*methodFrame](),
+			stack:     collections.NewUnsafeUint32Stack(),
 			g:         newGraph(0),
 			autoClear: true,
 		}
@@ -19,13 +19,14 @@ var ctxLocal = &goroutine.RoutineLocal[*EllynCtx]{}
 
 type EllynCtx struct {
 	id        uint64
-	stack     collections.Stack[*methodFrame]
+	stack     *collections.UnsafeUint32Stack
 	g         *graph
 	autoClear bool
 }
 
 func (c *EllynCtx) Snapshot() (id uint64, currentMethodId uint32) {
-	return c.id, c.stack.Top().methodId
+	top, _ := c.stack.Top()
+	return c.id, top
 }
 
 func (c *EllynCtx) recycle() {

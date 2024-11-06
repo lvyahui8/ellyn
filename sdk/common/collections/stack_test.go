@@ -6,7 +6,7 @@ import (
 	"unsafe"
 )
 
-type testInt int
+type testInt uint32
 
 func (t testInt) Equals(value Frame) bool {
 	val, ok := value.(testInt)
@@ -22,10 +22,10 @@ func (t testInt) Init() {
 func (t testInt) ReEnter() {
 }
 
-func testStack(b *testing.B, stackName string, stack Stack[testInt]) {
+func testStack[T testInt | uint32](b *testing.B, stackName string, stack Stack[T]) {
 	b.Run(stackName+"_Push", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			stack.Push(testInt(i))
+			stack.Push(T(i))
 		}
 	})
 	b.Run(stackName+"_Top", func(b *testing.B) {
@@ -40,7 +40,7 @@ func testStack(b *testing.B, stackName string, stack Stack[testInt]) {
 	})
 	b.Run(stackName+"_Push_same", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			stack.Push(-1)
+			stack.Push(1)
 		}
 	})
 	b.Run(stackName+"_Top_same", func(b *testing.B) {
@@ -63,10 +63,60 @@ func TestUnsafeCompressedStack_Push(t *testing.T) {
 	require.Equal(t, 1, stack.elements.Len())
 }
 
-//
+func TestUnsafeUint32Stack(t *testing.T) {
+	s := NewUnsafeUint32Stack()
+	s.Push(1)
+	s.Push(1)
+	s.Push(2)
+	s.Push(3)
+	s.Push(3)
+	s.Push(4)
+	// now 1[2]->2->3[2]-4
+	val, suc := s.Pop()
+	require.True(t, suc)
+	require.Equal(t, uint32(4), val)
+
+	// now  1[2]->2->3[2]
+	val, suc = s.Pop()
+	require.True(t, suc)
+	require.Equal(t, uint32(3), val)
+
+	// now  1[2]->2->3[1]
+	val, suc = s.Pop()
+	require.True(t, suc)
+	require.Equal(t, uint32(3), val)
+
+	// now  1[2]->2
+	val, suc = s.Pop()
+	require.True(t, suc)
+	require.Equal(t, uint32(2), val)
+
+	// now  1[2]
+	val, suc = s.Pop()
+	require.True(t, suc)
+	require.Equal(t, uint32(1), val)
+
+	// now  1[1]
+	val, suc = s.Pop()
+	require.True(t, suc)
+	require.Equal(t, uint32(1), val)
+
+	// now is empty
+	val, suc = s.Pop()
+	require.False(t, suc)
+	require.Equal(t, uint32(0), val)
+	require.True(t, s.Empty())
+}
+
+func TestUint32NodeSize(t *testing.T) {
+	t.Log(unsafe.Sizeof(uint32Node{}.extra))
+}
+
+//  go test -v -run ^$  -bench BenchmarkStack -benchtime=5s  -benchmem
 func BenchmarkStack(b *testing.B) {
-	testStack(b, "UnsafeStack", NewUnsafeStack[testInt]())
-	testStack(b, "UnsafeCompressedStack", NewUnsafeCompressedStack[testInt]())
+	testStack[testInt](b, "UnsafeStack", NewUnsafeStack[testInt]())
+	testStack[testInt](b, "UnsafeCompressedStack", NewUnsafeCompressedStack[testInt]())
+	testStack[uint32](b, "UnsafeUint32Stack", NewUnsafeUint32Stack())
 }
 
 // BenchmarkUnsafeCompressedStack_Push
@@ -75,7 +125,7 @@ func BenchmarkStack(b *testing.B) {
 func BenchmarkUnsafeCompressedStack_Push(b *testing.B) {
 	stack := NewUnsafeCompressedStack[testInt]()
 	for i := 0; i < b.N; i++ {
-		stack.Push(-1)
+		stack.Push(1)
 	}
 }
 

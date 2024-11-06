@@ -51,6 +51,7 @@ func TestN(t *testing.T) {
 	require.True(t, len(graph.Nodes) == 1)
 	node := getNode(graph, "N")
 	require.NotNil(t, node)
+	// 递归调用，存在递归边
 	require.True(t, len(graph.Edges) > 0)
 	_, exist := graph.Edges[uint64(node.MethodId)<<32|uint64(node.MethodId)]
 	require.True(t, exist)

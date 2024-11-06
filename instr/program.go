@@ -295,7 +295,7 @@ func (p *Program) copySdk(sdkPath string) {
 		if file.IsDir() {
 			p.copySdk(rPath)
 		} else {
-			if strings.HasSuffix(filepath.ToSlash(rPath), agent.AgentApiFile) {
+			if strings.HasSuffix(filepath.ToSlash(rPath), ellyn.AgentApiFile) {
 				if !p.require(ellyn.ApiPackage) {
 					continue
 				}

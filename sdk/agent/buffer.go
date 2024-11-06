@@ -34,7 +34,6 @@ func (c *collector) start() {
 					time.Sleep(100 * time.Nanosecond)
 					continue
 				}
-				// updateGlobalCovered(g)
 				if !conf.NoDemo {
 					// 消费链路数据，这里缓存到本地用于demo显示
 					saveToDisplayCache(g)
@@ -49,15 +48,4 @@ func saveToDisplayCache(g *graph) {
 	graphCache.GetWithDefault(g.id, func() any {
 		return collections.NewLinkedList[*graph]()
 	}).(*collections.LinkedList[*graph]).Add(g)
-}
-
-func updateGlobalCovered(g *graph) {
-	for _, n := range g.nodes {
-		m := methods[n.methodId]
-		for _, block := range m.Blocks {
-			if n.blocks[block.MethodOffset] {
-				globalCovered[int(block.Id)] = true
-			}
-		}
-	}
 }

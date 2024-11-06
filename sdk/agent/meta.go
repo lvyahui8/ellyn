@@ -239,9 +239,8 @@ func (m *Method) parse(cols []string) {
 	m.ReturnList = decodeVarDef(cols[8])
 }
 
-func newMethodBlockFlags(methodId uint32) *[]bool {
-	flags := make([]bool, methods[methodId].BlockCnt)
-	return &flags
+func newMethodBlockFlags(methodId uint32) []bool {
+	return make([]bool, methods[methodId].BlockCnt)
 }
 
 var blocks []*Block

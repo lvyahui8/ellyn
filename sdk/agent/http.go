@@ -367,8 +367,11 @@ func transferNode(n *node, withDetail bool) *Node {
 	return item
 }
 
-func toVarItemList(vars []any, defList *VarDefList) (res []*VarItem) {
-	for i, val := range vars {
+func toVarItemList(vars *[]any, defList *VarDefList) (res []*VarItem) {
+	if vars == nil {
+		return nil
+	}
+	for i, val := range *vars {
 		res = append(res, &VarItem{
 			Idx:  i,
 			Type: defList.Type(i),

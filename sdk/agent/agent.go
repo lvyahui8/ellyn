@@ -4,6 +4,7 @@ import (
 	"embed"
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
 	"github.com/lvyahui8/ellyn/sdk/common/guid"
+	"unsafe"
 )
 
 var idGenerator = guid.NewGuidGenerator()
@@ -44,7 +45,7 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 		trafficId := idGenerator.GenGUID()
 		res = &EllynCtx{
 			id:        trafficId,
-			stack:     collections.NewUnsafeCompressedStack[*methodFrame](),
+			stack:     collections.NewUnsafeUint32Stack(),
 			g:         newGraph(trafficId),
 			autoClear: true,
 		}
@@ -55,31 +56,48 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 
 func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
 	// 压栈
-	if ctx.g.origin != nil && ctx.stack.Size() == 0 {
+	if ctx.g.origin != nil && ctx.stack.Empty() {
 		*(ctx.g.origin) |= uint64(methodId)
 	}
-	f := &methodFrame{methodId: methodId}
-
-	ctx.stack.Push(f)
-	if params != nil && f.data != nil {
-		// 只记录首次入栈的参数
-		f.data.args = EncodeVars(params)
+	newElem := ctx.stack.Push(methodId)
+	if newElem {
+		// 当前method最新一次重入栈
+		var n *node
+		var exist bool
+		if n, exist = ctx.g.nodes[methodId]; !exist {
+			n = newNode(methodId)
+			// 方法多次调用只记录第一次参数
+			n.args = EncodeVars(params)
+			ctx.g.nodes[methodId] = n
+		}
+		// 后续使用不用再查找
+		ctx.stack.SetTopExtra(uintptr(unsafe.Pointer(n)))
 	}
 }
 
 func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 	// 弹栈，加到调用链
-	pop := ctx.stack.Pop()
-	top := ctx.stack.Top()
-	if top != nil && pop.methodId == top.methodId {
+	pop, extra, _ := ctx.stack.PopWithExtra()
+	top, ok := ctx.stack.Top()
+	n := (*node)(unsafe.Pointer(extra))
+	if ok && pop == top {
 		// 方法递归中，未完全弹出
+		if !n.recursion {
+			n.recursion = true
+			ctx.g.addEdge(pop, pop)
+		}
 		return
 	}
-	// 只记录首次入栈的参数
-	pop.data.results = EncodeVars(results)
+
+	if n.results == nil {
+		// 只记录首次产生节点的参数
+		n.results = EncodeVars(results)
+	}
+
 	// 记录调用链
-	ctx.g.add(top, pop)
-	if top == nil {
+	if ok {
+		ctx.g.addEdge(pop, top)
+	} else {
 		// 已经完全弹空， 调用链路追加到队列
 		coll.add(ctx.g)
 		if ctx.autoClear {
@@ -90,7 +108,7 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 
 func (agent *ellynAgent) SetBlock(ctx *EllynCtx, blockOffset, blockId int) {
 	// 取栈顶元素，标记block覆盖请求
-	top := ctx.stack.Top()
-	(*top.data.blocks)[blockOffset] = true
+	extra := ctx.stack.GetTopExtra()
+	((*node)(unsafe.Pointer(extra))).blocks[blockOffset] = true
 	globalCovered[blockId] = true
 }

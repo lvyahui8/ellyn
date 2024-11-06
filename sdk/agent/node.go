@@ -1,9 +1,17 @@
 package agent
 
 type node struct {
-	methodId uint32
-	blocks   []bool
-	cost     int64
-	args     []any
-	results  []any
+	recursion bool
+	methodId  uint32
+	cost      int64
+	blocks    []bool
+	args      *[]any
+	results   *[]any
+}
+
+func newNode(methodId uint32) *node {
+	return &node{
+		methodId: methodId,
+		blocks:   newMethodBlockFlags(methodId),
+	}
 }

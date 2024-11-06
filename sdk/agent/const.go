@@ -9,7 +9,3 @@ const (
 )
 
 const RuntimeConfFile = "config.json"
-
-const (
-	AgentApiFile = "agent/api.go"
-)

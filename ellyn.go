@@ -14,6 +14,7 @@ const (
 const AgentPkg = "ellyn_agent"
 
 const ApiPackage = "github.com/lvyahui8/ellyn/api"
+const AgentApiFile = "agent/api.go"
 
 //go:embed sdk
 var SdkFs embed.FS
