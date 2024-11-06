@@ -65,7 +65,9 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
 			n.methodId = methodId
 			n.blocks = newMethodBlockFlags(methodId)
 			// 方法多次调用只记录第一次参数
-			n.args = EncodeVars(params)
+			if !conf.NoArgs {
+				n.args = EncodeVars(params)
+			}
 			ctx.g.nodes[methodId] = n
 		}
 		// 后续使用不用再查找
@@ -87,7 +89,7 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 		return
 	}
 
-	if n.results == nil {
+	if !conf.NoArgs && n.results == nil {
 		// 只记录首次产生节点的参数
 		n.results = EncodeVars(results)
 	}
