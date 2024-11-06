@@ -2,7 +2,6 @@ package agent
 
 import (
 	"embed"
-	"github.com/lvyahui8/ellyn/sdk/common/collections"
 	"github.com/lvyahui8/ellyn/sdk/common/guid"
 	"unsafe"
 )
@@ -43,12 +42,9 @@ func (agent *ellynAgent) GetCtx() *EllynCtx {
 	res, exist := ctxLocal.Get()
 	if !exist {
 		trafficId := idGenerator.GenGUID()
-		res = &EllynCtx{
-			id:        trafficId,
-			stack:     collections.NewUnsafeUint32Stack(),
-			g:         newGraph(trafficId),
-			autoClear: true,
-		}
+		res = ctxPool.Get().(*EllynCtx)
+		res.id = trafficId
+		res.g.id = trafficId
 		ctxLocal.Set(res)
 	}
 	return res
@@ -65,7 +61,9 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
 		var n *node
 		var exist bool
 		if n, exist = ctx.g.nodes[methodId]; !exist {
-			n = newNode(methodId)
+			n = nodePool.Get().(*node)
+			n.methodId = methodId
+			n.blocks = newMethodBlockFlags(methodId)
 			// 方法多次调用只记录第一次参数
 			n.args = EncodeVars(params)
 			ctx.g.nodes[methodId] = n

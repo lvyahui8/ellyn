@@ -1,5 +1,24 @@
 package agent
 
+import (
+	"github.com/lvyahui8/ellyn/sdk/common/collections"
+	"sync"
+)
+
+var graphPool = &sync.Pool{New: func() any {
+	return newGraph(0)
+}}
+
+type graphGroup struct {
+	list *collections.LinkedList[*graph]
+}
+
+func (g *graphGroup) Recycle() {
+	for _, subGraph := range g.list.Values() {
+		graphPool.Put(subGraph)
+	}
+}
+
 type graph struct {
 	id uint64
 	// time 发生时间
@@ -16,6 +35,17 @@ func newGraph(id uint64) *graph {
 		time:  currentTime().UnixMilli(),
 		nodes: make(map[uint32]*node),
 		edges: make(map[uint64]struct{}),
+	}
+}
+
+func (g *graph) Recycle() {
+	g.origin = nil
+	for k, n := range g.nodes {
+		n.Recycle()
+		delete(g.nodes, k)
+	}
+	for k := range g.edges {
+		delete(g.edges, k)
 	}
 }
 

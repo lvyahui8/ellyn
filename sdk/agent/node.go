@@ -1,5 +1,13 @@
 package agent
 
+import "sync"
+
+var nodePool = &sync.Pool{
+	New: func() any {
+		return &node{}
+	},
+}
+
 type node struct {
 	recursion bool
 	methodId  uint32
@@ -9,9 +17,10 @@ type node struct {
 	results   *[]any
 }
 
-func newNode(methodId uint32) *node {
-	return &node{
-		methodId: methodId,
-		blocks:   newMethodBlockFlags(methodId),
-	}
+func (n *node) Recycle() {
+	n.recursion = false
+	n.cost = 0
+	n.blocks = n.blocks[0:0:len(n.blocks)]
+	n.args = nil
+	n.results = nil
 }

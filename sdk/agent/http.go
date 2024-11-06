@@ -32,7 +32,7 @@ const (
 
 var serviceOnce sync.Once
 
-var graphCache *collections.LRUCache[uint64] = collections.NewLRUCache[uint64](1024)
+var graphCache = collections.NewLRUCache[uint64, *graphGroup](1024)
 
 var StartBackend = true
 
@@ -157,18 +157,18 @@ func trafficList(writer http.ResponseWriter, request *http.Request) {
 func trafficDetail(writer http.ResponseWriter, request *http.Request) {
 	// 单个流量明细
 	id := queryVal[uint](request, "id")
-	gList, ok := graphCache.Get(uint64(id))
+	gGroup, ok := graphCache.Get(uint64(id))
 	asserts.True(ok)
-	g := mergeGraphs(gList.(*collections.LinkedList[*graph]).Values())
+	g := mergeGraphs(gGroup.list.Values())
 	responseJson(writer, toTraffic(g, true))
 }
 
 func nodeDetail(writer http.ResponseWriter, request *http.Request) {
 	graphId := uint64(queryVal[uint](request, "graphId"))
 	nodeId := uint32(queryVal[uint](request, "nodeId"))
-	gList, ok := graphCache.Get(graphId)
+	gGroup, ok := graphCache.Get(graphId)
 	asserts.True(ok)
-	g := mergeGraphs(gList.(*collections.LinkedList[*graph]).Values())
+	g := mergeGraphs(gGroup.list.Values())
 	n := g.nodes[nodeId]
 	resNode := transferNode(n, true)
 	mtd := methods[n.methodId]

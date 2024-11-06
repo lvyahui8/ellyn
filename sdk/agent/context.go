@@ -10,7 +10,7 @@ var ctxPool = &sync.Pool{
 	New: func() any {
 		return &EllynCtx{
 			stack:     collections.NewUnsafeUint32Stack(),
-			g:         newGraph(0),
+			g:         graphPool.Get().(*graph),
 			autoClear: true,
 		}
 	},
@@ -31,7 +31,8 @@ func (c *EllynCtx) Snapshot() (id uint64, currentMethodId uint32) {
 
 func (c *EllynCtx) recycle() {
 	c.stack.Clear()
-	c.g = newGraph(0) // g 暂时还不能复用，后续还需要使用
+	c.g = nil
+	c.autoClear = true
 	ctxPool.Put(c)
 	ctxLocal.Clear()
 }

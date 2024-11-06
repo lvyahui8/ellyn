@@ -1,48 +1,49 @@
 package collections
 
 import (
+	"github.com/lvyahui8/ellyn/sdk/common/definitions"
 	"sync"
 )
 
-type cacheItem[K comparable] struct {
+type cacheItem[K comparable, V definitions.Recyclable] struct {
 	key  K
-	val  any
-	prev *cacheItem[K]
-	next *cacheItem[K]
+	val  V
+	prev *cacheItem[K, V]
+	next *cacheItem[K, V]
 }
 
-type LRUCache[K comparable] struct {
+type LRUCache[K comparable, V definitions.Recyclable] struct {
 	lock     sync.RWMutex
 	capacity int
-	head     *cacheItem[K]
-	tail     *cacheItem[K]
-	table    map[K]*cacheItem[K]
+	head     *cacheItem[K, V]
+	tail     *cacheItem[K, V]
+	table    map[K]*cacheItem[K, V]
 }
 
-func NewLRUCache[K comparable](capacity int) *LRUCache[K] {
-	return &LRUCache[K]{
+func NewLRUCache[K comparable, V definitions.Recyclable](capacity int) *LRUCache[K, V] {
+	return &LRUCache[K, V]{
 		capacity: capacity,
-		table:    make(map[K]*cacheItem[K]),
+		table:    make(map[K]*cacheItem[K, V]),
 	}
 }
 
-func (cache *LRUCache[K]) Get(key K) (any, bool) {
+func (cache *LRUCache[K, V]) Get(key K) (V, bool) {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
 
 	return cache.get(key)
 }
 
-func (cache *LRUCache[K]) get(key K) (any, bool) {
+func (cache *LRUCache[K, V]) get(key K) (v V, ok bool) {
 	item := cache.table[key]
 	if item == nil {
-		return nil, false
+		return
 	}
 	cache.moveToFirst(item)
 	return item.val, true
 }
 
-func (cache *LRUCache[K]) GetWithDefault(key K, createDefault func() any) any {
+func (cache *LRUCache[K, V]) GetWithDefault(key K, createDefault func() V) V {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
 	val, exist := cache.get(key)
@@ -53,19 +54,20 @@ func (cache *LRUCache[K]) GetWithDefault(key K, createDefault func() any) any {
 	return val
 }
 
-func (cache *LRUCache[K]) Set(key K, value any) {
+func (cache *LRUCache[K, V]) Set(key K, value V) {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
 	cache.set(key, value)
 }
 
-func (cache *LRUCache[K]) set(key K, value any) {
+func (cache *LRUCache[K, V]) set(key K, value V) {
 	item := cache.table[key]
 	if item == nil {
 		if len(cache.table) >= cache.capacity {
+			// 空间满了，清理最久未使用的元素
 			cache.removeItem(cache.tail)
 		}
-		item = &cacheItem[K]{
+		item = &cacheItem[K, V]{
 			val: value,
 			key: key,
 		}
@@ -74,7 +76,7 @@ func (cache *LRUCache[K]) set(key K, value any) {
 	cache.moveToFirst(item)
 }
 
-func (cache *LRUCache[K]) Remove(key K) {
+func (cache *LRUCache[K, V]) Remove(key K) {
 	cache.lock.Lock()
 	defer cache.lock.Unlock()
 
@@ -82,7 +84,7 @@ func (cache *LRUCache[K]) Remove(key K) {
 	cache.removeItem(item)
 }
 
-func (cache *LRUCache[K]) Values() (res []any) {
+func (cache *LRUCache[K, V]) Values() (res []any) {
 	cache.lock.RLock()
 	defer cache.lock.RUnlock()
 
@@ -93,7 +95,7 @@ func (cache *LRUCache[K]) Values() (res []any) {
 	return
 }
 
-func (cache *LRUCache[K]) moveToFirst(item *cacheItem[K]) {
+func (cache *LRUCache[K, V]) moveToFirst(item *cacheItem[K, V]) {
 	if cache.head != nil && cache.head.key == item.key {
 		return
 	}
@@ -111,7 +113,7 @@ func (cache *LRUCache[K]) moveToFirst(item *cacheItem[K]) {
 	cache.head = item
 }
 
-func (cache *LRUCache[K]) removeItemFromLink(item *cacheItem[K]) {
+func (cache *LRUCache[K, V]) removeItemFromLink(item *cacheItem[K, V]) {
 	if item == nil {
 		return
 	}
@@ -127,7 +129,8 @@ func (cache *LRUCache[K]) removeItemFromLink(item *cacheItem[K]) {
 	}
 }
 
-func (cache *LRUCache[K]) removeItem(item *cacheItem[K]) {
+func (cache *LRUCache[K, V]) removeItem(item *cacheItem[K, V]) {
 	cache.removeItemFromLink(item)
+	item.val.Recycle()
 	delete(cache.table, item.key)
 }
