@@ -31,7 +31,7 @@ func (c *EllynCtx) Snapshot() (id uint64, currentMethodId uint32) {
 
 func (c *EllynCtx) recycle() {
 	c.stack.Clear()
-	c.g = nil
+	c.g = graphPool.Get().(*graph)
 	c.autoClear = true
 	ctxPool.Put(c)
 	ctxLocal.Clear()
