@@ -12,11 +12,11 @@ fi
 
 cd "$SCRIPT_DIR/.." && go test -v -run TestRollbackBenchmark ./instr/
 
-cd "$SCRIPT_DIR/" && go test -v -run ^$ -bench=. -benchmem -benchtime=5x . > old.out
+cd "$SCRIPT_DIR/" && go test -v -run ^$ -bench=. -benchmem -benchtime=5s . > old.out
 
 cd "$SCRIPT_DIR/.." && go test -v -run TestUpdateBenchmark ./instr/
 
-cd "$SCRIPT_DIR/" && go test -v -run ^$ -bench=. -benchmem -benchtime=5x . > new.out
+cd "$SCRIPT_DIR/" && go test -v -run ^$ -bench=. -benchmem -benchtime=5s . > new.out
 
 cat old.out new.out
 benchstat old.out new.out

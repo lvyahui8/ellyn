@@ -34,9 +34,14 @@ func (c *collector) start() {
 					time.Sleep(100 * time.Nanosecond)
 					continue
 				}
+				//fmt.Printf("g:%d\n", g.id)
 				if !conf.NoDemo {
 					// 消费链路数据，这里缓存到本地用于demo显示
 					saveToDisplayCache(g)
+				} else {
+					// 省略实际消费g，比如写磁盘，或者上报MQ
+					// 消费完成后回收g
+					g.Recycle()
 				}
 			}
 		}()

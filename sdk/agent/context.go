@@ -37,5 +37,5 @@ func (c *EllynCtx) recycle() {
 	c.g = graphPool.Get().(*graph)
 	c.autoClear = true
 	ctxPool.Put(c)
-	// todo 删除
+	ctxLocal.Delete(c.goid)
 }

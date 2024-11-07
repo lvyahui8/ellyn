@@ -30,10 +30,10 @@ func InitAgent(meta embed.FS) Api {
 	return &ellynAgent{}
 }
 
-func (agent *ellynAgent) InitCtx(ctxId uint64, from uint32) {
+func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
 	ctx := ctxPool.Get().(*EllynCtx)
-	ctx.id = ctxId
-	ctx.g.id = ctxId
+	ctx.id = trafficId
+	ctx.g.id = trafficId
 	origin := toEdge(from, 0)
 	ctx.g.origin = &origin
 	ctx.goid = goroutine.GetGoId()

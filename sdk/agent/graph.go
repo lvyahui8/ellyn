@@ -15,7 +15,7 @@ type graphGroup struct {
 
 func (g *graphGroup) Recycle() {
 	for _, subGraph := range g.list.Values() {
-		graphPool.Put(subGraph)
+		subGraph.Recycle()
 	}
 }
 
@@ -33,8 +33,8 @@ func newGraph(id uint64) *graph {
 	return &graph{
 		id:    id,
 		time:  currentTime().UnixMilli(),
-		nodes: make(map[uint32]*node),
-		edges: make(map[uint64]struct{}),
+		nodes: make(map[uint32]*node, 8),
+		edges: make(map[uint64]struct{}, 8),
 	}
 }
 
@@ -47,6 +47,7 @@ func (g *graph) Recycle() {
 	for k := range g.edges {
 		delete(g.edges, k)
 	}
+	graphPool.Put(g)
 }
 
 func (g *graph) addEdge(from, to uint32) {

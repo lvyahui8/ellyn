@@ -20,7 +20,8 @@ type node struct {
 func (n *node) Recycle() {
 	n.recursion = false
 	n.cost = 0
-	n.blocks = n.blocks[0:0:len(n.blocks)]
+	n.blocks = n.blocks[:0]
 	n.args = nil
 	n.results = nil
+	nodePool.Put(n)
 }
