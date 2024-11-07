@@ -2,6 +2,9 @@ package benchmark
 
 import "testing"
 
+import _ "github.com/lvyahui8/ellyn/api"
+import _ "github.com/lvyahui8/ellyn"
+
 func TestQuickSort(t *testing.T) {
 	for i := 0; i < 100000; i++ {
 		arr := []int{4, 5, 1, 7, 8, 10}

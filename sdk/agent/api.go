@@ -17,7 +17,7 @@ type ellynApiImpl struct {
 
 func (e *ellynApiImpl) ClearCtx() {
 	ctx := e.Agent.GetCtx()
-	ctx.recycle()
+	ctx.Recycle()
 }
 
 func (e *ellynApiImpl) GetGraphId() uint64 {

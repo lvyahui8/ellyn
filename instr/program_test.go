@@ -60,7 +60,7 @@ func TestRollbackExample(t *testing.T) {
 }
 
 func TestUpdateBenchmark(t *testing.T) {
-	prog := NewProgram(test.GetBenchmarkPath(), false, &agent.Configuration{
+	prog := NewProgram(test.GetBenchmarkPath(), true, &agent.Configuration{
 		NoArgs: true,
 		NoDemo: true,
 	})
@@ -70,7 +70,7 @@ func TestUpdateBenchmark(t *testing.T) {
 }
 
 func TestRollbackBenchmark(t *testing.T) {
-	prog := NewProgram(test.GetBenchmarkPath(), false, nil)
+	prog := NewProgram(test.GetBenchmarkPath(), true, nil)
 	defer prog.Destroy()
 	prog.RollbackAll()
 }

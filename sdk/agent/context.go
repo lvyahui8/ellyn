@@ -32,10 +32,10 @@ func (c *EllynCtx) Snapshot() (id uint64, currentMethodId uint32) {
 	return c.id, top
 }
 
-func (c *EllynCtx) recycle() {
+func (c *EllynCtx) Recycle() {
 	c.stack.Clear()
 	c.g = graphPool.Get().(*graph)
 	c.autoClear = true
-	ctxPool.Put(c)
 	ctxLocal.Delete(c.goid)
+	ctxPool.Put(c)
 }
