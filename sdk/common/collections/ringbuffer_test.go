@@ -5,6 +5,7 @@ import (
 	"math"
 	"runtime"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -57,14 +58,18 @@ func TestMaxIdx(t *testing.T) {
 }
 
 func TestRingBufferFull(t *testing.T) {
-	buffer := NewRingBuffer[int](2)
+	buffer := NewRingBuffer[int](4)
 	success := buffer.Enqueue(1)
 	require.True(t, success)
 	success = buffer.Enqueue(2)
 	require.True(t, success)
 	success = buffer.Enqueue(3)
-	require.False(t, success)
+	require.True(t, success)
 	success = buffer.Enqueue(4)
+	require.True(t, success)
+	success = buffer.Enqueue(5)
+	require.False(t, success)
+	success = buffer.Enqueue(6)
 	require.False(t, success)
 	value, success := buffer.Dequeue()
 	require.True(t, success)
@@ -72,6 +77,12 @@ func TestRingBufferFull(t *testing.T) {
 	value, success = buffer.Dequeue()
 	require.True(t, success)
 	require.Equal(t, 2, value)
+	value, success = buffer.Dequeue()
+	require.True(t, success)
+	require.Equal(t, 3, value)
+	value, success = buffer.Dequeue()
+	require.True(t, success)
+	require.Equal(t, 4, value)
 	value, success = buffer.Dequeue()
 	require.False(t, success)
 	require.Equal(t, 0, value)
@@ -102,6 +113,58 @@ func TestRingBufferConcurrent(t *testing.T) {
 		t.Logf("Round #%d, target %d,p %d,c %d\n", i, target, produceCnt, consumeCnt)
 		require.Equal(t, produceCnt, consumeCnt)
 	}
+}
+
+func TestRingBufferCorrect(t *testing.T) {
+	buf := NewRingBuffer[int](100)
+	var pCnt, pSum, cCnt, cSum uint64
+	pWait := &sync.WaitGroup{}
+	for i := 0; i < 10; i++ {
+		pWait.Add(1)
+		go func() {
+			defer pWait.Done()
+			for k := 0; k < 100000; k++ {
+				suc := buf.Enqueue(k)
+				if suc {
+					atomic.AddUint64(&pCnt, 1)
+					atomic.AddUint64(&pSum, uint64(k))
+				}
+			}
+		}()
+	}
+	cWait := &sync.WaitGroup{}
+	stopped := false
+	for i := 0; i < 10; i++ {
+		cWait.Add(1)
+		go func() {
+			defer cWait.Done()
+			for {
+				val, suc := buf.Dequeue()
+				if suc {
+					if val == -1 {
+						time.Sleep(100 * time.Millisecond)
+						stopped = true
+						break
+					}
+					//t.Logf("c %d\n", val)
+					atomic.AddUint64(&cCnt, 1)
+					atomic.AddUint64(&cSum, uint64(val))
+				} else {
+					if stopped {
+						break
+					}
+				}
+			}
+		}()
+	}
+	pWait.Wait()
+	for !buf.Enqueue(-1) {
+	}
+	cWait.Wait()
+	t.Logf("pCnt %d,pSum %d,cCnt %d,cSum %d\n", pCnt, pSum, cCnt, cSum)
+	require.Equal(t, pCnt, cCnt)
+	require.True(t, pSum >= cSum)
+	require.Equal(t, pSum, cSum)
 }
 
 func TestRingBuffer_Dequeue_Loop(t *testing.T) {

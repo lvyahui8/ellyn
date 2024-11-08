@@ -47,11 +47,13 @@ func NewRingBuffer[T any](capacity uint64) *RingBuffer[T] {
 
 // Enqueue 非阻塞式写入，当缓冲区满时，返回失败
 func (r *RingBuffer[T]) Enqueue(value T) (success bool) {
-	pos := atomic.LoadUint64(&r.enqueuePos)
+
 	var element *node[T]
+	var seq uint64
 	for {
+		pos := atomic.LoadUint64(&r.enqueuePos)
 		element = r.elements[pos&r.mask]
-		seq := atomic.LoadUint64(&element.seq)
+		seq = atomic.LoadUint64(&element.seq)
 		diff := int64(seq) - int64(pos)
 		if diff == 0 {
 			// 可以尝试写入
@@ -62,39 +64,41 @@ func (r *RingBuffer[T]) Enqueue(value T) (success bool) {
 		} else if diff < 0 {
 			// 缓冲区满，写入失败
 			return false
-		} else {
-			// pos由于并发已经过期，需要重新读取
-			pos = atomic.LoadUint64(&r.enqueuePos)
 		}
+		// 其他线程在此element写入成功，重新读取enqueuePos
 	}
 	element.value = value
 	// 将seq设置为待消费标识
-	atomic.StoreUint64(&element.seq, pos+1)
+	// 也就是当dequeuePos指向此element时，seq=dequeuePos=seq+1
+	atomic.StoreUint64(&element.seq, seq+1)
 	return true
 }
 
 // Dequeue 非阻塞式出队，当没有元素可以取时（缓冲区空）返回失败
 func (r *RingBuffer[T]) Dequeue() (value T, success bool) {
 	var element *node[T]
-	pos := atomic.LoadUint64(&r.dequeuePos)
+
+	var seq uint64
 	for {
+		pos := atomic.LoadUint64(&r.dequeuePos)
 		element = r.elements[pos&r.mask]
-		seq := atomic.LoadUint64(&element.seq)
+		seq = atomic.LoadUint64(&element.seq)
 		diff := int64(seq) - int64(pos+1)
 		if diff == 0 {
+			value = element.value
 			// 可以尝试读取
 			if atomic.CompareAndSwapUint64(&r.dequeuePos, pos, pos+1) {
+				success = true
 				break
 			}
 		} else if diff < 0 {
 			// 缓冲区为空，没有元素可以消费
 			return
-		} else {
-			// pos由于并发已经过期，需要重新读取
-			pos = atomic.LoadUint64(&r.dequeuePos)
 		}
+		// 元素已经被其他协程取走，重新读取dequeuePos
 	}
 	// Dequeue中将seq更新一个容量跨度，相当于设置本轮循环的数据已经消费掉了
-	atomic.StoreUint64(&element.seq, pos+r.mask+1)
-	return element.value, true
+	// 也就是下一次enqueuePos指向此element时，seq与enqueuePos相等
+	atomic.StoreUint64(&element.seq, seq+r.mask)
+	return
 }
