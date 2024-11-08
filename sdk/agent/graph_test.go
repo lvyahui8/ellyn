@@ -8,6 +8,6 @@ import "testing"
 func BenchmarkGraphAddEdge(b *testing.B) {
 	g := newGraph(0)
 	for i := 0; i < b.N; i++ {
-		g.addEdge(4, 3)
+		g.addEdge(uint32(i)%8, 3)
 	}
 }
