@@ -4,8 +4,12 @@ import "sync"
 
 var nodePool = &sync.Pool{
 	New: func() any {
-		return &node{}
+		return newNode()
 	},
+}
+
+func newNode() *node {
+	return &node{}
 }
 
 type node struct {

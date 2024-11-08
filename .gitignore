@@ -32,3 +32,4 @@ example/ellyn_common
 *.dat
 *.src
 config.json
+*.log

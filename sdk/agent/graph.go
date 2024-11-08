@@ -9,6 +9,8 @@ var graphPool = &sync.Pool{New: func() any {
 	return newGraph(0)
 }}
 
+var emptyVal = struct{}{}
+
 type graphGroup struct {
 	list *collections.LinkedList[*graph]
 }
@@ -39,10 +41,11 @@ func newGraph(id uint64) *graph {
 }
 
 func (g *graph) Recycle() {
+	//log.Info("recycle g:%d", g.id)
 	g.origin = nil
 	for k, n := range g.nodes {
-		n.Recycle()
 		delete(g.nodes, k)
+		n.Recycle()
 	}
 	for k := range g.edges {
 		delete(g.edges, k)
@@ -51,7 +54,7 @@ func (g *graph) Recycle() {
 }
 
 func (g *graph) addEdge(from, to uint32) {
-	g.edges[toEdge(from, to)] = struct{}{}
+	g.edges[toEdge(from, to)] = emptyVal
 }
 
 func toEdge(from, to uint32) uint64 {

@@ -32,7 +32,9 @@ func InitAgent(meta embed.FS) Api {
 
 func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
 	ctx := ctxPool.Get().(*EllynCtx)
+
 	ctx.id = trafficId
+	ctx.g = graphPool.Get().(*graph)
 	ctx.g.id = trafficId
 	origin := toEdge(from, 0)
 	ctx.g.origin = &origin
@@ -42,16 +44,17 @@ func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
 
 func (agent *ellynAgent) GetCtx() *EllynCtx {
 	goid := goroutine.GetGoId()
-	res, exist := ctxLocal.Load(goid)
+	ctx, exist := ctxLocal.Load(goid)
 	if !exist {
 		trafficId := idGenerator.GenGUID()
-		res = ctxPool.Get().(*EllynCtx)
-		res.id = trafficId
-		res.g.id = trafficId
-		res.goid = goid
-		ctxLocal.Store(goid, res)
+		ctx = ctxPool.Get().(*EllynCtx)
+		ctx.id = trafficId
+		ctx.g = graphPool.Get().(*graph)
+		ctx.g.id = trafficId
+		ctx.goid = goid
+		ctxLocal.Store(goid, ctx)
 	}
-	return res
+	return ctx
 }
 
 func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
@@ -72,6 +75,7 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
 			if !conf.NoArgs {
 				n.args = EncodeVars(params)
 			}
+			//log.Info("ctx.g %x", uintptr(unsafe.Pointer(ctx.g)))
 			ctx.g.nodes[methodId] = n
 		}
 		// 后续使用不用再查找
@@ -100,7 +104,7 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 
 	// 记录调用链
 	if ok {
-		ctx.g.addEdge(pop, top)
+		ctx.g.addEdge(top, pop)
 	} else {
 		// 已经完全弹空， 调用链路追加到队列
 		coll.add(ctx.g)

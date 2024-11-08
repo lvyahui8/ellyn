@@ -7,17 +7,20 @@ import (
 
 var ctxPool = &sync.Pool{
 	New: func() any {
-		return &EllynCtx{
-			stack:     collections.NewUnsafeUint32Stack(),
-			g:         graphPool.Get().(*graph),
-			autoClear: true,
-		}
+		return newEllynCtx()
 	},
 }
 
 //var ctxLocal = &goroutine.RoutineLocal[*EllynCtx]{}
 
 var ctxLocal = collections.NewNumberKeyConcurrentMap[uint64, *EllynCtx](4096)
+
+func newEllynCtx() *EllynCtx {
+	return &EllynCtx{
+		stack:     collections.NewUnsafeUint32Stack(),
+		autoClear: true,
+	}
+}
 
 type EllynCtx struct {
 	goid      uint64 // 当前协程id
@@ -34,7 +37,7 @@ func (c *EllynCtx) Snapshot() (id uint64, currentMethodId uint32) {
 
 func (c *EllynCtx) Recycle() {
 	c.stack.Clear()
-	c.g = graphPool.Get().(*graph)
+	c.g = nil
 	c.autoClear = true
 	ctxLocal.Delete(c.goid)
 	ctxPool.Put(c)
