@@ -13,7 +13,7 @@ var globalCovered []bool
 
 type Api interface {
 	InitCtx(ctxId uint64, from uint32)
-	GetCtx() *EllynCtx
+	GetCtx() (ctx *EllynCtx, collect bool, cleaner func())
 	Push(ctx *EllynCtx, methodId uint32, params []any)
 	Pop(ctx *EllynCtx, results []any)
 	SetBlock(ctx *EllynCtx, blockOffset, blockId int)
@@ -42,19 +42,27 @@ func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
 	ctxLocal.Store(ctx.goid, ctx)
 }
 
-func (agent *ellynAgent) GetCtx() *EllynCtx {
+func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) {
 	goid := goroutine.GetGoId()
 	ctx, exist := ctxLocal.Load(goid)
 	if !exist {
-		trafficId := idGenerator.GenGUID()
+		defer func() {
+			ctxLocal.Store(goid, ctx)
+		}()
+		if !sampling.hit() {
+			ctx = discardedCtx
+			return ctx, false, func() {
+				ctxLocal.Delete(goid)
+			}
+		}
 		ctx = ctxPool.Get().(*EllynCtx)
+		trafficId := idGenerator.GenGUID()
 		ctx.id = trafficId
 		ctx.g = graphPool.Get().(*graph)
 		ctx.g.id = trafficId
 		ctx.goid = goid
-		ctxLocal.Store(goid, ctx)
 	}
-	return ctx
+	return ctx, ctx != discardedCtx, nil
 }
 
 func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {

@@ -15,6 +15,8 @@ var ctxPool = &sync.Pool{
 
 var ctxLocal = collections.NewNumberKeyConcurrentMap[uint64, *EllynCtx](4096)
 
+var discardedCtx = &EllynCtx{}
+
 func newEllynCtx() *EllynCtx {
 	return &EllynCtx{
 		stack:     collections.NewUnsafeUint32Stack(),
@@ -23,11 +25,11 @@ func newEllynCtx() *EllynCtx {
 }
 
 type EllynCtx struct {
+	autoClear bool
 	goid      uint64 // 当前协程id
 	id        uint64
 	stack     *collections.UnsafeUint32Stack
 	g         *graph
-	autoClear bool
 }
 
 func (c *EllynCtx) Snapshot() (id uint64, currentMethodId uint32) {

@@ -23,4 +23,7 @@ type Configuration struct {
 
 	// 是否收集演示数据
 	NoDemo bool
+
+	// 采样率， 0-1(0%-100%)
+	SamplingRate float64
 }

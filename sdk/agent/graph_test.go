@@ -1,6 +1,15 @@
 package agent
 
-import "testing"
+import (
+	"testing"
+	"unsafe"
+)
+
+func TestGraphSize(t *testing.T) {
+	t.Log(unsafe.Sizeof(graph{}))
+	t.Log(unsafe.Sizeof(graph{}.nodes))
+	t.Log(unsafe.Sizeof(graph{}.edges))
+}
 
 // go test -v -run ^$  -bench 'BenchmarkGraphAddEdge' -benchtime=5s -benchmem -cpuprofile profile.pprof -memprofile memprofile.pprof
 // go tool pprof -http=":8081" profile.pprof
@@ -8,6 +17,10 @@ import "testing"
 func BenchmarkGraphAddEdge(b *testing.B) {
 	g := newGraph(0)
 	for i := 0; i < b.N; i++ {
-		g.addEdge(uint32(i)%8, 3)
+		g.addEdge(2, 0)
+		g.addEdge(2, 2)
+		for k := range g.edges {
+			delete(g.edges, k)
+		}
 	}
 }

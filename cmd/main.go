@@ -27,6 +27,10 @@ func main() {
 						Name:        "no-demo",
 						Destination: &conf.NoDemo,
 					},
+					&cli.Float64Flag{
+						Name:        "sampling",
+						Destination: &conf.SamplingRate,
+					},
 				},
 				Action: func(ctx *cli.Context) error {
 					dir, err := os.Getwd()

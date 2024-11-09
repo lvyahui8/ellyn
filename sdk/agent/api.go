@@ -16,23 +16,33 @@ type ellynApiImpl struct {
 }
 
 func (e *ellynApiImpl) ClearCtx() {
-	ctx := e.Agent.GetCtx()
-	ctx.Recycle()
+	ctx, ok, _ := e.Agent.GetCtx()
+	if ok {
+		ctx.Recycle()
+	}
 }
 
 func (e *ellynApiImpl) GetGraphId() uint64 {
-	ctx := e.Agent.GetCtx()
+	ctx, ok, _ := e.Agent.GetCtx()
+	if !ok {
+		return 0
+	}
 	g := ctx.g
 	return g.id
 }
 
 func (e *ellynApiImpl) SetAutoClear(auto bool) {
-	ctx := e.Agent.GetCtx()
-	ctx.autoClear = auto
+	ctx, ok, _ := e.Agent.GetCtx()
+	if ok {
+		ctx.autoClear = auto
+	}
 }
 
 func (e *ellynApiImpl) GetGraph() *api.Graph {
-	ctx := e.Agent.GetCtx()
+	ctx, ok, _ := e.Agent.GetCtx()
+	if !ok {
+		return nil
+	}
 	g := ctx.g
 	res := &api.Graph{
 		Nodes: make(map[uint32]*api.Node),

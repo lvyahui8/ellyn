@@ -325,9 +325,10 @@ func (f *FileVisitor) modifyVarList(list *ast.FieldList, namePrefix string) (mod
 func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position, funcType *ast.FuncType) {
 	fc := f.prog.addMethod(f.fileId, fName, begin, end, funcType)
 
-	format := "_ellynCtx := ellyn_agent.Agent.GetCtx();" +
-		"ellyn_agent.Agent.Push(_ellynCtx,%d,%s);" +
-		"defer ellyn_agent.Agent.Pop(_ellynCtx,%s);"
+	format := "_ellynCtx,_ellynCollect,_ellynCleaner := ellyn_agent.Agent.GetCtx();" +
+		"if _ellynCleaner != nil { defer _ellynCleaner() };" +
+		"if _ellynCollect { ellyn_agent.Agent.Push(_ellynCtx,%d,%s);" +
+		"defer ellyn_agent.Agent.Pop(_ellynCtx,%s) };"
 	var args []any
 	args = append(args, fc.Id)
 
@@ -345,7 +346,7 @@ func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position
 func (f *FileVisitor) addBlock(begin, end token.Pos) {
 	block := f.prog.addBlock(f.fileId, f.fset.Position(begin), f.fset.Position(end))
 	f.insertAtPost(block.Begin.Offset, func() string {
-		return fmt.Sprintf("ellyn_agent.Agent.SetBlock(_ellynCtx,%d,%d);", block.MethodOffset, block.Id)
+		return fmt.Sprintf("if _ellynCollect { ellyn_agent.Agent.SetBlock(_ellynCtx,%d,%d) };", block.MethodOffset, block.Id)
 	}, 2)
 }
 

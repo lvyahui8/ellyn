@@ -11,4 +11,5 @@ func initAgent(m embed.FS) {
 	if len(blocks) > 0 {
 		globalCovered = make([]bool, int(len(blocks)))
 	}
+	initSampling()
 }

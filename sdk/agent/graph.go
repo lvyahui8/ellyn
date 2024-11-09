@@ -33,8 +33,8 @@ func newGraph(id uint64) *graph {
 	return &graph{
 		id:    id,
 		time:  currentTime().UnixMilli(),
-		nodes: make(map[uint32]*node, 8),
-		edges: make(map[uint64]struct{}, 8),
+		nodes: make(map[uint32]*node, 10),
+		edges: make(map[uint64]struct{}, 10),
 	}
 }
 
