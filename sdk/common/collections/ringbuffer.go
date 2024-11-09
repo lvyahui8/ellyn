@@ -1,6 +1,7 @@
 package collections
 
 import (
+	"runtime"
 	"sync/atomic"
 )
 
@@ -90,6 +91,8 @@ func (r *RingBuffer[T]) Dequeue() (value T, success bool) {
 			if atomic.CompareAndSwapUint64(&r.dequeuePos, pos, pos+1) {
 				success = true
 				break
+			} else {
+				runtime.Gosched()
 			}
 		} else if diff < 0 {
 			// 缓冲区为空，没有元素可以消费

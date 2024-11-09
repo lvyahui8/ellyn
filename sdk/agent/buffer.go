@@ -2,7 +2,6 @@ package agent
 
 import (
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
-	"runtime"
 	"time"
 )
 
@@ -25,27 +24,25 @@ func (c *collector) add(g *graph) {
 }
 
 func (c *collector) start() {
-	for i := 0; i < runtime.NumCPU(); i++ {
-		go func() {
-			for {
-				g, ok := c.buffer.Dequeue()
-				if !ok {
-					// 避免取不到数据CPU空转
-					time.Sleep(100 * time.Nanosecond)
-					continue
-				}
-				//fmt.Printf("g:%d\n", g.id)
-				if !conf.NoDemo {
-					// 消费链路数据，这里缓存到本地用于demo显示
-					saveToDisplayCache(g)
-				} else {
-					// 省略实际消费g，比如写磁盘，或者上报MQ
-					// 消费完成后回收g
-					g.Recycle()
-				}
+	go func() {
+		for {
+			g, ok := c.buffer.Dequeue()
+			if !ok {
+				// 避免取不到数据CPU空转
+				time.Sleep(time.Microsecond)
+				continue
 			}
-		}()
-	}
+			//fmt.Printf("g:%d\n", g.id)
+			if !conf.NoDemo {
+				// 消费链路数据，这里缓存到本地用于demo显示
+				saveToDisplayCache(g)
+			} else {
+				// 省略实际消费g，比如写磁盘，或者上报MQ
+				// 消费完成后回收g
+				g.Recycle()
+			}
+		}
+	}()
 }
 
 func saveToDisplayCache(g *graph) {
