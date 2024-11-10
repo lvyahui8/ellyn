@@ -5,6 +5,8 @@ import (
 	"sync/atomic"
 )
 
+const maxBackoff = 16
+
 type RingBuffer[T any] struct {
 	// dequeuePos 指向下一个可消费点位，一直累加然后对capacity取模（&mask）取值
 	dequeuePos uint64
@@ -80,6 +82,7 @@ func (r *RingBuffer[T]) Dequeue() (value T, success bool) {
 	var element *node[T]
 
 	var seq uint64
+	backoff := 1
 	for {
 		pos := atomic.LoadUint64(&r.dequeuePos)
 		element = r.elements[pos&r.mask]
@@ -92,7 +95,12 @@ func (r *RingBuffer[T]) Dequeue() (value T, success bool) {
 				success = true
 				break
 			} else {
-				runtime.Gosched()
+				for i := 0; i < backoff; i++ {
+					runtime.Gosched()
+				}
+				if backoff < maxBackoff {
+					backoff <<= 1
+				}
 			}
 		} else if diff < 0 {
 			// 缓冲区为空，没有元素可以消费
