@@ -2,6 +2,7 @@ package collections
 
 import (
 	"math/rand"
+	"sync"
 	"testing"
 	"time"
 	"unsafe"
@@ -84,4 +85,26 @@ func randomSeq(cnt, maxVal int) (res []int) {
 	raw = shuffle(raw)
 	res = raw[0:cnt]
 	return
+}
+
+// BenchmarkDeferOrDirectCall在明确不会panic的情况下，直接调用比defer调用性能更好
+func BenchmarkDeferOrDirectCall(b *testing.B) {
+	b.Run("defer", func(b *testing.B) {
+		lock := &sync.RWMutex{}
+		for i := 0; i < b.N; i++ {
+			func() {
+				lock.RLock()
+				defer lock.RUnlock()
+			}()
+		}
+	})
+	b.Run("direct", func(b *testing.B) {
+		lock := &sync.RWMutex{}
+		for i := 0; i < b.N; i++ {
+			func() {
+				lock.RLock()
+				lock.RUnlock()
+			}()
+		}
+	})
 }

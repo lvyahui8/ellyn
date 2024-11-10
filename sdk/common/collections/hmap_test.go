@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-func testReadWrite(b *testing.B, name string, m mapApi[int, any], insertSeq, readSeq, deleteSeq []int) {
+func testReadWrite(b *testing.B, name string, m mapApi[int, struct{}], insertSeq, readSeq, deleteSeq []int) {
 	// 测试纯粹写入的并发性能
 	routineSize := runtime.NumCPU()
 	handleSize := len(insertSeq) / routineSize
@@ -109,12 +109,32 @@ func (s *SyncMap[K, V]) Delete(key K) {
 	s.m.Delete(key)
 }
 
+var _ mapApi[int, struct{}] = newLockFreeMap[int, struct{}]()
+
+func newLockFreeMap[K int | uint, V any]() *lockFreeMap[int, struct{}] {
+	return &lockFreeMap[int, struct{}]{}
+}
+
+type lockFreeMap[K int | uint, V any] struct {
+}
+
+func (l *lockFreeMap[K, V]) Store(key K, val V) {
+}
+
+func (l *lockFreeMap[K, V]) Load(key K) (v V, ok bool) {
+	return
+}
+
+func (l *lockFreeMap[K, V]) Delete(key K) {
+}
+
 func BenchmarkMap(b *testing.B) {
 	insertSeq := randomSeq(cnt, maxVal)
 	readSeq := shuffle(insertSeq)
 	deleteSeq := shuffle(insertSeq)
-	testReadWrite(b, "ConcurrentMap", NewNumberKeyConcurrentMap[int, any](2048), insertSeq, readSeq, deleteSeq)
-	testReadWrite(b, "syncMap", &SyncMap[int, any]{}, insertSeq, readSeq, deleteSeq)
+	testReadWrite(b, "ConcurrentMap", NewNumberKeyConcurrentMap[int, struct{}](2048), insertSeq, readSeq, deleteSeq)
+	testReadWrite(b, "syncMap", &SyncMap[int, struct{}]{}, insertSeq, readSeq, deleteSeq)
+	//testReadWrite(b, "lockFreeMap", newLockFreeMap[int, struct{}](), insertSeq, readSeq, deleteSeq)
 }
 
 func TestMapPadding(t *testing.T) {

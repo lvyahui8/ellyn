@@ -75,22 +75,18 @@ func (m *ConcurrentMap[K, V]) Size() int {
 
 func (m *ConcurrentMap[K, V]) Values() (res []V) {
 	for _, seg := range m.segments {
-		func() {
-			seg.RLock()
-			defer seg.RUnlock()
-			res = append(res, utils.GetMapValues(seg.entries)...)
-		}()
+		seg.RLock()
+		res = append(res, utils.GetMapValues(seg.entries)...)
+		seg.RUnlock()
 	}
 	return
 }
 
 func (m *ConcurrentMap[K, V]) SortedValues(compare func(a, b V) bool) (res []V) {
 	for _, seg := range m.segments {
-		func() {
-			seg.RLock()
-			defer seg.RUnlock()
-			res = append(res, utils.GetMapValues(seg.entries)...)
-		}()
+		seg.RLock()
+		res = append(res, utils.GetMapValues(seg.entries)...)
+		seg.RUnlock()
 	}
 	sort.Slice(res, func(i, j int) bool {
 		return compare(res[i], res[j])
@@ -109,23 +105,23 @@ type mapSegment[K comparable, V any] struct {
 
 func (s *mapSegment[K, V]) Store(key K, val V) {
 	s.Lock()
-	defer s.Unlock()
 	s.entries[key] = val
 	s.size = len(s.entries)
+	s.Unlock()
 }
 
 func (s *mapSegment[K, V]) Load(key K) (res V, ok bool) {
 	s.RLock()
-	defer s.RUnlock()
 	res, ok = s.entries[key]
+	s.RUnlock()
 	return
 }
 
 func (s *mapSegment[K, V]) Delete(key K) {
 	s.Lock()
-	defer s.Unlock()
 	delete(s.entries, key)
 	s.size = len(s.entries)
+	s.Unlock()
 }
 
 func (s *mapSegment[K, V]) Size() int {
