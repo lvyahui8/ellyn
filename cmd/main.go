@@ -10,7 +10,7 @@ import (
 
 func main() {
 	agent.StartBackend = false
-	conf := &agent.Configuration{}
+	conf := agent.NewDefaultConf()
 	app := &cli.App{
 		Name:  "ellyn",
 		Usage: "Go coverage and callgraph collection tool",

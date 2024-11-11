@@ -70,7 +70,7 @@ type Program struct {
 func NewProgram(mainPkgDir string, useRawSdk bool, conf *agent.Configuration) *Program {
 	mainPkgDir = filepath.ToSlash(mainPkgDir)
 	if conf == nil {
-		conf = &agent.Configuration{}
+		conf = agent.NewDefaultConf()
 	}
 	prog := &Program{
 		conf: *conf,

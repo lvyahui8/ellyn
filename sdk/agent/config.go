@@ -17,6 +17,14 @@ func initConfig() {
 	}
 }
 
+func NewDefaultConf() *Configuration {
+	return &Configuration{
+		NoArgs:       false,
+		NoDemo:       false,
+		SamplingRate: 1,
+	}
+}
+
 type Configuration struct {
 	// 是否采集参数
 	NoArgs bool

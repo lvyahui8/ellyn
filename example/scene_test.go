@@ -26,6 +26,7 @@ func TestAutoClean(t *testing.T) {
 
 func TestSum(t *testing.T) {
 	api.Agent.SetAutoClear(false)
+	defer api.Agent.ClearCtx()
 	Sum(1, 2)
 	graph := api.Agent.GetGraph()
 	require.NotNil(t, graph)
@@ -36,6 +37,7 @@ func TestSum(t *testing.T) {
 
 func TestTrade(t *testing.T) {
 	api.Agent.SetAutoClear(false)
+	defer api.Agent.ClearCtx()
 	Trade()
 	graph := api.Agent.GetGraph()
 	require.NotNil(t, graph)
@@ -45,6 +47,7 @@ func TestTrade(t *testing.T) {
 
 func TestN(t *testing.T) {
 	api.Agent.SetAutoClear(false)
+	defer api.Agent.ClearCtx()
 	N(4)
 	graph := api.Agent.GetGraph()
 	require.NotNil(t, graph)
