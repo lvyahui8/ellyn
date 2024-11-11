@@ -1,6 +1,8 @@
 package benchmark
 
-import "testing"
+import (
+	"testing"
+)
 
 const data = `2016-10-25 06:21:25 [Info] ellyn.go site:cn|lang:cn|msg:build success`
 
@@ -16,5 +18,15 @@ func BenchmarkWrite2DevNull(b *testing.B) {
 func BenchmarkWrite2TmpFile(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		Write2TmpFile(data)
+	}
+}
+
+func TestNetworkReadWrite(t *testing.T) {
+	NetworkReadWrite(data)
+}
+
+func BenchmarkNetworkReadWrite(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		NetworkReadWrite(data)
 	}
 }

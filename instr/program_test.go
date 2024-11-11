@@ -63,7 +63,7 @@ func TestUpdateBenchmark(t *testing.T) {
 	prog := NewProgram(test.GetBenchmarkPath(), true, &agent.Configuration{
 		NoArgs:       true,
 		NoDemo:       true,
-		SamplingRate: 0.01,
+		SamplingRate: 0.001,
 	})
 	defer prog.Destroy()
 	prog.RollbackAll()

@@ -1,6 +1,8 @@
 package benchmark
 
 import (
+	"io/ioutil"
+	"net"
 	"os"
 	"path/filepath"
 )
@@ -27,4 +29,13 @@ func Write2DevNull(content string) {
 
 func Write2TmpFile(content string) {
 	_, _ = tmpFile.Write([]byte(content))
+}
+
+func NetworkReadWrite(content string) {
+	r, w := net.Pipe()
+	go func() {
+		_, _ = w.Write([]byte(content))
+		_ = w.Close()
+	}()
+	_, _ = ioutil.ReadAll(r)
 }
