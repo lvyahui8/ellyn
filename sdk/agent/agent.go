@@ -2,7 +2,6 @@ package agent
 
 import (
 	"embed"
-	"github.com/lvyahui8/ellyn/sdk/common/goroutine"
 	"github.com/lvyahui8/ellyn/sdk/common/guid"
 	"unsafe"
 )
@@ -38,21 +37,19 @@ func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
 	ctx.g.id = trafficId
 	origin := toEdge(from, 0)
 	ctx.g.origin = &origin
-	ctx.goid = goroutine.GetGoId()
-	ctxLocal.Store(ctx.goid, ctx)
+	setEllynCtx(ctx)
 }
 
 func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) {
-	goid := goroutine.GetGoId()
-	ctx, exist := ctxLocal.Load(goid)
+	ctx, exist := getEllynCtx()
 	if !exist {
 		defer func() {
-			ctxLocal.Store(goid, ctx)
+			setEllynCtx(ctx)
 		}()
 		if !sampling.hit() {
 			ctx = discardedCtx
 			return ctx, false, func() {
-				ctxLocal.Delete(goid)
+				clearEllynCtx()
 			}
 		}
 		ctx = ctxPool.Get().(*EllynCtx)
@@ -60,7 +57,6 @@ func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) 
 		ctx.id = trafficId
 		ctx.g = graphPool.Get().(*graph)
 		ctx.g.id = trafficId
-		ctx.goid = goid
 	}
 	return ctx, ctx != discardedCtx, nil
 }

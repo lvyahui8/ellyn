@@ -15,6 +15,10 @@ type ellynApiImpl struct {
 	Agent *ellynAgent
 }
 
+func (e *ellynApiImpl) GetGraphCnt() uint64 {
+	return graphCnt
+}
+
 func (e *ellynApiImpl) ClearCtx() {
 	ctx, ok, _ := e.Agent.GetCtx()
 	if ok {

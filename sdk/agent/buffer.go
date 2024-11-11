@@ -2,6 +2,7 @@ package agent
 
 import (
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
+	"sync/atomic"
 	"time"
 )
 
@@ -23,6 +24,8 @@ func (c *collector) add(g *graph) {
 	c.buffer.Enqueue(g)
 }
 
+var graphCnt uint64
+
 func (c *collector) start() {
 	go func() {
 		for {
@@ -32,7 +35,8 @@ func (c *collector) start() {
 				time.Sleep(time.Microsecond)
 				continue
 			}
-			//fmt.Printf("g:%d\n", g.id)
+			// fmt.Printf("g:%d\n", g.id)
+			atomic.AddUint64(&graphCnt, 1)
 			if !conf.NoDemo {
 				// 消费链路数据，这里缓存到本地用于demo显示
 				saveToDisplayCache(g)

@@ -9,3 +9,11 @@ import "runtime"
 func GetGoId() uint64 {
 	return runtime.EllynGetGoid()
 }
+
+func GetRoutineCtx() uintptr {
+	return runtime.EllynGetRoutineCtx()
+}
+
+func SetRoutineCtx(ctx uintptr) {
+	runtime.EllynSetRoutineCtx(ctx)
+}

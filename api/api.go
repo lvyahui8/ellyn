@@ -11,6 +11,7 @@ type EllynApi interface {
 	GetGraph() *Graph
 	GetGraphId() uint64
 	ClearCtx()
+	GetGraphCnt() uint64
 }
 
 var Agent *agentProxy = &agentProxy{}
@@ -20,6 +21,13 @@ var _ EllynApi = (*agentProxy)(nil)
 type agentProxy struct {
 	sync.Once
 	target EllynApi
+}
+
+func (a *agentProxy) GetGraphCnt() uint64 {
+	if a.target == nil {
+		return 0
+	}
+	return a.target.GetGraphCnt()
 }
 
 func Init(target EllynApi) {
