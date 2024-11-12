@@ -10,12 +10,12 @@ import _ "github.com/lvyahui8/ellyn/api"
 import _ "github.com/lvyahui8/ellyn"
 
 func TestQuickSort(t *testing.T) {
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 1000000; i++ {
 		arr := []int{4, 5, 1, 7, 8, 10}
 		quickSort(arr, 0, len(arr)-1)
 	}
 	time.Sleep(100 * time.Millisecond)
-	t.Log(api.Agent.GetGraphCnt()) // 当前采样率0.01，则累计1w
+	t.Log(api.Agent.GetGraphCnt()) // 当前采样率0.001，则累计1k
 }
 
 func newUnsortedArr() []int {

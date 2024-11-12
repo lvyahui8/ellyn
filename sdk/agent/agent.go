@@ -30,8 +30,11 @@ func InitAgent(meta embed.FS) Api {
 }
 
 func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
+	if trafficId == 0 {
+		setEllynCtx(discardedCtx)
+		return
+	}
 	ctx := ctxPool.Get().(*EllynCtx)
-
 	ctx.id = trafficId
 	ctx.g = graphPool.Get().(*graph)
 	ctx.g.id = trafficId
@@ -43,11 +46,9 @@ func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
 func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) {
 	ctx, exist := getEllynCtx()
 	if !exist {
-		defer func() {
-			setEllynCtx(ctx)
-		}()
 		if !sampling.hit() {
 			ctx = discardedCtx
+			setEllynCtx(ctx)
 			return ctx, false, func() {
 				clearEllynCtx()
 			}
@@ -57,6 +58,7 @@ func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) 
 		ctx.id = trafficId
 		ctx.g = graphPool.Get().(*graph)
 		ctx.g.id = trafficId
+		setEllynCtx(ctx)
 	}
 	return ctx, ctx != discardedCtx, nil
 }

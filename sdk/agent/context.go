@@ -57,6 +57,9 @@ type EllynCtx struct {
 }
 
 func (c *EllynCtx) Snapshot() (id uint64, currentMethodId uint32) {
+	if c.stack == nil {
+		return c.id, 0
+	}
 	top, _ := c.stack.Top()
 	return c.id, top
 }

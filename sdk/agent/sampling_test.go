@@ -27,7 +27,7 @@ func testRate(t *testing.T, targetRate float32) {
 	}
 	realRate := float32(sum) / float32(total)
 	t.Logf("%f", realRate)
-	require.True(t, math.Abs(float64(realRate-targetRate)) <= 0.001) // 误差不超过千分之一即可
+	require.True(t, math.Abs(float64(realRate-targetRate)) <= 0.001) // 误差不超过即可
 }
 
 func TestRandomSampling(t *testing.T) {

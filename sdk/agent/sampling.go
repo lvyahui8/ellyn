@@ -21,7 +21,7 @@ func newRandomSampling(samplingRate float32) *randomSampling {
 		samplingRate = 1
 	}
 	rs := &randomSampling{}
-	precision := uint64(1000000)
+	precision := uint64(100000000)
 	if samplingRate == 1 {
 		rs.target = math.MaxUint64
 	} else {
