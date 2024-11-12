@@ -52,3 +52,15 @@ func BenchmarkShuffle(b *testing.B) {
 		shuffle(arr)
 	}
 }
+
+func BenchmarkStringCompress(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		StringCompress(data)
+	}
+}
+
+func BenchmarkEncryptAndDecrypt(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		EncryptAndDecrypt(data)
+	}
+}
