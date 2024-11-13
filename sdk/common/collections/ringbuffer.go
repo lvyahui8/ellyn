@@ -5,7 +5,7 @@ import (
 	"sync/atomic"
 )
 
-const maxBackoff = 16
+const maxBackoff = 10
 
 type RingBuffer[T any] struct {
 	// dequeuePos 指向下一个可消费点位，一直累加然后对capacity取模（&mask）取值
@@ -95,6 +95,7 @@ func (r *RingBuffer[T]) Dequeue() (value T, success bool) {
 				success = true
 				break
 			} else {
+				// 指数避退
 				for i := 0; i < backoff; i++ {
 					runtime.Gosched()
 				}

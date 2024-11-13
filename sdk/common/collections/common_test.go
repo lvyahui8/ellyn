@@ -2,6 +2,7 @@ package collections
 
 import (
 	"math/rand"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -105,6 +106,79 @@ func BenchmarkDeferOrDirectCall(b *testing.B) {
 				lock.RLock()
 				lock.RUnlock()
 			}()
+		}
+	})
+}
+
+func BenchmarkMapInter(b *testing.B) {
+	type user struct {
+		Id   int
+		Name string
+	}
+	structMap := make(map[int]user)
+	ptrMap := make(map[int]*user)
+	emptyValMap := make(map[int]struct{})
+	total := 100
+	for i := 0; i < total; i++ {
+		name := strconv.Itoa(i)
+		structMap[i] = user{i, name}
+		ptrMap[i] = &user{i, name}
+		emptyValMap[i] = struct{}{}
+	}
+
+	b.Run("structMapNoVal", func(b *testing.B) {
+		sum := 0
+		for i := 0; i < b.N; i++ {
+			for k := range structMap {
+				sum += k
+			}
+		}
+	})
+	b.Run("structMapWithVal", func(b *testing.B) {
+		sum := 0
+		for i := 0; i < b.N; i++ {
+			for k, v := range structMap {
+				sum += k
+				if v.Id == 0 {
+				}
+			}
+		}
+	})
+	b.Run("ptrMapNoVal", func(b *testing.B) {
+		sum := 0
+		for i := 0; i < b.N; i++ {
+			for k := range ptrMap {
+				sum += k
+			}
+		}
+	})
+	b.Run("ptrMapWithVal", func(b *testing.B) {
+		sum := 0
+		for i := 0; i < b.N; i++ {
+			for k, v := range ptrMap {
+				sum += k
+				if v.Id == 0 {
+				}
+			}
+		}
+	})
+
+	b.Run("emptyMapNoVal", func(b *testing.B) {
+		sum := 0
+		for i := 0; i < b.N; i++ {
+			for k := range emptyValMap {
+				sum += k
+			}
+		}
+	})
+	b.Run("emptyMapWithVal", func(b *testing.B) {
+		sum := 0
+		for i := 0; i < b.N; i++ {
+			for k, v := range emptyValMap {
+				sum += k
+				if v == struct{}{} {
+				}
+			}
 		}
 	})
 }

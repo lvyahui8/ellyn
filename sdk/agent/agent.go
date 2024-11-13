@@ -49,9 +49,11 @@ func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) 
 		if !sampling.hit() {
 			ctx = discardedCtx
 			setEllynCtx(ctx)
-			return ctx, false, func() {
+			collect = false
+			cleaner = func() {
 				clearEllynCtx()
 			}
+			return
 		}
 		ctx = ctxPool.Get().(*EllynCtx)
 		trafficId := idGenerator.GenGUID()
@@ -60,7 +62,8 @@ func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) 
 		ctx.g.id = trafficId
 		setEllynCtx(ctx)
 	}
-	return ctx, ctx != discardedCtx, nil
+	collect = ctx != discardedCtx
+	return
 }
 
 func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
