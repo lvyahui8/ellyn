@@ -1,10 +1,12 @@
 package instr
 
 import (
+	"flag"
 	"github.com/lvyahui8/ellyn/sdk/agent"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"github.com/lvyahui8/ellyn/test"
 	"github.com/stretchr/testify/require"
+	"strconv"
 	"testing"
 )
 
@@ -60,14 +62,25 @@ func TestRollbackExample(t *testing.T) {
 }
 
 func TestUpdateBenchmark(t *testing.T) {
+	args := flag.Args()
+	rate := 0.0001
+	if len(args) == 1 {
+		val, err := strconv.ParseFloat(args[0], 10)
+		require.Nil(t, err)
+		require.True(t, val >= 0 && val <= 1)
+		rate = val
+	}
+	t.Logf("samplingRate: %f\n", rate)
 	prog := NewProgram(test.GetBenchmarkPath(), true, &agent.Configuration{
 		NoArgs:       true,
 		NoDemo:       true,
-		SamplingRate: 0.0001,
+		SamplingRate: rate,
 	})
 	defer prog.Destroy()
 	prog.RollbackAll()
 	prog.Visit()
+
+	t.Log()
 }
 
 func TestRollbackBenchmark(t *testing.T) {

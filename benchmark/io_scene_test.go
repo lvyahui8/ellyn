@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-const logLine = `2016-10-25 06:21:25 [Info] 20241011230455C8B089895F0389 ellyn.go site:cn|stress:N|lang:cn|msg:build success`
+const logLine = `2016-10-25 06:21:25 [Info] 20241011230455C8B089895F0389 ellyn.go:77 [Compress] site:cn|stress:N|lang:cn|msg:build success`
 
 func BenchmarkWrite2DevNull(b *testing.B) {
 	for i := 0; i < b.N; i++ {
