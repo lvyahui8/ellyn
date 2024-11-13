@@ -4,11 +4,11 @@ import (
 	"testing"
 )
 
-const data = `2016-10-25 06:21:25 [Info] ellyn.go site:cn|lang:cn|msg:build success`
+const logLine = `2016-10-25 06:21:25 [Info] 20241011230455C8B089895F0389 ellyn.go site:cn|stress:N|lang:cn|msg:build success`
 
 func BenchmarkWrite2DevNull(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Write2DevNull(data)
+		Write2DevNull(logLine)
 	}
 }
 
@@ -17,21 +17,21 @@ func BenchmarkWrite2DevNull(b *testing.B) {
 // go tool pprof -http=":8082" memprofile.pprof
 func BenchmarkWrite2TmpFile(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Write2TmpFile(data)
+		Write2TmpFile(logLine)
 	}
 }
 
 func TestLocalPipeReadWrite(t *testing.T) {
-	LocalPipeReadWrite(data)
+	LocalPipeReadWrite(logLine)
 }
 
 func BenchmarkLocalPipeReadWrite(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		LocalPipeReadWrite(data)
+		LocalPipeReadWrite(logLine)
 	}
 }
 
-func BenchmarkSyncRead(b *testing.B) {
+func BenchmarkSerialNetRequest(b *testing.B) {
 	srv := mockHttpServer()
 	defer srv.Close()
 	urls := generateLinks(srv.URL)
@@ -41,7 +41,7 @@ func BenchmarkSyncRead(b *testing.B) {
 	}
 }
 
-func BenchmarkConcurrentRead(b *testing.B) {
+func BenchmarkConcurrentNetRequest(b *testing.B) {
 	srv := mockHttpServer()
 	defer srv.Close()
 	urls := generateLinks(srv.URL)
