@@ -21,12 +21,32 @@ func BenchmarkWrite2TmpFile(b *testing.B) {
 	}
 }
 
-func TestNetworkReadWrite(t *testing.T) {
-	NetworkReadWrite(data)
+func TestLocalPipeReadWrite(t *testing.T) {
+	LocalPipeReadWrite(data)
 }
 
-func BenchmarkNetworkReadWrite(b *testing.B) {
+func BenchmarkLocalPipeReadWrite(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		NetworkReadWrite(data)
+		LocalPipeReadWrite(data)
+	}
+}
+
+func BenchmarkSyncRead(b *testing.B) {
+	srv := mockHttpServer()
+	defer srv.Close()
+	urls := generateLinks(srv.URL)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		syncCrawl(urls)
+	}
+}
+
+func BenchmarkConcurrentRead(b *testing.B) {
+	srv := mockHttpServer()
+	defer srv.Close()
+	urls := generateLinks(srv.URL)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		concurrentCrawl(urls)
 	}
 }

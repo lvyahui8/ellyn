@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sync"
+	"time"
 )
 
 var devNull *os.File
@@ -38,7 +42,7 @@ func Write2TmpFile(content string) {
 	}
 }
 
-func NetworkReadWrite(content string) {
+func LocalPipeReadWrite(content string) {
 	r, w := net.Pipe()
 	go func() {
 		_, err := w.Write([]byte(content))
@@ -54,4 +58,37 @@ func NetworkReadWrite(content string) {
 		return
 	}
 	_ = fmt.Sprintf("data:%s", string(data))
+}
+
+func generateLinks(url string) []string {
+	urls := make([]string, 10)
+	for i := 0; i < 10; i++ {
+		urls[i] = url
+	}
+	return urls
+}
+
+func syncCrawl(urls []string) {
+	for _, url := range urls {
+		http.Get(url)
+	}
+}
+
+func concurrentCrawl(urls []string) {
+	var wg sync.WaitGroup
+	wg.Add(len(urls))
+	for _, url := range urls {
+		go func(url string) {
+			defer wg.Done()
+			http.Get(url)
+		}(url)
+	}
+	wg.Wait()
+}
+
+func mockHttpServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(time.Millisecond)
+		w.WriteHeader(200)
+	}))
 }
