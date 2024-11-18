@@ -27,3 +27,12 @@ func initTimeClock() {
 		}
 	}()
 }
+
+func date() int {
+	return getDate(currentTime())
+}
+
+func getDate(t time.Time) int {
+	year, month, day := t.Date()
+	return year*10000 + int(month)*100 + day
+}

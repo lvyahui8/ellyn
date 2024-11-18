@@ -6,6 +6,7 @@ import (
 
 func initAgent(m embed.FS) {
 	meta = m
+	initLogger()
 	initConfig()
 	initMetaData()
 	if len(blocks) > 0 {
