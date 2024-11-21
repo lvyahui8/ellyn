@@ -4,10 +4,12 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
+	"github.com/lvyahui8/ellyn/sdk/common/collections"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"os"
 	"path/filepath"
 	"sync"
+	"time"
 )
 
 const (
@@ -16,12 +18,19 @@ const (
 
 // log
 // log写盘逻辑：定时、大小溢出、日期切换
-var log *logger
+var log *asyncLogger
 
 var logInitOnce = sync.Once{}
 
+type logLevel int
+
+const (
+	Info logLevel = iota
+	Warn
+	Error
+)
+
 type logfile struct {
-	sync.Mutex
 	size int
 	date int
 	w    *bufio.Writer
@@ -36,9 +45,6 @@ func newRotateFile() *logfile {
 }
 
 func (f *logfile) Write(p []byte) (n int, err error) {
-	f.Lock()
-	defer f.Unlock()
-
 	n, err = f.w.Write(p)
 	f.size += n
 
@@ -91,24 +97,63 @@ func (f *logfile) rotate() (err error) {
 	return
 }
 
-type logger struct {
-	file *logfile
+type logLine struct {
+	buf []byte
+}
+
+type asyncLogger struct {
+	logQueue     *collections.RingBuffer[*logLine]
+	file         *logfile
+	currentLevel logLevel
 }
 
 func initLogger() {
 	logInitOnce.Do(func() {
-		log = &logger{
-			file: newRotateFile(),
+		log = &asyncLogger{
+			file:     newRotateFile(),
+			logQueue: collections.NewRingBuffer[*logLine](4096),
 		}
+		log.start()
 	})
 }
 
-func (l *logger) Error(format string, args ...any) {
-	line := fmt.Sprintf("[Error] "+format+"\n", args...)
-	_, _ = l.file.Write(utils.String.String2bytes(line))
+func (l *asyncLogger) start() {
+	go func() {
+		for {
+			line, suc := l.logQueue.Dequeue()
+			if !suc {
+				time.Sleep(time.Microsecond)
+				continue
+			}
+			l.outputLine(line)
+		}
+	}()
 }
 
-func (l *logger) Info(format string, args ...any) {
+func (l *asyncLogger) Error(format string, args ...any) {
+	if l.currentLevel > Error {
+		return
+	}
+	line := fmt.Sprintf("[Error] "+format+"\n", args...)
+	l.logQueue.Enqueue(&logLine{buf: utils.String.String2bytes(line)})
+}
+
+func (l *asyncLogger) Warn(format string, args ...any) {
+	if l.currentLevel > Warn {
+		return
+	}
+	line := fmt.Sprintf("[Warn] "+format+"\n", args...)
+	l.logQueue.Enqueue(&logLine{buf: utils.String.String2bytes(line)})
+}
+
+func (l *asyncLogger) Info(format string, args ...any) {
+	if l.currentLevel > Info {
+		return
+	}
 	line := fmt.Sprintf("[Info] "+format+"\n", args...)
-	_, _ = l.file.Write(utils.String.String2bytes(line))
+	l.logQueue.Enqueue(&logLine{buf: utils.String.String2bytes(line)})
+}
+
+func (l *asyncLogger) outputLine(line *logLine) {
+	_, _ = l.file.Write(line.buf)
 }

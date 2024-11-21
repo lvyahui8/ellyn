@@ -33,3 +33,4 @@ example/ellyn_common
 *.src
 config.json
 *.log
+*.log.*
