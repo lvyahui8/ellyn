@@ -3,7 +3,8 @@ package agent
 import "time"
 
 var (
-	currTime *time.Time
+	currTime     *time.Time
+	currDatetime []byte
 )
 
 func currentTime() time.Time {
@@ -12,7 +13,7 @@ func currentTime() time.Time {
 
 func init() {
 	first := time.Now()
-	currTime = &first
+	refreshTime(&first)
 	initTimeClock()
 }
 
@@ -22,7 +23,7 @@ func initTimeClock() {
 		for {
 			select {
 			case cur := <-ticker.C:
-				currTime = &cur
+				refreshTime(&cur)
 			}
 		}
 	}()
@@ -35,4 +36,9 @@ func date() int {
 func getDate(t time.Time) int {
 	year, month, day := t.Date()
 	return year*10000 + int(month)*100 + day
+}
+
+func refreshTime(t *time.Time) {
+	currTime = t
+	currDatetime = []byte(t.Format("2006-01-02 15:04:05.000"))
 }

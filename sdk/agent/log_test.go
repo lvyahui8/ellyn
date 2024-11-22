@@ -15,6 +15,9 @@ func TestLogger_Info(t *testing.T) {
 	log.file.w.Flush()
 }
 
+// go test -v -run ^$  -bench 'BenchmarkLogger/asyncLogger' -benchtime=5s -benchmem -cpuprofile profile.pprof -memprofile memprofile.pprof
+// go tool pprof -http=":8081" profile.pprof
+// go tool pprof -http=":8082" memprofile.pprof
 func BenchmarkLogger(b *testing.B) {
 	initLogger()
 	b.Run("asyncLogger", func(b *testing.B) {

@@ -30,6 +30,16 @@ const (
 	Error
 )
 
+var levelBytes = [][]byte{
+	[]byte("[Info]"),
+	[]byte("[Warn]"),
+	[]byte("[Error]"),
+}
+
+func (level logLevel) strBytes() []byte {
+	return levelBytes[level]
+}
+
 type logfile struct {
 	size int
 	date int
@@ -97,8 +107,21 @@ func (f *logfile) rotate() (err error) {
 	return
 }
 
+var linePool = &sync.Pool{
+	New: func() any {
+		return &logLine{
+			buf: make([]byte, 0, 128),
+		}
+	},
+}
+
 type logLine struct {
 	buf []byte
+}
+
+func (l *logLine) Recycle() {
+	l.buf = l.buf[:0]
+	linePool.Put(l)
 }
 
 type asyncLogger struct {
@@ -134,26 +157,43 @@ func (l *asyncLogger) Error(format string, args ...any) {
 	if l.currentLevel > Error {
 		return
 	}
-	line := fmt.Sprintf("[Error] "+format+"\n", args...)
-	l.logQueue.Enqueue(&logLine{buf: utils.String.String2bytes(line)})
+	l.logFormatMsg(Error, format, args)
 }
 
 func (l *asyncLogger) Warn(format string, args ...any) {
 	if l.currentLevel > Warn {
 		return
 	}
-	line := fmt.Sprintf("[Warn] "+format+"\n", args...)
-	l.logQueue.Enqueue(&logLine{buf: utils.String.String2bytes(line)})
+	l.logFormatMsg(Warn, format, args)
 }
 
 func (l *asyncLogger) Info(format string, args ...any) {
 	if l.currentLevel > Info {
 		return
 	}
-	line := fmt.Sprintf("[Info] "+format+"\n", args...)
-	l.logQueue.Enqueue(&logLine{buf: utils.String.String2bytes(line)})
+	l.logFormatMsg(Info, format, args)
+}
+
+func (l *asyncLogger) logFormatMsg(level logLevel, format string, args []any) {
+	line := linePool.Get().(*logLine)
+	line.buf = append(line.buf, currDatetime...)
+	line.buf = append(line.buf, ' ')
+	line.buf = append(line.buf, level.strBytes()...)
+	line.buf = append(line.buf, ' ')
+	if len(args) == 0 {
+		line.buf = append(line.buf, utils.String.String2bytes(format)...)
+	} else {
+		message := fmt.Sprintf(format, args...) // Sprintf性能较差，可以进一步优化为自行实现
+		line.buf = append(line.buf, utils.String.String2bytes(message)...)
+	}
+	line.buf = append(line.buf, '\n')
+	suc := l.logQueue.Enqueue(line)
+	if !suc {
+		line.Recycle()
+	}
 }
 
 func (l *asyncLogger) outputLine(line *logLine) {
 	_, _ = l.file.Write(line.buf)
+	line.Recycle()
 }
