@@ -34,7 +34,7 @@ func TestLogger_Info(t *testing.T) {
 
 func TestLogger_InfoKV(t *testing.T) {
 	initLogger()
-	log.InfoKV(V("name", "yah"), V("age", 1))
+	log.InfoKV(empty().Str("name", "yah").Int("age", 1))
 	time.Sleep(1 * time.Second)
 	log.flush()
 }
@@ -67,12 +67,12 @@ func BenchmarkLoggerFormatAndKV(b *testing.B) {
 	initLogger()
 	b.Run("formatLog", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			log.Info("name:%s|age:%d", "yah", 1)
+			log.Info("name:%s|age:%d|suc:%b", "yah", 1, true)
 		}
 	})
 	b.Run("kvLog", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			log.InfoKV(V("name", "yah"), V("age", 1))
+			log.InfoKV(empty().Str("name", "yah").Int("age", 1).Bool("suc", true))
 		}
 	})
 }

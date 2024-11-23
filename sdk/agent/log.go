@@ -217,6 +217,10 @@ type Schema struct {
 	res   []byte
 }
 
+func empty() *Schema {
+	return schemaPool.Get().(*Schema)
+}
+
 func (s *Schema) Build() []byte {
 	for i, item := range s.items {
 		if i != 0 {
@@ -227,37 +231,38 @@ func (s *Schema) Build() []byte {
 	return s.res
 }
 
+func (s *Schema) Int(key string, val int) *Schema {
+	s.append(key, utils.String.String2bytes(strconv.Itoa(val)))
+	return s
+}
+
+func (s *Schema) Str(key string, val string) *Schema {
+	s.append(key, utils.String.String2bytes(val))
+	return s
+}
+
+func (s *Schema) Bool(key string, ok bool) *Schema {
+	if ok {
+		s.append(key, []byte{'Y'})
+	} else {
+		s.append(key, []byte{'N'})
+	}
+	return s
+}
+
+func (s *Schema) append(key string, val []byte) {
+	if len(s.res) != 0 {
+		s.res = append(s.res, '|')
+	}
+	s.res = append(s.res, key...)
+	s.res = append(s.res, ':')
+	s.res = append(s.res, val...)
+}
+
 func (s *Schema) Recycle() {
 	s.items = s.items[:0]
 	s.res = s.res[:0]
 	schemaPool.Put(s)
-}
-
-type KV[VT int | string | bool] struct {
-	key string
-	val VT
-}
-
-func (item *KV[VT]) formatLogBytes() (res []byte) {
-	res = append(res, item.key...)
-	res = append(res, ':')
-	switch n := any(item.val).(type) {
-	case int:
-		res = append(res, strconv.Itoa(n)...)
-	case string:
-		res = append(res, n...)
-	case bool:
-		if n {
-			res = append(res, 'Y')
-		} else {
-			res = append(res, 'N')
-		}
-	}
-	return
-}
-
-func V[VT int | string | bool](key string, val VT) *KV[VT] {
-	return &KV[VT]{key: key, val: val}
 }
 
 type asyncLogger struct {
@@ -296,10 +301,8 @@ func (l *asyncLogger) start() {
 	}()
 }
 
-func (l *asyncLogger) InfoKV(items ...KVItem) {
+func (l *asyncLogger) InfoKV(s *Schema) {
 	line := l.newLine(Info)
-	s := schemaPool.Get().(*Schema)
-	s.items = items
 	line.buf = append(line.buf, s.Build()...)
 	l.emitLine(line)
 	s.Recycle()
