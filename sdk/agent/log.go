@@ -202,6 +202,64 @@ func (l *logLine) Recycle() {
 	linePool.Put(l)
 }
 
+type KVItem interface {
+	formatLogBytes() []byte
+}
+
+var schemaPool = &sync.Pool{New: func() any {
+	return &Schema{
+		res: make([]byte, 0, 64),
+	}
+}}
+
+type Schema struct {
+	items []KVItem
+	res   []byte
+}
+
+func (s *Schema) Build() []byte {
+	for i, item := range s.items {
+		if i != 0 {
+			s.res = append(s.res, '|')
+		}
+		s.res = append(s.res, item.formatLogBytes()...)
+	}
+	return s.res
+}
+
+func (s *Schema) Recycle() {
+	s.items = s.items[:0]
+	s.res = s.res[:0]
+	schemaPool.Put(s)
+}
+
+type KV[VT int | string | bool] struct {
+	key string
+	val VT
+}
+
+func (item *KV[VT]) formatLogBytes() (res []byte) {
+	res = append(res, item.key...)
+	res = append(res, ':')
+	switch n := any(item.val).(type) {
+	case int:
+		res = append(res, strconv.Itoa(n)...)
+	case string:
+		res = append(res, n...)
+	case bool:
+		if n {
+			res = append(res, 'Y')
+		} else {
+			res = append(res, 'N')
+		}
+	}
+	return
+}
+
+func V[VT int | string | bool](key string, val VT) *KV[VT] {
+	return &KV[VT]{key: key, val: val}
+}
+
 type asyncLogger struct {
 	logQueue     *collections.RingBuffer[*logLine]
 	file         *logfile
@@ -238,6 +296,15 @@ func (l *asyncLogger) start() {
 	}()
 }
 
+func (l *asyncLogger) InfoKV(items ...KVItem) {
+	line := l.newLine(Info)
+	s := schemaPool.Get().(*Schema)
+	s.items = items
+	line.buf = append(line.buf, s.Build()...)
+	l.emitLine(line)
+	s.Recycle()
+}
+
 func (l *asyncLogger) Error(format string, args ...any) {
 	if l.currentLevel > Error {
 		return
@@ -260,22 +327,31 @@ func (l *asyncLogger) Info(format string, args ...any) {
 }
 
 func (l *asyncLogger) logFormatMsg(level logLevel, format string, args []any) {
-	line := linePool.Get().(*logLine)
-	line.buf = append(line.buf, currDatetime...)
-	line.buf = append(line.buf, ' ')
-	line.buf = append(line.buf, level.strBytes()...)
-	line.buf = append(line.buf, ' ')
+	line := l.newLine(level)
 	if len(args) == 0 {
 		line.buf = append(line.buf, utils.String.String2bytes(format)...)
 	} else {
 		message := fmt.Sprintf(format, args...) // Sprintf性能较差，可以进一步优化为自行实现
 		line.buf = append(line.buf, utils.String.String2bytes(message)...)
 	}
+	l.emitLine(line)
+}
+
+func (l *asyncLogger) emitLine(line *logLine) {
 	line.buf = append(line.buf, '\n')
 	suc := l.logQueue.Enqueue(line)
 	if !suc {
 		line.Recycle()
 	}
+}
+
+func (l *asyncLogger) newLine(level logLevel) *logLine {
+	line := linePool.Get().(*logLine)
+	line.buf = append(line.buf, currDatetime...)
+	line.buf = append(line.buf, ' ')
+	line.buf = append(line.buf, level.strBytes()...)
+	line.buf = append(line.buf, ' ')
+	return line
 }
 
 func (l *asyncLogger) outputLine(line *logLine) {

@@ -32,6 +32,13 @@ func TestLogger_Info(t *testing.T) {
 	log.flush()
 }
 
+func TestLogger_InfoKV(t *testing.T) {
+	initLogger()
+	log.InfoKV(V("name", "yah"), V("age", 1))
+	time.Sleep(1 * time.Second)
+	log.flush()
+}
+
 // go test -v -run ^$  -bench 'BenchmarkLogger/asyncLogger' -benchtime=5s -benchmem -cpuprofile profile.pprof -memprofile memprofile.pprof
 // go tool pprof -http=":8081" profile.pprof
 // go tool pprof -http=":8082" memprofile.pprof
@@ -49,6 +56,23 @@ func BenchmarkLogger(b *testing.B) {
 		ll.SetOutput(f)
 		for i := 0; i < b.N; i++ {
 			ll.Println("This is a test log entry")
+		}
+	})
+}
+
+// go test -v -run ^$  -bench 'BenchmarkLoggerFormatAndKV/kvLog' -benchtime=5s -benchmem -cpuprofile profile.pprof -memprofile memprofile.pprof
+// go tool pprof -http=":8081" profile.pprof
+// go tool pprof -http=":8082" memprofile.pprof
+func BenchmarkLoggerFormatAndKV(b *testing.B) {
+	initLogger()
+	b.Run("formatLog", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			log.Info("name:%s|age:%d", "yah", 1)
+		}
+	})
+	b.Run("kvLog", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			log.InfoKV(V("name", "yah"), V("age", 1))
 		}
 	})
 }
