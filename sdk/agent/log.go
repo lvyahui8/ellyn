@@ -8,12 +8,16 @@ import (
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
 
 const (
-	LogFileMaxSize = 1 * 1024 * 1024
+	// LogFileMaxSize 日志文件最大100M
+	LogFileMaxSize     = 100 * 1024 * 1024
+	LogFileMaintainDay = 7
 )
 
 // log
@@ -41,22 +45,60 @@ func (level logLevel) strBytes() []byte {
 }
 
 type logfile struct {
-	size int
+	size int64
 	date int
 	w    *bufio.Writer
 	file *os.File
-	idx  int
 }
 
 func newRotateFile() *logfile {
 	f := &logfile{}
 	f.checkRotate()
+	f.autoClean()
 	return f
+}
+
+func (f *logfile) autoClean() {
+	go func() {
+		//ticker := time.NewTicker(24 * time.Hour)
+		ticker := time.NewTicker(1 * time.Second)
+		for {
+			select {
+			case cur := <-ticker.C:
+				minDay := getDate(cur.Add(-LogFileMaintainDay * 24 * time.Hour))
+				baseFile := f.getBaseLogFile()
+				dir := filepath.Dir(baseFile)
+				items, err := os.ReadDir(dir)
+				if err != nil {
+					break
+				}
+				for _, item := range items {
+					itemName := filepath.Join(dir, item.Name())
+					if !strings.HasPrefix(itemName, baseFile) {
+						continue
+					}
+					begin := len(baseFile)
+					if len(itemName) < begin+10 {
+						continue
+					}
+					dayStr := itemName[begin+1 : begin+8+1]
+					day, err := strconv.Atoi(dayStr)
+					if err != nil {
+						continue
+					}
+					if day < minDay {
+						// 可以清理
+						utils.OS.Remove(itemName)
+					}
+				}
+			}
+		}
+	}()
 }
 
 func (f *logfile) Write(p []byte) (n int, err error) {
 	n, err = f.w.Write(p)
-	f.size += n
+	f.size += int64(n)
 
 	f.checkRotate()
 	return
@@ -65,7 +107,6 @@ func (f *logfile) Write(p []byte) (n int, err error) {
 func (f *logfile) checkRotate() {
 	if f.date != date() {
 		f.date = date()
-		f.idx = 0
 		_ = f.rotate()
 	} else if f.size >= LogFileMaxSize {
 		_ = f.rotate()
@@ -87,24 +128,61 @@ func (f *logfile) rotate() (err error) {
 		if err != nil {
 			return
 		}
-		err = os.Rename(f.file.Name(), fmt.Sprintf("%s.%d.%d", f.file.Name(), f.date, f.idx))
+		err = os.Rename(f.file.Name(), f.dumpFileName())
 		if err != nil {
 			return
 		}
 	}
 	// 指向新文件
-	wd, err := os.Getwd()
-	asserts.IsNil(err)
-	logPath := filepath.Join(wd, "logs")
-	utils.OS.MkDirs(logPath)
-	file, err := os.OpenFile(filepath.Join(logPath, "run.log"),
+	logFile := f.getBaseLogFile()
+	initSize := int64(0)
+	fileInfo, statErr := os.Stat(logFile)
+	if statErr == nil {
+		initSize = fileInfo.Size()
+	}
+	file, err := os.OpenFile(logFile,
 		os.O_CREATE|os.O_APPEND|os.O_RDWR, 644)
 	asserts.IsNil(err)
 	w := bufio.NewWriter(file)
 	f.w = w
 	f.file = file
-	f.size = 0
+	f.size = initSize
 	return
+}
+
+func (f *logfile) dumpFileName() string {
+	file := f.getBaseLogFile()
+	dir := filepath.Dir(file)
+	items, err := os.ReadDir(dir)
+	asserts.IsNil(err)
+	prefix := fmt.Sprintf("%s.%d.", file, f.date)
+	maxIdx := -1
+	for _, item := range items {
+		if item.IsDir() {
+			continue
+		}
+		itemName := filepath.Join(dir, item.Name())
+		if strings.HasPrefix(itemName, prefix) {
+			idx, parseErr := strconv.Atoi(itemName[len(prefix):])
+			if parseErr != nil {
+				continue
+			}
+			if idx > maxIdx {
+				maxIdx = idx
+			}
+		}
+	}
+	return fmt.Sprintf("%s%d", prefix, maxIdx+1)
+}
+
+func (f *logfile) getBaseLogFile() string {
+	wd, err := os.Getwd()
+	asserts.IsNil(err)
+	logPath := filepath.Join(wd, "logs")
+	if utils.OS.NotExists(logPath) {
+		utils.OS.MkDirs(logPath)
+	}
+	return filepath.Join(logPath, "run.log")
 }
 
 var linePool = &sync.Pool{
@@ -142,12 +220,19 @@ func initLogger() {
 
 func (l *asyncLogger) start() {
 	go func() {
+		last := currTime.Unix()
 		for {
 			line, suc := l.logQueue.Dequeue()
 			if !suc {
 				time.Sleep(time.Microsecond)
+				now := currTime.Unix()
+				if now-last > 1 {
+					// 超过1s无日志输出
+					l.flush()
+				}
 				continue
 			}
+			last = currTime.Unix()
 			l.outputLine(line)
 		}
 	}()
@@ -196,4 +281,8 @@ func (l *asyncLogger) logFormatMsg(level logLevel, format string, args []any) {
 func (l *asyncLogger) outputLine(line *logLine) {
 	_, _ = l.file.Write(line.buf)
 	line.Recycle()
+}
+
+func (l *asyncLogger) flush() {
+	_ = l.file.w.Flush()
 }

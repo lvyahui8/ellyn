@@ -45,3 +45,14 @@ func (osUtils) NotExists(file string) bool {
 	_, err := os.Stat(file)
 	return errors.Is(err, os.ErrNotExist)
 }
+
+func (osUtils) Exists(file string) bool {
+	_, err := os.Stat(file)
+	return err == nil
+}
+
+func (osUtils) FileInfo(file string) os.FileInfo {
+	info, err := os.Stat(file)
+	asserts.IsNil(err)
+	return info
+}

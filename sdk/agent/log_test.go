@@ -1,18 +1,35 @@
 package agent
 
 import (
+	"fmt"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
+	"github.com/stretchr/testify/require"
 	ll "log"
 	"os"
+	"strconv"
+	"strings"
 	"testing"
+	"time"
 )
+
+func TestLogFileDumpName(t *testing.T) {
+	initLogger()
+	file := log.file.getBaseLogFile()
+	name := log.file.dumpFileName()
+	require.True(t, strings.HasPrefix(name, file))
+	//require.True(t, strings.HasSuffix(name, ".0"))
+	idx, err := strconv.Atoi(name[len(file)+len(fmt.Sprintf(".%d.", date())):])
+	require.Nil(t, err)
+	require.True(t, idx >= 0)
+}
 
 func TestLogger_Info(t *testing.T) {
 	initLogger()
-	for i := 0; i < 100000; i++ {
+	for i := 0; i < 200000; i++ {
 		log.Info("hello world")
 	}
-	log.file.w.Flush()
+	time.Sleep(1 * time.Second)
+	log.flush()
 }
 
 // go test -v -run ^$  -bench 'BenchmarkLogger/asyncLogger' -benchtime=5s -benchmem -cpuprofile profile.pprof -memprofile memprofile.pprof
