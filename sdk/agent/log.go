@@ -221,6 +221,10 @@ func empty() *Schema {
 	return schemaPool.Get().(*Schema)
 }
 
+func code(c string) *Schema {
+	return empty().Str("code", c)
+}
+
 func (s *Schema) Build() []byte {
 	for i, item := range s.items {
 		if i != 0 {

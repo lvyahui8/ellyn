@@ -23,6 +23,10 @@ func initMetaData() {
 	files = initCsvData[*File](getDat(MetaFiles))
 	methods = initCsvData[*Method](getDat(MetaMethods))
 	blocks = initCsvData[*Block](getDat(MetaBlocks))
+	log.InfoKV(empty().Int("packages", len(packages)).
+		Int("files", len(files)).
+		Int("methods", len(methods)).
+		Int("blocks", len(blocks)))
 }
 
 type CsvRow interface {

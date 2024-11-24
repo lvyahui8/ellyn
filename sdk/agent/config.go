@@ -2,6 +2,7 @@ package agent
 
 import (
 	"encoding/json"
+	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"path/filepath"
 )
 
@@ -13,6 +14,8 @@ func initConfig() {
 		err := json.Unmarshal(configContent, &conf)
 		if err != nil {
 			log.Error("config init failed. err %v", err)
+		} else {
+			log.Info("init conf:%s", utils.Marshal(conf))
 		}
 	}
 }

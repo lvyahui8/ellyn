@@ -39,6 +39,8 @@ func (c *collector) start() {
 			atomic.AddUint64(&graphCnt, 1)
 			if !conf.NoDemo {
 				// 消费链路数据，这里缓存到本地用于demo显示
+				log.InfoKV(code("g_collect").Int("n", len(g.nodes)).
+					Int("e", len(g.edges)).Bool("c", g.origin != nil))
 				saveToDisplayCache(g)
 			} else {
 				// 省略实际消费g，比如写磁盘，或者上报MQ
