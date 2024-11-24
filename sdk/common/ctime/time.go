@@ -1,4 +1,4 @@
-package agent
+package ctime
 
 import "time"
 
@@ -7,8 +7,16 @@ var (
 	currDatetime []byte
 )
 
-func currentTime() time.Time {
+func CurrentTime() time.Time {
 	return *currTime
+}
+
+func Current() *time.Time {
+	return currTime
+}
+
+func CurrentDateTime() []byte {
+	return currDatetime
 }
 
 func init() {
@@ -29,11 +37,11 @@ func initTimeClock() {
 	}()
 }
 
-func date() int {
-	return getDate(currentTime())
+func Date() int {
+	return GetDate(CurrentTime())
 }
 
-func getDate(t time.Time) int {
+func GetDate(t time.Time) int {
 	year, month, day := t.Date()
 	return year*10000 + int(month)*100 + day
 }

@@ -1,8 +1,9 @@
-package agent
+package logging
 
 import (
 	"fmt"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
+	"github.com/lvyahui8/ellyn/sdk/common/ctime"
 	"github.com/stretchr/testify/require"
 	ll "log"
 	"os"
@@ -18,7 +19,7 @@ func TestLogFileDumpName(t *testing.T) {
 	name := log.file.dumpFileName()
 	require.True(t, strings.HasPrefix(name, file))
 	//require.True(t, strings.HasSuffix(name, ".0"))
-	idx, err := strconv.Atoi(name[len(file)+len(fmt.Sprintf(".%d.", date())):])
+	idx, err := strconv.Atoi(name[len(file)+len(fmt.Sprintf(".%d.", ctime.Date())):])
 	require.Nil(t, err)
 	require.True(t, idx >= 0)
 }
@@ -34,7 +35,7 @@ func TestLogger_Info(t *testing.T) {
 
 func TestLogger_InfoKV(t *testing.T) {
 	initLogger()
-	log.InfoKV(empty().Str("name", "yah").Int("age", 1))
+	log.InfoKV(Empty().Str("name", "yah").Int("age", 1))
 	time.Sleep(1 * time.Second)
 	log.flush()
 }
@@ -50,12 +51,12 @@ func BenchmarkLogger(b *testing.B) {
 		}
 	})
 	b.Run("syncLogger", func(b *testing.B) {
-		f, err := os.OpenFile("logs/test.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		f, err := os.OpenFile("logs/test.logging", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		asserts.IsNil(err)
 		defer f.Close()
 		ll.SetOutput(f)
 		for i := 0; i < b.N; i++ {
-			ll.Println("This is a test log entry")
+			ll.Println("This is a test logging entry")
 		}
 	})
 }
@@ -72,7 +73,7 @@ func BenchmarkLoggerFormatAndKV(b *testing.B) {
 	})
 	b.Run("kvLog", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			log.InfoKV(empty().Str("name", "yah").Int("age", 1).Bool("suc", true))
+			log.InfoKV(Empty().Str("name", "yah").Int("age", 1).Bool("suc", true))
 		}
 	})
 }

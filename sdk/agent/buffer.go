@@ -2,6 +2,7 @@ package agent
 
 import (
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
+	"github.com/lvyahui8/ellyn/sdk/common/logging"
 	"sync/atomic"
 	"time"
 )
@@ -39,7 +40,7 @@ func (c *collector) start() {
 			atomic.AddUint64(&graphCnt, 1)
 			if !conf.NoDemo {
 				// 消费链路数据，这里缓存到本地用于demo显示
-				log.InfoKV(code("g_collect").Int("n", len(g.nodes)).
+				log.InfoKV(logging.Code("g_collect").Int("n", len(g.nodes)).
 					Int("e", len(g.edges)).Bool("c", g.origin != nil))
 				saveToDisplayCache(g)
 			} else {

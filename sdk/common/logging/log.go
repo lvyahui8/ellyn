@@ -1,10 +1,11 @@
-package agent
+package logging
 
 import (
 	"bufio"
 	"fmt"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
+	"github.com/lvyahui8/ellyn/sdk/common/ctime"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"os"
 	"path/filepath"
@@ -19,12 +20,6 @@ const (
 	LogFileMaxSize     = 100 * 1024 * 1024
 	LogFileMaintainDay = 7
 )
-
-// log
-// log写盘逻辑：定时、大小溢出、日期切换
-var log *asyncLogger
-
-var logInitOnce = sync.Once{}
 
 type logLevel int
 
@@ -65,7 +60,7 @@ func (f *logfile) autoClean() {
 		for {
 			select {
 			case cur := <-ticker.C:
-				minDay := getDate(cur.Add(-LogFileMaintainDay * 24 * time.Hour))
+				minDay := ctime.GetDate(cur.Add(-LogFileMaintainDay * 24 * time.Hour))
 				baseFile := f.getBaseLogFile()
 				dir := filepath.Dir(baseFile)
 				items, err := os.ReadDir(dir)
@@ -105,8 +100,9 @@ func (f *logfile) Write(p []byte) (n int, err error) {
 }
 
 func (f *logfile) checkRotate() {
-	if f.date != date() {
-		f.date = date()
+	date := ctime.Date()
+	if f.date != date {
+		f.date = date
 		_ = f.rotate()
 	} else if f.size >= LogFileMaxSize {
 		_ = f.rotate()
@@ -182,7 +178,7 @@ func (f *logfile) getBaseLogFile() string {
 	if utils.OS.NotExists(logPath) {
 		utils.OS.MkDirs(logPath)
 	}
-	return filepath.Join(logPath, "run.log")
+	return filepath.Join(logPath, "run.logging")
 }
 
 var linePool = &sync.Pool{
@@ -217,12 +213,12 @@ type Schema struct {
 	res   []byte
 }
 
-func empty() *Schema {
+func Empty() *Schema {
 	return schemaPool.Get().(*Schema)
 }
 
-func code(c string) *Schema {
-	return empty().Str("code", c)
+func Code(c string) *Schema {
+	return Empty().Str("Code", c)
 }
 
 func (s *Schema) Build() []byte {
@@ -269,71 +265,81 @@ func (s *Schema) Recycle() {
 	schemaPool.Put(s)
 }
 
-type asyncLogger struct {
+type AsyncLogger struct {
 	logQueue     *collections.RingBuffer[*logLine]
 	file         *logfile
 	currentLevel logLevel
 }
 
-func initLogger() {
+var logInitOnce = sync.Once{}
+
+var log *AsyncLogger
+
+func GetLogger() *AsyncLogger {
+	initLogger()
+	return log
+}
+
+func initLogger() *AsyncLogger {
 	logInitOnce.Do(func() {
-		log = &asyncLogger{
+		log = &AsyncLogger{
 			file:     newRotateFile(),
 			logQueue: collections.NewRingBuffer[*logLine](4096),
 		}
 		log.start()
 	})
+	return log
 }
 
-func (l *asyncLogger) start() {
+func (l *AsyncLogger) start() {
 	go func() {
-		last := currTime.Unix()
+		last := ctime.Current().Unix()
 		for {
 			line, suc := l.logQueue.Dequeue()
 			if !suc {
 				time.Sleep(time.Microsecond)
-				now := currTime.Unix()
+				now := ctime.Current().Unix()
 				if now-last > 1 {
 					// 超过1s无日志输出
 					l.flush()
 				}
 				continue
 			}
-			last = currTime.Unix()
+			last = ctime.Current().Unix()
 			l.outputLine(line)
 		}
 	}()
 }
 
-func (l *asyncLogger) InfoKV(s *Schema) {
+func (l *AsyncLogger) InfoKV(s *Schema) {
 	line := l.newLine(Info)
 	line.buf = append(line.buf, s.Build()...)
 	l.emitLine(line)
 	s.Recycle()
 }
 
-func (l *asyncLogger) Error(format string, args ...any) {
+func (l *AsyncLogger) Error(format string, args ...any) {
 	if l.currentLevel > Error {
 		return
 	}
 	l.logFormatMsg(Error, format, args)
 }
 
-func (l *asyncLogger) Warn(format string, args ...any) {
+func (l *AsyncLogger) Warn(format string, args ...any) {
 	if l.currentLevel > Warn {
 		return
 	}
 	l.logFormatMsg(Warn, format, args)
 }
 
-func (l *asyncLogger) Info(format string, args ...any) {
+func (l *AsyncLogger) Info(format string, args ...any) {
 	if l.currentLevel > Info {
 		return
 	}
 	l.logFormatMsg(Info, format, args)
 }
 
-func (l *asyncLogger) logFormatMsg(level logLevel, format string, args []any) {
+func (l *AsyncLogger) logFormatMsg(level logLevel, format string, args []any) {
 	line := l.newLine(level)
 	if len(args) == 0 {
 		line.buf = append(line.buf, utils.String.String2bytes(format)...)
@@ -344,7 +350,7 @@ func (l *asyncLogger) logFormatMsg(level logLevel, format string, args []any) {
 	l.emitLine(line)
 }
 
-func (l *asyncLogger) emitLine(line *logLine) {
+func (l *AsyncLogger) emitLine(line *logLine) {
 	line.buf = append(line.buf, '\n')
 	suc := l.logQueue.Enqueue(line)
 	if !suc {
@@ -352,20 +358,20 @@ func (l *asyncLogger) emitLine(line *logLine) {
 	}
 }
 
-func (l *asyncLogger) newLine(level logLevel) *logLine {
+func (l *AsyncLogger) newLine(level logLevel) *logLine {
 	line := linePool.Get().(*logLine)
-	line.buf = append(line.buf, currDatetime...)
+	line.buf = append(line.buf, ctime.CurrentDateTime()...)
 	line.buf = append(line.buf, ' ')
 	line.buf = append(line.buf, level.strBytes()...)
 	line.buf = append(line.buf, ' ')
 	return line
 }
 
-func (l *asyncLogger) outputLine(line *logLine) {
+func (l *AsyncLogger) outputLine(line *logLine) {
 	_, _ = l.file.Write(line.buf)
 	line.Recycle()
 }
 
-func (l *asyncLogger) flush() {
+func (l *AsyncLogger) flush() {
 	_ = l.file.w.Flush()
 }

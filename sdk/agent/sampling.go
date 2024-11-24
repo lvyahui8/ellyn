@@ -1,6 +1,9 @@
 package agent
 
-import "math"
+import (
+	"github.com/lvyahui8/ellyn/sdk/common/ctime"
+	"math"
+)
 
 var sampling *randomSampling
 
@@ -27,7 +30,7 @@ func newRandomSampling(samplingRate float32) *randomSampling {
 	} else {
 		rs.target = math.MaxUint64 / precision * (uint64(float32(precision) * samplingRate))
 	}
-	rs.cur = uint64(currentTime().UnixMicro())
+	rs.cur = uint64(ctime.CurrentTime().UnixMicro())
 	return rs
 }
 
@@ -38,7 +41,7 @@ func (rs *randomSampling) hit() bool {
 func (rs *randomSampling) random() uint64 {
 	x := rs.cur
 	if x == 0 {
-		x = uint64(currentTime().UnixMicro())
+		x = uint64(ctime.CurrentTime().UnixMicro())
 	}
 	x ^= x << 13
 	x ^= x >> 7

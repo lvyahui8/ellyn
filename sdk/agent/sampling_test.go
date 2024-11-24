@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"github.com/lvyahui8/ellyn/sdk/common/ctime"
 	"github.com/stretchr/testify/require"
 	"math"
 	"math/rand"
@@ -43,7 +44,7 @@ func BenchmarkRandomSampling(b *testing.B) {
 			rs.random()
 		}
 	})
-	rand.Seed(currentTime().UnixMilli())
+	rand.Seed(ctime.CurrentTime().UnixMilli())
 	b.Run("goRandom", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			rand.Uint64()

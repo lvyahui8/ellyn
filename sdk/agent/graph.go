@@ -2,6 +2,7 @@ package agent
 
 import (
 	"github.com/lvyahui8/ellyn/sdk/common/collections"
+	"github.com/lvyahui8/ellyn/sdk/common/ctime"
 	"sync"
 )
 
@@ -32,14 +33,14 @@ type graph struct {
 func newGraph(id uint64) *graph {
 	return &graph{
 		id:    id,
-		time:  currentTime().UnixMilli(),
+		time:  ctime.Current().UnixMilli(),
 		nodes: make(map[uint32]*node, 10),
 		edges: make(map[uint64]struct{}, 10),
 	}
 }
 
 func (g *graph) Recycle() {
-	//log.Info("recycle g:%d", g.id)
+	//logging.Info("recycle g:%d", g.id)
 	g.origin = nil
 	for k, n := range g.nodes {
 		delete(g.nodes, k)

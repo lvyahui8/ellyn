@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/lvyahui8/ellyn/sdk/common/asserts"
+	"github.com/lvyahui8/ellyn/sdk/common/logging"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"reflect"
 	"strconv"
@@ -23,7 +24,7 @@ func initMetaData() {
 	files = initCsvData[*File](getDat(MetaFiles))
 	methods = initCsvData[*Method](getDat(MetaMethods))
 	blocks = initCsvData[*Block](getDat(MetaBlocks))
-	log.InfoKV(empty().Int("packages", len(packages)).
+	log.InfoKV(logging.Empty().Int("packages", len(packages)).
 		Int("files", len(files)).
 		Int("methods", len(methods)).
 		Int("blocks", len(blocks)))

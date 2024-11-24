@@ -3,8 +3,13 @@ package agent
 import (
 	"embed"
 	"github.com/lvyahui8/ellyn/sdk/common/guid"
+	"github.com/lvyahui8/ellyn/sdk/common/logging"
 	"unsafe"
 )
+
+// log
+// log写盘逻辑：定时、大小溢出、日期切换
+var log = logging.GetLogger()
 
 var idGenerator = guid.NewGuidGenerator()
 
@@ -84,7 +89,7 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
 			if !conf.NoArgs {
 				n.args = EncodeVars(params)
 			}
-			//log.Info("ctx.g %x", uintptr(unsafe.Pointer(ctx.g)))
+			//logging.Info("ctx.g %x", uintptr(unsafe.Pointer(ctx.g)))
 			ctx.g.nodes[methodId] = n
 		}
 		// 后续使用不用再查找
