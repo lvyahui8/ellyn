@@ -346,7 +346,7 @@ func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position
 func (f *FileVisitor) addBlock(begin, end token.Pos) {
 	block := f.prog.addBlock(f.fileId, f.fset.Position(begin), f.fset.Position(end))
 	f.insertAtPost(block.Begin.Offset, func() string {
-		return fmt.Sprintf("if _ellynCollect { ellyn_agent.Agent.SetBlock(_ellynCtx,%d,%d) };", block.MethodOffset, block.Id)
+		return fmt.Sprintf("if _ellynCollect { ellyn_agent.Agent.Mark(_ellynCtx,%d,%d) };", block.MethodOffset, block.Id)
 	}, 2)
 }
 

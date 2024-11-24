@@ -141,7 +141,7 @@ func (f *logfile) rotate() (err error) {
 		initSize = fileInfo.Size()
 	}
 	file, err := os.OpenFile(logFile,
-		os.O_CREATE|os.O_APPEND|os.O_RDWR, 644)
+		os.O_CREATE|os.O_APPEND|os.O_RDWR, 0644)
 	asserts.IsNil(err)
 	w := bufio.NewWriter(file)
 	f.w = w

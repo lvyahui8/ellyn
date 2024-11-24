@@ -38,7 +38,7 @@ jobs:
         run: go install github.com/jstemmer/go-junit-report/v2@latest
 
       - name: Clean
-        run: rm -f sdk/meta/*.dat && rm -fr example/target && rm -fr example/ellyn_agent
+        run: rm -f sdk/meta/*.dat && rm -fr example/target && rm -fr example/ellyn_agent && find . -name "*.log" -exec rm -f {} \;
 
       - name: Build
         run: go build -v ./...
@@ -52,7 +52,7 @@ jobs:
       - name: Test Example
         run: cd example && go test -v -coverprofile="coverage_example.txt" -coverpkg="example,github.com/lvyahui8/ellyn/sdk/agent,github.com/lvyahui8/ellyn/api" ./... 2>&1 | tee output.txt && cat output.txt |  go-junit-report -set-exit-code > ../junit_example.xml
 
-      - name : Run Benchmark
+      - name: Run Benchmark
         run: sh ./benchmark/benchmark.sh
 
       - name: Upload coverage reports to Codecov

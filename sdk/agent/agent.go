@@ -15,7 +15,7 @@ type Api interface {
 	GetCtx() (ctx *EllynCtx, collect bool, cleaner func())
 	Push(ctx *EllynCtx, methodId uint32, params []any)
 	Pop(ctx *EllynCtx, results []any)
-	SetBlock(ctx *EllynCtx, blockOffset, blockId int)
+	Mark(ctx *EllynCtx, blockOffset, blockId int)
 }
 
 var _ Api = (*ellynAgent)(nil)
@@ -123,7 +123,7 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 	}
 }
 
-func (agent *ellynAgent) SetBlock(ctx *EllynCtx, blockOffset, blockId int) {
+func (agent *ellynAgent) Mark(ctx *EllynCtx, blockOffset, blockId int) {
 	// 取栈顶元素，标记block覆盖请求
 	extra := ctx.stack.GetTopExtra()
 	((*node)(unsafe.Pointer(extra))).blocks[blockOffset] = true
