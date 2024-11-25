@@ -105,7 +105,7 @@ GLOBAL OPTIONS:
   - [routineLocal性能测试](./sdk/common/goroutine/routine_local_test.go)
 - [routinePool](./sdk/common/goroutine/routine_pool.go): 协程池，并发处理文件
 - [Uint64GUIDGenerator](./sdk/common/guid/guid.go): 生成流量id
-
+- [AsyncLogger](./sdk/common/logging/readme.md): 高性能异步日志
 
 ### 性能测试
 
