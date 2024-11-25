@@ -40,6 +40,7 @@ func TestLogger_InfoKV(t *testing.T) {
 	log.flush()
 }
 
+// go test -v -run ^$  -bench 'BenchmarkLogger' -benchtime=5s -benchmem
 // go test -v -run ^$  -bench 'BenchmarkLogger/asyncLogger' -benchtime=5s -benchmem -cpuprofile profile.pprof -memprofile memprofile.pprof
 // go tool pprof -http=":8081" profile.pprof
 // go tool pprof -http=":8082" memprofile.pprof
@@ -51,12 +52,12 @@ func BenchmarkLogger(b *testing.B) {
 		}
 	})
 	b.Run("syncLogger", func(b *testing.B) {
-		f, err := os.OpenFile("logs/test.logging", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+		f, err := os.OpenFile("logs/test.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		asserts.IsNil(err)
 		defer f.Close()
 		ll.SetOutput(f)
 		for i := 0; i < b.N; i++ {
-			ll.Println("This is a test logging entry")
+			ll.Println("hello world")
 		}
 	})
 }
