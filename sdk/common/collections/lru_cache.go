@@ -84,7 +84,7 @@ func (cache *LRUCache[K, V]) Remove(key K) {
 	cache.removeItem(item)
 }
 
-func (cache *LRUCache[K, V]) Values() (res []any) {
+func (cache *LRUCache[K, V]) Values() (res []V) {
 	cache.lock.RLock()
 	defer cache.lock.RUnlock()
 

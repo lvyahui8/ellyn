@@ -148,7 +148,7 @@ func trafficList(writer http.ResponseWriter, request *http.Request) {
 	allGraphs := graphCache.Values()
 	var res []*Traffic
 	for _, gList := range allGraphs {
-		g := mergeGraphs(gList.(*collections.LinkedList[*graph]).Values())
+		g := mergeGraphs(gList.list.Values())
 		res = append(res, toTraffic(g, false))
 	}
 	responseJson(writer, res)

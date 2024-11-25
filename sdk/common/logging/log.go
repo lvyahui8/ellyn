@@ -178,7 +178,7 @@ func (f *logfile) getBaseLogFile() string {
 	if utils.OS.NotExists(logPath) {
 		utils.OS.MkDirs(logPath)
 	}
-	return filepath.Join(logPath, "run.logging")
+	return filepath.Join(logPath, "run.log")
 }
 
 var linePool = &sync.Pool{
