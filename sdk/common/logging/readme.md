@@ -19,6 +19,7 @@ Int("e", len(g.edges)).Bool("c", g.origin != nil))
 - Buffer池化复用
 - bufio.Writer缓冲写磁盘
 - 单线程写文件，不加锁，减少性能消耗
+- 缓存日期时间，减少系统调用或格式化日期耗时
 
 ### 与Go官方log库性能对比
 
