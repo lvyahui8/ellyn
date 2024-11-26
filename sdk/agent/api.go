@@ -1,5 +1,6 @@
 package agent
 
+// 实现ellyn_api，将sdk能力暴露给外部访问
 import (
 	"github.com/lvyahui8/ellyn/api"
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
@@ -9,8 +10,10 @@ func init() {
 	api.Init(&ellynApiImpl{})
 }
 
+// 限制实现
 var _ api.EllynApi = (*ellynApiImpl)(nil)
 
+// ellynApiImpl ellyn_api实现类
 type ellynApiImpl struct {
 	Agent *ellynAgent
 }

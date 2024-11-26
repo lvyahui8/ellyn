@@ -4,6 +4,12 @@ import (
 	"embed"
 )
 
+// InitAgent 基于元数据初始化agent
+func InitAgent(meta embed.FS) Api {
+	initAgent(meta)
+	return &ellynAgent{}
+}
+
 func initAgent(m embed.FS) {
 	meta = m
 	initConfig()

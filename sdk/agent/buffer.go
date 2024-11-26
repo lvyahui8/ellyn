@@ -7,7 +7,12 @@ import (
 	"time"
 )
 
+// coll 链路数据缓冲
+// 基于Lock-Free RingBuffer缓冲链路数据
 var coll *collector = newCollector()
+
+// graphCnt 记录启动后累计收集的链路数
+var graphCnt uint64
 
 func newCollector() *collector {
 	c := &collector{
@@ -17,16 +22,17 @@ func newCollector() *collector {
 	return c
 }
 
+// collector 收集器
 type collector struct {
 	buffer *collections.RingBuffer[*graph]
 }
 
+// add 将链路加入到缓冲队列中
 func (c *collector) add(g *graph) {
 	c.buffer.Enqueue(g)
 }
 
-var graphCnt uint64
-
+// start 启动消费逻辑
 func (c *collector) start() {
 	go func() {
 		for {
@@ -52,6 +58,7 @@ func (c *collector) start() {
 	}()
 }
 
+// saveToDisplayCache 将链路数据保存到本地的LRU缓存，用于demo程序可视化展示
 func saveToDisplayCache(g *graph) {
 	// 同一个id可能因为异步产生多个graph，需要merge. 这里放到展示的时候再merge
 	graphCache.GetWithDefault(g.id, func() *graphGroup {

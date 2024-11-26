@@ -20,6 +20,7 @@ func initConfig() {
 	}
 }
 
+// NewDefaultConf 创建默认配置
 func NewDefaultConf() *Configuration {
 	return &Configuration{
 		NoArgs:       false,
@@ -28,6 +29,7 @@ func NewDefaultConf() *Configuration {
 	}
 }
 
+// Configuration agent 运行配置
 type Configuration struct {
 	// 是否采集参数
 	NoArgs bool

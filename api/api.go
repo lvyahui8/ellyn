@@ -9,8 +9,11 @@ type EllynApi interface {
 	// GetGraph 获取当前的链路数据
 	// 手动获取链路，必须先设置AutoClear=false
 	GetGraph() *Graph
+	// GetGraphId 获取当前链路id
 	GetGraphId() uint64
+	// ClearCtx 手动清理ctx
 	ClearCtx()
+	// GetGraphCnt 获取自启动后累计收集的链路数
 	GetGraphCnt() uint64
 }
 
@@ -19,8 +22,8 @@ var Agent *agentProxy = &agentProxy{}
 var _ EllynApi = (*agentProxy)(nil)
 
 type agentProxy struct {
-	sync.Once
-	target EllynApi
+	initOnce sync.Once
+	target   EllynApi
 }
 
 func (a *agentProxy) GetGraphCnt() uint64 {
@@ -34,7 +37,7 @@ func Init(target EllynApi) {
 	if target == nil {
 		return
 	}
-	Agent.Once.Do(func() {
+	Agent.initOnce.Do(func() {
 		Agent.target = target
 	})
 }

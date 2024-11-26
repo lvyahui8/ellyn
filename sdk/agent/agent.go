@@ -1,7 +1,6 @@
 package agent
 
 import (
-	"embed"
 	"github.com/lvyahui8/ellyn/sdk/common/guid"
 	"github.com/lvyahui8/ellyn/sdk/common/logging"
 	"unsafe"
@@ -11,27 +10,31 @@ import (
 // log写盘逻辑：定时、大小溢出、日期切换
 var log = logging.GetLogger()
 
+// idGenerator 用于生成流量id
 var idGenerator = guid.NewGuidGenerator()
 
+// globalCovered 记录全局覆盖，长度为全局的块信息
 var globalCovered []bool
 
+// Api agent API,插桩到目标项目中使用的代码
 type Api interface {
+	// InitCtx 手动创建一个ctx，用于异步协程指定ctx来源
 	InitCtx(ctxId uint64, from uint32)
+	// GetCtx 获取当前协程的ctx，如果没有则会初始化一个
 	GetCtx() (ctx *EllynCtx, collect bool, cleaner func())
+	// Push 方法压栈
 	Push(ctx *EllynCtx, methodId uint32, params []any)
+	// Pop 方法弹栈
 	Pop(ctx *EllynCtx, results []any)
+	// Mark 标记覆盖的块
 	Mark(ctx *EllynCtx, blockOffset, blockId int)
 }
 
+// 用于限制ellynAgent必须实现Api接口
 var _ Api = (*ellynAgent)(nil)
 
-// ellynAgent 实例
+// ellynAgent agent api实现
 type ellynAgent struct {
-}
-
-func InitAgent(meta embed.FS) Api {
-	initAgent(meta)
-	return &ellynAgent{}
 }
 
 func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
