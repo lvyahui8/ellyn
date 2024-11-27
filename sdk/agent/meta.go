@@ -241,17 +241,29 @@ func decodeVarDef(str string) *VarDefList {
 // methods 目标项目所有方法
 var methods []*Method
 
+// Method golang方法、函数
 type Method struct {
-	Id         uint32
-	Name       string
-	FullName   string // 完整函数名
-	FileId     uint32 // 所在文件id
-	PackageId  uint32 // 包id
-	Blocks     []*Block
-	BlockCnt   int
-	Begin      *Pos
-	End        *Pos
-	ArgsList   *VarDefList
+	// Id 全局唯一，在遍历时生成
+	Id uint32
+	// Name 方法名
+	Name string
+	// FullName 完整函数名，包括包名前缀
+	FullName string
+	// FileId 所在文件id
+	FileId uint32
+	// PackageId 所在PackageId
+	PackageId uint32
+	// Blocks 方法内所有的block
+	Blocks []*Block
+	// BlockCnt 方法内Block总数
+	BlockCnt int
+	// Begin 方法在文件中的开始位置
+	Begin *Pos
+	// End 方法在文件中的结束位置
+	End *Pos
+	// ArgsList 方法的参数声明列表
+	ArgsList *VarDefList
+	// ReturnList 方法的返回值声明列表
 	ReturnList *VarDefList
 }
 
@@ -279,15 +291,25 @@ func newMethodBlockFlags(methodId uint32) []bool {
 	return make([]bool, methods[methodId].BlockCnt)
 }
 
+// blocks 目标项目所有的代码块
 var blocks []*Block
 
+// Block 代码块
+// - 一个块表示一段可以连续执行的代码，直到控制语句或者}结束
+// - 块不存在嵌套关系，只有前后关系
 type Block struct {
-	Id           uint32
-	FileId       uint32
-	MethodId     uint32
+	// Id 代码块id
+	Id uint32
+	// FileId 文件id
+	FileId uint32
+	// MethodId 方法id
+	MethodId uint32
+	// MethodOffset 当前块在方法中是第几个块
 	MethodOffset int
-	Begin        *Pos
-	End          *Pos
+	// Begin 代码块开始位置
+	Begin *Pos
+	// End 代码块结束位置
+	End *Pos
 }
 
 func (b *Block) encodeRow() string {
