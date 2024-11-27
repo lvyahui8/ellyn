@@ -1,5 +1,8 @@
 package agent
 
+import "sync"
+
+// 用于demo演示程序
 import (
 	"bytes"
 	"encoding/json"
@@ -18,7 +21,6 @@ import (
 	"runtime/debug"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 )
 

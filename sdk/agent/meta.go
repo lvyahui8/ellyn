@@ -12,13 +12,16 @@ import (
 	"strings"
 )
 
+// meta 元数据
 var meta embed.FS
 
+// getDat 读取元数据文件
 func getDat(file string) []byte {
 	data, _ := meta.ReadFile(MetaRelativePath + "/" + file)
 	return data
 }
 
+// initMetaData 初始化元数据
 func initMetaData() {
 	packages = initCsvData[*Package](getDat(MetaPackages))
 	files = initCsvData[*File](getDat(MetaFiles))
@@ -30,11 +33,15 @@ func initMetaData() {
 		Int("blocks", len(blocks)))
 }
 
+// CsvRow 元数据文件行的编码解码定义。不同元数据文件分别为不同的实现类
 type CsvRow interface {
+	// parse 解码行，从一行csv文件中解码出数据
 	parse(cols []string)
+	// encodeRow 编码行，将数据编码成csv文件中的一行
 	encodeRow() string
 }
 
+// initCsvData 从压缩csv数据中反序列化出对象实例
 func initCsvData[T CsvRow](compressedContent []byte) []T {
 	if len(compressedContent) == 0 {
 		return nil
@@ -57,6 +64,7 @@ func initCsvData[T CsvRow](compressedContent []byte) []T {
 	return res
 }
 
+// EncodeCsvRows 将对象实例列表编码成压缩的csv数据
 func EncodeCsvRows[T CsvRow](rows []T) []byte {
 	var res []byte
 	for _, row := range rows {
@@ -72,12 +80,17 @@ func parseUint32(col string) uint32 {
 	return uint32(id)
 }
 
+// Pos 定义在文件中的位置
 type Pos struct {
+	// Offset 文件偏移量，字节数
 	Offset int `json:"offset"`
-	Line   int `json:"line"`
+	// Line 所在行
+	Line int `json:"line"`
+	// Column 所在列
 	Column int `json:"column"`
 }
 
+// NewPos 初始化行
 func NewPos(offset, line, column int) *Pos {
 	return &Pos{offset, line, column}
 }
@@ -86,6 +99,7 @@ func (p *Pos) String() string {
 	return fmt.Sprintf("L%dC%d:%d", p.Line, p.Column, p.Offset)
 }
 
+// ParsePos 解码Pos , 格式:L%dC%d:%d
 func ParsePos(encodedPos string) *Pos {
 	colIdx := strings.Index(encodedPos, "C")
 	offsetIdx := strings.Index(encodedPos, ":")
@@ -96,8 +110,10 @@ func ParsePos(encodedPos string) *Pos {
 	}
 }
 
+// packages 目标项目所有的package
 var packages []*Package
 
+// Package 代表golang package
 type Package struct {
 	Id uint32
 	// Name pkg名，如ellyn
@@ -124,13 +140,19 @@ func (p *Package) parse(cols []string) {
 	p.Path = cols[2]
 }
 
+// files 目标项目所有的源码文件
 var files []*File
 
+// File 代表golang源码文件
 type File struct {
-	FileId       uint32
-	PackageId    uint32
+	// FileId 文件id，遍历的过程中生成
+	FileId uint32
+	// PackageId golang package id，遍历的过程中生成
+	PackageId uint32
+	// RelativePath 在目标项目中的相对路径
 	RelativePath string
-	LineNum      int
+	// LineNum 文件总行数
+	LineNum int
 }
 
 func (f *File) encodeRow() string {
@@ -144,17 +166,25 @@ func (f *File) parse(cols []string) {
 	f.LineNum = int(parseUint32(cols[3]))
 }
 
+// VarDef 代表变量声明
 type VarDef struct {
+	// Names 变量名列表
 	Names []string
-	Type  string
+	// Type 变量类型的文字表示
+	Type string
 }
 
+// VarDefList 参数列表，主要表示方法的出参和入参
 type VarDefList struct {
-	list     []*VarDef
+	// list 参数列表
+	list []*VarDef
+	// idx2name 所处位置的变量名
 	idx2name []string
+	// idx2type 所处位置的变量类型
 	idx2type []string
 }
 
+// NewVarDefList 基于多个参数声明创建列表
 func NewVarDefList(list []*VarDef) *VarDefList {
 	res := &VarDefList{
 		list: list,
@@ -208,6 +238,7 @@ func decodeVarDef(str string) *VarDefList {
 	return NewVarDefList(list)
 }
 
+// methods 目标项目所有方法
 var methods []*Method
 
 type Method struct {
