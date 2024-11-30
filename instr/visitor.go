@@ -5,12 +5,14 @@ import (
 	"github.com/lvyahui8/ellyn/sdk/common/utils"
 	"go/ast"
 	"go/token"
+	"go/types"
 	"sort"
 	"strings"
 )
 
 const varNamePrefix = "_ellynVar"
 const notCollectedVarName = "ellyn_agent.NotCollected"
+const nilGoCtxVarName = "ellyn_agent.NilGoCtx"
 
 type insert struct {
 	offset        int
@@ -270,6 +272,19 @@ func (f *FileVisitor) addFuncByDecl(fName string, decl *ast.FuncDecl) {
 	f.addFunc(fName, f.fset.Position(decl.Pos()), f.fset.Position(decl.End()), f.fset.Position(decl.Body.Pos()), decl.Type)
 }
 
+func (f *FileVisitor) findGoCtxFromParams(funcType *ast.FuncType) string {
+	for _, item := range funcType.Params.List {
+		typeStr := types.ExprString(item.Type)
+		switch typeStr {
+		case "*context.Context":
+			return item.Names[0].Name
+		case "context.Context":
+			return "&" + item.Names[0].Name
+		}
+	}
+	return nilGoCtxVarName
+}
+
 func (f *FileVisitor) modifyParamsAndResults(funcType *ast.FuncType) (params []string, results []string) {
 	_, params = f.modifyVarList(funcType.Params, "Param")
 	cnt, results := f.modifyVarList(funcType.Results, "Ret")
@@ -326,11 +341,13 @@ func (f *FileVisitor) addFunc(fName string, begin, end, bodyBegin token.Position
 
 	format := "_ellynCtx,_ellynCollect,_ellynCleaner := ellyn_agent.Agent.GetCtx();" +
 		"if _ellynCleaner != nil { defer _ellynCleaner() };" +
-		"if _ellynCollect { ellyn_agent.Agent.Push(_ellynCtx,%d,%s);" +
+		"if _ellynCollect { ellyn_agent.Agent.Push(_ellynCtx,%s,%d,%s);" +
 		"defer ellyn_agent.Agent.Pop(_ellynCtx,%s) };"
 	var args []any
-	args = append(args, fc.Id)
+	goCtxVar := f.findGoCtxFromParams(funcType)
+	args = append(args, goCtxVar)
 
+	args = append(args, fc.Id)
 	if f.prog.conf.NoArgs {
 		args = append(args, "nil", "nil")
 	} else {

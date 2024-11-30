@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"context"
 	"github.com/lvyahui8/ellyn/sdk/common/guid"
 	"github.com/lvyahui8/ellyn/sdk/common/logging"
 	"unsafe"
@@ -23,7 +24,7 @@ type Api interface {
 	// GetCtx 获取当前协程的ctx，如果没有则会初始化一个
 	GetCtx() (ctx *EllynCtx, collect bool, cleaner func())
 	// Push 方法压栈
-	Push(ctx *EllynCtx, methodId uint32, params []any)
+	Push(ctx *EllynCtx, goCtx *context.Context, methodId uint32, params []any)
 	// Pop 方法弹栈
 	Pop(ctx *EllynCtx, results []any)
 	// Mark 标记覆盖的块
@@ -74,7 +75,7 @@ func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) 
 	return
 }
 
-func (agent *ellynAgent) Push(ctx *EllynCtx, methodId uint32, params []any) {
+func (agent *ellynAgent) Push(ctx *EllynCtx, goCtx *context.Context, methodId uint32, params []any) {
 	// 压栈
 	if ctx.g.origin != nil && ctx.stack.Empty() {
 		*(ctx.g.origin) |= uint64(methodId)
