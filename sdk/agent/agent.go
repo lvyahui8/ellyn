@@ -19,7 +19,7 @@ var globalCovered []bool
 // Api agent API,插桩到目标项目中使用的代码
 type Api interface {
 	// InitCtx 手动创建一个ctx，用于异步协程指定ctx来源
-	InitCtx(ctxId uint64, from uint32)
+	InitCtx(traceId uint64, from uint32)
 	// GetCtx 获取当前协程的ctx，如果没有则会初始化一个
 	GetCtx() (ctx *EllynCtx, collect bool, cleaner func())
 	// Push 方法压栈
@@ -37,15 +37,15 @@ var _ Api = (*ellynAgent)(nil)
 type ellynAgent struct {
 }
 
-func (agent *ellynAgent) InitCtx(trafficId uint64, from uint32) {
-	if trafficId == 0 {
+func (agent *ellynAgent) InitCtx(traceId uint64, from uint32) {
+	if traceId == 0 {
 		setEllynCtx(discardedCtx)
 		return
 	}
 	ctx := ctxPool.Get().(*EllynCtx)
-	ctx.id = trafficId
+	ctx.id = traceId
 	ctx.g = graphPool.Get().(*graph)
-	ctx.g.id = trafficId
+	ctx.g.id = traceId
 	origin := toEdge(from, 0)
 	ctx.g.origin = &origin
 	setEllynCtx(ctx)
@@ -64,10 +64,10 @@ func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) 
 			return
 		}
 		ctx = ctxPool.Get().(*EllynCtx)
-		trafficId := idGenerator.GenGUID()
-		ctx.id = trafficId
+		traceId := idGenerator.GenGUID()
+		ctx.id = traceId
 		ctx.g = graphPool.Get().(*graph)
-		ctx.g.id = trafficId
+		ctx.g.id = traceId
 		setEllynCtx(ctx)
 	}
 	collect = ctx != discardedCtx

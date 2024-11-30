@@ -95,7 +95,7 @@ GLOBAL OPTIONS:
 
 #### Sdk组件及用途
 
-- [RingBuffer ](./sdk/common/collections/ringbuffer.go) : 缓冲流量数据
+- [RingBuffer ](./sdk/common/collections/ringbuffer.go) : 缓冲调用数据
   - [RingBuffer性能测试](./sdk/common/collections/ringbuffer.md)
   - [RingBuffer与Map性能对比测试](./sdk/common/collections/ring_buffer_vs_map.md)
 - [LinkedQueue](./sdk/common/collections/linked_queue.go): 基于链表的同步队列。用作协程池的任务队列
@@ -107,7 +107,7 @@ GLOBAL OPTIONS:
 - [routineLocal/GLS/GoRoutineLocalStorage](./sdk/common/goroutine/routine_local.go): 缓存上下文
   - [routineLocal性能测试](./sdk/common/goroutine/routine_local_test.go)
 - [routinePool](./sdk/common/goroutine/routine_pool.go): 协程池，并发处理文件
-- [Uint64GUIDGenerator](./sdk/common/guid/guid.go): 生成流量id
+- [Uint64GUIDGenerator](./sdk/common/guid/guid.go): 生成调用id
 - [AsyncLogger](./sdk/common/logging/readme.md): 高性能异步日志
 
 ### 性能测试
