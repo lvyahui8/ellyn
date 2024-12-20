@@ -71,6 +71,7 @@ GLOBAL OPTIONS:
 
 #### 程序架构
 
+![架构图](.assets/arch.png)
 
 #### 目录说明
 
