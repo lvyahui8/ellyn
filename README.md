@@ -73,6 +73,10 @@ GLOBAL OPTIONS:
 
 ![架构图](.assets/arch.png)
 
+#### SDK核心逻辑
+
+![架构图](.assets/flow.png)
+
 #### 目录说明
 
 - api: 提供运行时访问sdk（插桩代码）的api
