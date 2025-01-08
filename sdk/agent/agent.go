@@ -39,6 +39,7 @@ type ellynAgent struct {
 }
 
 func (agent *ellynAgent) InitCtx(traceId uint64, from uint32) {
+	defer agent.handleSelfError()()
 	if traceId == 0 {
 		setEllynCtx(discardedCtx)
 		return
@@ -53,6 +54,7 @@ func (agent *ellynAgent) InitCtx(traceId uint64, from uint32) {
 }
 
 func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) {
+	defer agent.handleSelfError()()
 	ctx, exist := getEllynCtx()
 	if !exist {
 		if !sampling.hit() {
@@ -76,6 +78,7 @@ func (agent *ellynAgent) GetCtx() (ctx *EllynCtx, collect bool, cleaner func()) 
 }
 
 func (agent *ellynAgent) Push(ctx *EllynCtx, goCtx *context.Context, methodId uint32, params []any) {
+	defer agent.handleSelfError()()
 	// 压栈
 	if ctx.g.origin != nil && ctx.stack.Empty() {
 		*(ctx.g.origin) |= uint64(methodId)
@@ -102,6 +105,7 @@ func (agent *ellynAgent) Push(ctx *EllynCtx, goCtx *context.Context, methodId ui
 }
 
 func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
+	defer agent.handleSelfError()()
 	// 弹栈，加到调用链
 	pop, extra, _ := ctx.stack.PopWithExtra()
 	top, ok := ctx.stack.Top()
@@ -133,8 +137,19 @@ func (agent *ellynAgent) Pop(ctx *EllynCtx, results []any) {
 }
 
 func (agent *ellynAgent) Mark(ctx *EllynCtx, blockOffset, blockId int) {
+	defer agent.handleSelfError()()
 	// 取栈顶元素，标记block覆盖请求
 	extra := ctx.stack.GetTopExtra()
 	((*node)(unsafe.Pointer(extra))).blocks[blockOffset] = true
 	globalCovered[blockId] = true
+}
+
+func (agent *ellynAgent) handleSelfError() func() {
+	return func() {
+		err := recover()
+		if err != nil {
+			// 可以在滑动时间窗口内，按照指数避退策略，减少错误日志输出，避免出现异常时打满磁盘
+			log.Error("agent panic err: %v", err)
+		}
+	}
 }
