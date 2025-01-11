@@ -11,6 +11,7 @@ func InitAgent(meta embed.FS) Api {
 }
 
 func initAgent(m embed.FS) {
+	defer handleSelfError()()
 	meta = m
 	initConfig()
 	initMetaData()
