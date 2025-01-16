@@ -4,6 +4,10 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/lvyahui8/ellyn)](https://goreportcard.com/report/github.com/lvyahui8/ellyn)
 [![codecov](https://codecov.io/gh/lvyahui8/ellyn/graph/badge.svg?token=YBV3TH2HQU)](https://codecov.io/gh/lvyahui8/ellyn)
 
+### README Translation
+- [English](README.en.md)
+- [简体中文](README.md)
+
 ### 功能特性
 
 - 支持收集全局覆盖数据（计算增量、全量覆盖率）
