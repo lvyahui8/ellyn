@@ -2,6 +2,11 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)[![Go Report Card](https://goreportcard.com/badge/github.com/lvyahui8/ellyn)](https://goreportcard.com/report/github.com/lvyahui8/ellyn)[![codecov](https://codecov.io/gh/lvyahui8/ellyn/graph/badge.svg?token=YBV3TH2HQU)](https://codecov.io/gh/lvyahui8/ellyn)
 
+### README Translation
+
+-   [English](README.en.md)
+-   [Simplified Chinese](README.md)
+
 ### Features
 
 -   Supports collection of global coverage data (calculation of increments, full coverage)
@@ -22,7 +27,7 @@
 -   Single test, automated test (obtain single use case coverage details)
 -   Accurate testing
 -   risk analysis
--   Unified monitoring and alarming (metrics)
+-   统一监控告警(metrics)
 -   etc
 
 ### Operating environment
