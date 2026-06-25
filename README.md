@@ -1,55 +1,57 @@
-# Ellyn - Go 覆盖率、调用链数据采集工具
+# Ellyn
+
+Go coverage, call chain, and runtime data collection toolkit.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Report Card](https://goreportcard.com/badge/github.com/lvyahui8/ellyn)](https://goreportcard.com/report/github.com/lvyahui8/ellyn)
 [![codecov](https://codecov.io/gh/lvyahui8/ellyn/graph/badge.svg?token=YBV3TH2HQU)](https://codecov.io/gh/lvyahui8/ellyn)
 
-### README Translation
-- [English](README.en.md)
-- [简体中文](README.md)
+**Languages:** English | [简体中文](README.zh-CN.md)
 
-### 功能特性
+Ellyn instruments Go applications so you can collect request-level coverage,
+function call chains, async execution links, and runtime data such as arguments,
+return values, errors, and latency. It is designed for observability, precision
+testing, traffic replay, and risk analysis scenarios where coverage alone is not
+enough.
 
-- 支持收集全局覆盖数据（计算增量、全量覆盖率）
-- 支持收集函数调用链（包含异步链路）
-- 支持收集运行时数据（出入参、异常、耗时等）
-- 支持收集单个请求粒度的上述数据
-- 支持并发收集
-- ~~支持配置方法mock~~
+## Features
 
+- Global coverage collection for full and incremental coverage analysis.
+- Function call chain collection, including asynchronous links.
+- Runtime data collection for parameters, return values, exceptions, and latency.
+- Request-level collection for coverage, call graph, and runtime details.
+- Concurrent data collection.
+- Performance-oriented SDK components for high-frequency runtime paths.
+- Experimental mock support is planned but not currently available.
 
-### 应用场景
+## Use Cases
 
-- 覆盖率统计
-- 调用链收集
-- 数据（字段）血缘
-- 流量观测
-- 流量回放
-- Mock
-- 单测、自动化测试(获取单个用例覆盖明细)
-- 精准测试
-- 风险分析
-- 统一监控告警(metrics)
-- etc
+- Coverage statistics and single-test coverage details.
+- Call chain tracing and runtime observation.
+- Data and field lineage analysis.
+- Traffic observation and replay.
+- Precision testing and automated testing.
+- Risk analysis.
+- Unified metrics, monitoring, and alerting.
 
-### 运行环境
+## Requirements
 
-- Go Version >= 1.18
-- Linux\Windows\MacOS
+- Go 1.18 or later.
+- Linux, macOS, or Windows.
 
-### 演示程序
+## Demo
 
-[下载example演示程序](https://github.com/lvyahui8/ellyn/releases)
+Download the demo program for your platform from
+[GitHub Releases](https://github.com/lvyahui8/ellyn/releases), run it, and open
+[http://localhost:19898](http://localhost:19898).
 
-下载对应系统版本执行，然后访问[http://localhost:19898](http://localhost:19898)即可
+![Call chain visualization](./.assets/graph.png)
 
-![调用链](./.assets/graph.png)
+## CLI Usage
 
-### 工具使用方法
+Download the `ellyn` CLI from
+[GitHub Releases](https://github.com/lvyahui8/ellyn/releases).
 
-[下载ellyn工具](https://github.com/lvyahui8/ellyn/releases)
-
-Usage
 ```text
 NAME:
    ellyn - Go coverage and callgraph collection tool
@@ -66,68 +68,84 @@ GLOBAL OPTIONS:
    --help, -h  show help
 ```
 
-在目标go项目main package所在目录执行
+Run the CLI in the directory that contains the target Go application's `main`
+package:
 
-- ellyn update: 代码插桩，插桩之后编译代码启动服务，即可收集数据
-- ellyn rollback: 回滚原文件，清理插桩痕迹
+```shell
+ellyn update
+```
 
-### 二次开发
+`ellyn update` instruments the project. After instrumentation, compile and start
+the target service to collect data.
 
-#### 程序架构
+```shell
+ellyn rollback
+```
 
-![架构图](.assets/arch.png)
+`ellyn rollback` restores the original source files and removes instrumentation
+artifacts.
 
-#### SDK核心逻辑
+## Repository Layout
 
-![架构图](.assets/flow.png)
+- `api`: Runtime API used to access the instrumented SDK.
+- `benchmark`: Benchmark scenarios for comparing overhead at different sampling rates.
+- `cmd`: The `ellyn` command-line tool.
+- `example`: Demo application for inspecting collected data.
+- `instr`: Instrumentation logic that walks target Go files and injects SDK calls.
+- `sdk`: SDK code copied into the target project and compiled as part of it.
+- `test`: Shared test helpers.
+- `viewer`: Lightweight visualization UI.
 
-#### 目录说明
+## Architecture
 
-- api: 提供运行时访问sdk（插桩代码）的api
-- benchmark: 性能基准测试，对比各种场景不同采样率下的性能差异
-- cmd: ellyn命令行工具，用于对目标项目执行插桩
-- example: 演示程序。演示数据采集效果
-- instr: 插桩逻辑，遍历目标项目文件，植入ellyn sdk代码
-- sdk: 插桩代码调用的sdk，此目录拷贝到目标项目，作为目标项目的一部分参与编译。此目录不能使用非go官方依赖（test文件除外）
-- test: 项目测试基础代码
-- viewer: 简易版的可视化页面
+![Architecture](.assets/arch.png)
 
-#### 开发要点
+## SDK Flow
 
-- 避免资源冲突/锁竞争， 无锁优先
-- 核心函数必须O(1)操作
-- 高频访问的字段必须缓存行填充，防止伪共享
-- 可以牺牲部分空间换时间
-- 尽量用array/bitmap而非go官方map
-- 高频创建使用的对象基于sync.Pool池化，减少gc压力
-- 参数收集要考虑大值传递（拷贝）对性能影响
+![SDK flow](.assets/flow.png)
 
-#### Sdk组件及用途
+## Development Notes
 
-- [RingBuffer ](./sdk/common/collections/ringbuffer.go) : 缓冲调用数据
-  - [RingBuffer性能测试](./sdk/common/collections/ringbuffer.md)
-  - [RingBuffer与Map性能对比测试](./sdk/common/collections/ring_buffer_vs_map.md)
-- [LinkedQueue](./sdk/common/collections/linked_queue.go): 基于链表的同步队列。用作协程池的任务队列
-- [hmap(SegmentHashmap)](./sdk/common/collections/hmap.go): 实现高性能的routineLocal
-  - [hmap性能测试](./sdk/common/collections/hmap.md)
-- [bitmap](./sdk/common/collections/bitmap.go): 记录函数、块的执行情况
-- [UnsafeCompressedStack](./sdk/common/collections/stack.go) : 模拟入栈弹栈
-  - [Stack性能测试](./sdk/common/collections/stack.md)
-- [routineLocal/GLS/GoRoutineLocalStorage](./sdk/common/goroutine/routine_local.go): 缓存上下文
-  - [routineLocal性能测试](./sdk/common/goroutine/routine_local_test.go)
-- [routinePool](./sdk/common/goroutine/routine_pool.go): 协程池，并发处理文件
-- [Uint64GUIDGenerator](./sdk/common/guid/guid.go): 生成调用id
-- [AsyncLogger](./sdk/common/logging/readme.md): 高性能异步日志
+The SDK is copied into target projects, so runtime code should avoid unnecessary
+dependencies and keep hot paths predictable:
 
-### 性能测试
+- Prefer lock-free designs where practical, and avoid resource contention.
+- Keep core operations at `O(1)`.
+- Pad highly accessed fields to reduce false sharing.
+- Trade limited memory overhead for lower runtime latency when it is justified.
+- Prefer arrays and bitmaps over Go maps on high-frequency paths.
+- Reuse frequently allocated objects with `sync.Pool` to reduce GC pressure.
+- Be careful when collecting large parameter values because copying can be costly.
 
-- 对CPU密集型场景存在一定影响，即使采样率很低
-- 对IO密集型场景影响很小，即使采样率很高
+## SDK Components
 
-[明细数据](./benchmark/result.md)
+- [RingBuffer](./sdk/common/collections/ringbuffer.go): Buffers call data.
+  - [RingBuffer benchmark](./sdk/common/collections/ringbuffer.md)
+  - [RingBuffer vs Map benchmark](./sdk/common/collections/ring_buffer_vs_map.md)
+- [LinkedQueue](./sdk/common/collections/linked_queue.go): Linked-list-based synchronized queue used by the goroutine pool.
+- [hmap / SegmentHashmap](./sdk/common/collections/hmap.go): High-performance routine-local storage implementation.
+  - [hmap benchmark](./sdk/common/collections/hmap.md)
+- [bitmap](./sdk/common/collections/bitmap.go): Records function and block execution.
+- [UnsafeCompressedStack](./sdk/common/collections/stack.go): Simulates stack push and pop operations.
+  - [Stack benchmark](./sdk/common/collections/stack.md)
+- [routineLocal / GLS / GoRoutineLocalStorage](./sdk/common/goroutine/routine_local.go): Caches goroutine context.
+  - [routineLocal benchmark](./sdk/common/goroutine/routine_local_test.go)
+- [routinePool](./sdk/common/goroutine/routine_pool.go): Goroutine pool for concurrent file processing.
+- [Uint64GUIDGenerator](./sdk/common/guid/guid.go): Generates call IDs.
+- [AsyncLogger](./sdk/common/logging/readme.md): High-performance asynchronous logger.
 
-### Q&A 
+## Performance
 
-#### Q:为什么要实现部分集合库，而不是直接使用开源方案？
+- CPU-intensive workloads can show measurable overhead even at low sampling rates.
+- IO-intensive workloads are usually affected much less, even with higher sampling rates.
 
-A: 这部分实现会拷贝到目标仓库，一是为确保不与目标仓库sdk冲突，二是针对当前场景做性能优化，因此自行实现。对于不拷贝的目标仓库的代码，优先考虑用复用开源实现
+See [benchmark details](./benchmark/result.md).
+
+## FAQ
+
+### Why implement custom collection utilities instead of using open-source alternatives?
+
+Part of the SDK is copied into target repositories. Custom implementations help
+avoid dependency conflicts in those repositories and allow Ellyn to optimize for
+its specific runtime collection paths. For code that is not copied into target
+projects, reusing mature open-source implementations is preferred.
